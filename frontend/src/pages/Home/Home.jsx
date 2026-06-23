@@ -1,4 +1,4 @@
-import { useAuth } from '../../../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
 // Trang chủ sau khi đăng nhập — bổ sung UI theo design
