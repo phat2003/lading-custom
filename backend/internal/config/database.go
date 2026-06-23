@@ -34,3 +34,4 @@ func ConnectDB(cfg *Config) *gorm.DB {
 	log.Println("kết nối database thành công")
 	return db
 }
+

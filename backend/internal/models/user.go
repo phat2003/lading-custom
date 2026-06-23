@@ -67,3 +67,4 @@ type Subscription struct {
 }
 
 func (Subscription) TableName() string { return "subscription" }
+

@@ -113,3 +113,4 @@ type PublishedSnapshot struct {
 }
 
 func (PublishedSnapshot) TableName() string { return "published_snapshot" }
+

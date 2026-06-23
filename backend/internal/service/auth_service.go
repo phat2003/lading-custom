@@ -5,10 +5,10 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/your-org/landing-page-builder/backend/internal/config"
-	"github.com/your-org/landing-page-builder/backend/internal/middleware"
-	"github.com/your-org/landing-page-builder/backend/internal/models"
-	"github.com/your-org/landing-page-builder/backend/internal/repository"
+	"github.com/nhienthai/lading-custom/backend/internal/config"
+	"github.com/nhienthai/lading-custom/backend/internal/middleware"
+	"github.com/nhienthai/lading-custom/backend/internal/models"
+	"github.com/nhienthai/lading-custom/backend/internal/repository"
 )
 
 var (
@@ -78,3 +78,4 @@ func (s *AuthService) Login(email, password string) (string, *models.User, error
 	}
 	return token, user, nil
 }
+

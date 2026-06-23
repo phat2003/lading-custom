@@ -8,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/your-org/landing-page-builder/backend/internal/config"
-	"github.com/your-org/landing-page-builder/backend/internal/handlers"
-	"github.com/your-org/landing-page-builder/backend/internal/middleware"
-	"github.com/your-org/landing-page-builder/backend/internal/repository"
-	"github.com/your-org/landing-page-builder/backend/internal/service"
+	"github.com/nhienthai/lading-custom/backend/internal/config"
+	"github.com/nhienthai/lading-custom/backend/internal/handlers"
+	"github.com/nhienthai/lading-custom/backend/internal/middleware"
+	"github.com/nhienthai/lading-custom/backend/internal/repository"
+	"github.com/nhienthai/lading-custom/backend/internal/service"
 )
 
 // Setup khởi tạo Gin engine, đăng ký middleware và toàn bộ route.
@@ -95,3 +95,4 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	return r
 }
+

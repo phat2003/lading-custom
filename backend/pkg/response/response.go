@@ -26,3 +26,4 @@ func Fail(c *gin.Context, status int, errMsg string) {
 		Error:   errMsg,
 	})
 }
+

@@ -17,7 +17,6 @@ CREATE TYPE plan_type AS ENUM ('free', 'pro');
 
 -- Trạng thái subscription
 CREATE TYPE subscription_status AS ENUM ('active', 'expired', 'cancelled');
-
 -- Loại template: system (do admin tạo) | user (user lưu từ landing page)
 CREATE TYPE template_type AS ENUM ('system', 'user');
 

@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/your-org/landing-page-builder/backend/internal/config"
-	"github.com/your-org/landing-page-builder/backend/internal/router"
+	"github.com/nhienthai/lading-custom/backend/internal/config"
+	"github.com/nhienthai/lading-custom/backend/internal/router"
 )
 
 func main() {
@@ -24,3 +24,4 @@ func main() {
 		log.Fatalf("không khởi động được server: %v", err)
 	}
 }
+
