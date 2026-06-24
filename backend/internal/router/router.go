@@ -44,6 +44,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	userService := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
+	projectRepo := repository.NewProjectRepository(db)
+	projectService := service.NewProjectService(projectRepo)
+	projectHandler := handlers.NewProjectHandler(projectService)
+
 	templateRepo := repository.NewTemplateRepository(db)
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
@@ -71,6 +75,16 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// ---- Profile API ----
 		authorized.GET("/profile", userHandler.GetProfile)
 		authorized.PUT("/profile", userHandler.UpdateProfile)
+
+		// ---- Project API (THÊM MỚI TỪ ĐÂY) ----
+		projects := authorized.Group("/projects")
+		{
+			projects.POST("", projectHandler.Create)
+			projects.GET("", projectHandler.GetAll)
+			projects.GET("/:id", projectHandler.GetByID)
+			projects.PUT("/:id", projectHandler.Update)
+			projects.DELETE("/:id", projectHandler.Delete)
+		}
 
 		// Project — BE Dev 2
 		// authorized.GET("/projects", projectHandler.List)
