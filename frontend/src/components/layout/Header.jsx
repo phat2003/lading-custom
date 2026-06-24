@@ -1,4 +1,4 @@
-export default function Header() {
+export default function Header({ user, onLogout }) {
   return (
     <header className="flex items-center justify-between px-8 py-4 bg-white shadow">
       <h1 className="text-xl font-bold">Landing Page Builder</h1>
@@ -8,9 +8,25 @@ export default function Header() {
         <a href="#pricing">Pricing</a>
         <a href="#reviews">Review</a>
       </nav>
-      <div className="flex gap-4">
-        <button className="text-gray-600">Login</button>
-        <button className="px-4 py-2 text-white bg-blue-600 rounded-lg">Get Started</button>
+      <div className="flex items-center gap-4">
+        {user ? (
+          <>
+            <span className="text-gray-600">{user.full_name || user.email}</span>
+            <button
+              onClick={onLogout}
+              className="text-sm text-red-600 hover:underline"
+            >
+              Đăng xuất
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="text-gray-600">Login</button>
+            <button className="px-4 py-2 text-white bg-blue-600 rounded-lg">
+              Get Started
+            </button>
+          </>
+        )}
       </div>
     </header>
   )
