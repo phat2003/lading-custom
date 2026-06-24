@@ -41,6 +41,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	userRepo := repository.NewUserRepository(db)
 	authService := service.NewAuthService(userRepo, cfg)
 	authHandler := handlers.NewAuthHandler(authService)
+	userService := service.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
 
 	// --- Routes ---
 	api := r.Group("/api/v1")
@@ -57,6 +59,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	authorized := api.Group("/")
 	authorized.Use(middleware.AuthRequired(cfg.JWTSecret))
 	{
+		// ---- Profile API ----
+		authorized.GET("/profile", userHandler.GetProfile)
+		authorized.PUT("/profile", userHandler.UpdateProfile)
+
 		// Project — BE Dev 2
 		// authorized.GET("/projects", projectHandler.List)
 		// authorized.POST("/projects", projectHandler.Create)
