@@ -72,7 +72,7 @@ func (s *AuthService) Login(email, password string) (string, *models.User, error
 		return "", nil, ErrInvalidCredentials
 	}
 
-	token, err := middleware.GenerateToken(s.cfg.JWTSecret, s.cfg.JWTExpireHours, user.UserID, user.Role)
+	token, err := middleware.GenerateToken(s.cfg.JWTSecret, s.cfg.JWTExpireHours, user.UserID, user.Role, user.PlanType)
 	if err != nil {
 		return "", nil, err
 	}

@@ -52,3 +52,7 @@ func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	return count > 0, err
 }
 
+// Update cập nhật thông tin user.
+func (r *UserRepository) Update(user *models.User) error {
+	return r.db.Save(user).Error
+}

@@ -41,6 +41,17 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	userRepo := repository.NewUserRepository(db)
 	authService := service.NewAuthService(userRepo, cfg)
 	authHandler := handlers.NewAuthHandler(authService)
+	userService := service.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
+
+	templateRepo := repository.NewTemplateRepository(db)
+	templateService := service.NewTemplateService(templateRepo)
+	templateHandler := handlers.NewTemplateHandler(templateService)
+
+	uploadHandler := handlers.NewUploadHandler()
+
+	// Serve file tĩnh đã upload (thumbnail, template file).
+	r.Static("/uploads", "./uploads")
 
 	// --- Routes ---
 	api := r.Group("/api/v1")
@@ -57,6 +68,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	authorized := api.Group("/")
 	authorized.Use(middleware.AuthRequired(cfg.JWTSecret))
 	{
+		// ---- Profile API ----
+		authorized.GET("/profile", userHandler.GetProfile)
+		authorized.PUT("/profile", userHandler.UpdateProfile)
+
 		// Project — BE Dev 2
 		// authorized.GET("/projects", projectHandler.List)
 		// authorized.POST("/projects", projectHandler.Create)
@@ -70,8 +85,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// Media upload — BE Dev 3
 		// authorized.POST("/media/upload", mediaHandler.Upload)
 
-		// Publish — BE Dev 3
-		// authorized.POST("/landing-pages/:id/publish", publishHandler.Publish)
+		// Publish — chỉ gói Pro (BE Dev 3)
+		// authorized.POST("/landing-pages/:id/publish", middleware.ProRequired(), publishHandler.Publish)
 
 		// Export — BE Dev 1
 		// authorized.GET("/landing-pages/:id/export/pdf", exportHandler.PDF)
@@ -84,8 +99,17 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	admin := api.Group("/admin")
 	admin.Use(middleware.AuthRequired(cfg.JWTSecret), middleware.AdminRequired())
 	{
-		// System template management — BE Dev 2
-		// admin.POST("/templates", templateHandler.CreateSystem)
+		// System template management
+		admin.POST("/templates", templateHandler.Create)
+		admin.GET("/templates", templateHandler.List)
+		admin.GET("/templates/:id", templateHandler.GetByID)
+		admin.PUT("/templates/:id", templateHandler.Update)
+		admin.DELETE("/templates/:id", templateHandler.Delete)
+		admin.POST("/templates/upload", uploadHandler.UploadTemplateFile)
+
+		// Media upload
+		admin.POST("/media/upload", uploadHandler.UploadThumbnail)
+
 		// Section library — BE Dev 3
 		// admin.POST("/section-library", libHandler.Create)
 	}
