@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/your-org/landing-page-builder/backend/internal/service"
-	"github.com/your-org/landing-page-builder/backend/pkg/response"
+	"github.com/nhienthai/lading-custom/backend/internal/service"
+	"github.com/nhienthai/lading-custom/backend/pkg/response"
 )
 
 // AuthHandler nhận request HTTP cho đăng ký / đăng nhập.
@@ -74,3 +74,4 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"user":  user,
 	})
 }
+

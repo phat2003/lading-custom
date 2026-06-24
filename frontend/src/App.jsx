@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home/Home'
+import IconGallery from './pages/icons-list/IconGallery'
 
 // Bọc route cần đăng nhập: chưa login thì đẩy về /login.
 function ProtectedRoute({ children }) {
@@ -16,6 +17,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      {/* Trang dev xem icon — có thể xóa khi không cần. */}
+      <Route path="/icons" element={<IconGallery />} />
       <Route
         path="/"
         element={

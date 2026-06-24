@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/your-org/landing-page-builder/backend/internal/models"
+	"github.com/nhienthai/lading-custom/backend/internal/models"
 )
 
 var ErrNotFound = errors.New("không tìm thấy bản ghi")
@@ -51,3 +51,4 @@ func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	err := r.db.Model(&models.User{}).Where("email = ?", email).Count(&count).Error
 	return count > 0, err
 }
+

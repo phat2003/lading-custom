@@ -9,8 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	"github.com/your-org/landing-page-builder/backend/internal/models"
-	"github.com/your-org/landing-page-builder/backend/pkg/response"
+	"github.com/nhienthai/lading-custom/backend/internal/models"
+	"github.com/nhienthai/lading-custom/backend/pkg/response"
 )
 
 // Claims là payload trong JWT token.
@@ -80,3 +80,4 @@ func AdminRequired() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
