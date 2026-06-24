@@ -17,7 +17,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      {/* Trang dev xem icon — có thể xóa khi không cần. */}
+      <Route path="/home" element={<Home />} />
       <Route path="/icons" element={<IconGallery />} />
       <Route
         path="/"

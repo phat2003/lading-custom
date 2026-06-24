@@ -1,10 +1,6 @@
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import Header from '../../components/layout/Header'
-import HeroSection from '../../components/layout/HeroSection'
-import FeatureSection from '../../components/layout/FeatureSection'
-import Testimonials from '../../components/layout/Testimonials'
-import PricingPreview from '../../components/layout/PricingPreview'
 import Footer from '../../components/layout/Footer'
 
 // Trang chủ sau khi đăng nhập — bổ sung UI theo design
@@ -20,24 +16,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-4 bg-white shadow">
-        <h1 className="text-xl font-bold">Landing Page Builder</h1>
-        <nav className="flex gap-6 text-gray-700">
-          <a href="#features">Features</a>
-          <a href="#templates">Templates</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#reviews">Review</a>
-        </nav>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">{user?.full_name || user?.email}</span>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-600 hover:underline"
-          >
-            Đăng xuất
-          </button>
-        </div>
-      </header>
+      <Header user={user} onLogout={handleLogout} />
 
       {/* Main content */}
       <main className="flex-grow">
@@ -116,15 +95,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-sm text-center text-gray-600 bg-gray-100">
-        <div className="flex justify-center gap-6 mb-2">
-          <a href="/about">About</a>
-          <a href="/terms">Terms</a>
-          <a href="/privacy">Privacy</a>
-          <a href="/contact">Contact</a>
-        </div>
-        <p>© 2026 Landing Page Builder. All rights reserved.</p>
-      </footer>
+      <Footer />
     </div>
   )
 }
