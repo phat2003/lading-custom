@@ -15,16 +15,18 @@ import (
 
 // Claims là payload trong JWT token.
 type Claims struct {
-	UserID uuid.UUID       `json:"user_id"`
-	Role   models.UserRole `json:"role"`
+	UserID   uuid.UUID        `json:"user_id"`
+	Role     models.UserRole  `json:"role"`
+	PlanType models.PlanType  `json:"plan_type"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken tạo JWT cho user sau khi đăng nhập thành công.
-func GenerateToken(secret string, expireHours int, userID uuid.UUID, role models.UserRole) (string, error) {
+func GenerateToken(secret string, expireHours int, userID uuid.UUID, role models.UserRole, planType models.PlanType) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Role:   role,
+		UserID:   userID,
+		Role:     role,
+		PlanType: planType,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expireHours) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -58,6 +60,25 @@ func AuthRequired(secret string) gin.HandlerFunc {
 		// Lưu thông tin user vào context để handler dùng.
 		c.Set("user_id", claims.UserID)
 		c.Set("role", claims.Role)
+		c.Set("plan_type", claims.PlanType)
+		c.Next()
+	}
+}
+
+// ProRequired chỉ cho phép user có plan "pro" thực hiện (dùng sau AuthRequired).
+func ProRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		plan, exists := c.Get("plan_type")
+		if !exists {
+			response.Fail(c, http.StatusForbidden, "không xác định được gói dịch vụ")
+			c.Abort()
+			return
+		}
+		if plan.(models.PlanType) != models.PlanPro {
+			response.Fail(c, http.StatusForbidden, "tính năng này chỉ dành cho gói Pro")
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }
