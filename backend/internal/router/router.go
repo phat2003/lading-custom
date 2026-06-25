@@ -24,12 +24,13 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 
 	// CORS — cho phép frontend gọi API.
+	// AllowCredentials không dùng vì auth qua Bearer token, không phải cookie.
+	// Production nên đổi AllowOrigins thành domain cụ thể thay vì "*".
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // production nên giới hạn domain cụ thể
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+		MaxAge:       12 * time.Hour,
 	}))
 
 	// Health check
