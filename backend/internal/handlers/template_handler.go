@@ -37,13 +37,8 @@ func (h *TemplateHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Lấy admin ID từ context (đã được AuthRequired set trước đó).
-	adminIDVal, _ := c.Get("user_id")
-	adminID := adminIDVal.(uuid.UUID)
-
 	t, err := h.templateService.CreateSystemTemplate(service.CreateSystemTemplateInput{
-		Name:    req.Name,
-		AdminID: adminID,
+		Name: req.Name,
 	})
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "tạo template thất bại")

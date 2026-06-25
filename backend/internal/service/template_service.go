@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/google/uuid"
-
 	"github.com/nhienthai/lading-custom/backend/internal/models"
 	"github.com/nhienthai/lading-custom/backend/internal/repository"
 )
@@ -18,8 +17,7 @@ func NewTemplateService(templateRepo *repository.TemplateRepository) *TemplateSe
 
 // CreateSystemTemplateInput dữ liệu đầu vào tạo system template.
 type CreateSystemTemplateInput struct {
-	Name    string
-	AdminID uuid.UUID
+	Name string
 }
 
 // CreateSystemTemplate tạo template loại system do admin khởi tạo.
@@ -27,7 +25,7 @@ func (s *TemplateService) CreateSystemTemplate(in CreateSystemTemplateInput) (*m
 	t := &models.Template{
 		Name:           in.Name,
 		Type:           models.TemplateSystem,
-		OwnerID:        &in.AdminID,
+		OwnerID:        nil, // system template không có owner theo DB constraint
 		TemplateSource: models.SourceCreatedByAdmin,
 	}
 	if err := s.templateRepo.Create(t); err != nil {
