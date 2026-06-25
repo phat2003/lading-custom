@@ -23,7 +23,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
+      {/*Header*/}
       <Header
         user={user}
         onLogout={handleLogout}
@@ -31,7 +31,7 @@ export default function Home() {
         onRegister={() => setShowRegister(true)}
       />
 
-      {/* Main content */}
+      {/*Main content*/}
       <main className="flex-grow">
         <HeroSection
           onGetStarted={() => setShowRegister(true)}
