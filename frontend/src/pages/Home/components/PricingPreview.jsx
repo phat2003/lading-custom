@@ -1,19 +1,46 @@
-export default function PricingPreview() {
+export default function PricingPreview({ onChoosePlan }) {
+  const plans = [
+    {
+      name: "Starter",
+      price: "Free",
+      features: ["Basic templates", "Drag & drop editor", "Community support"],
+    },
+    {
+      name: "Pro",
+      price: "$19/mo",
+      features: ["All templates", "Advanced analytics", "Priority support"],
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      features: ["Unlimited projects", "Dedicated manager", "Custom integrations"],
+    },
+  ]
+
   return (
-    <section id="pricing" className="px-8 py-16 text-center">
-      <h3 className="mb-8 text-3xl font-semibold">Choose your plan</h3>
-      <div className="grid max-w-4xl gap-8 mx-auto md:grid-cols-2">
-        <div className="p-6 border rounded-lg shadow-sm">
-          <h4 className="mb-2 font-bold">Free Plan</h4>
-          <p className="mb-4">Basic templates, PDF export, watermark</p>
-          <p className="text-xl font-bold">$0</p>
-        </div>
-        <div className="p-6 border rounded-lg shadow-sm">
-          <h4 className="mb-2 font-bold">Pro Plan</h4>
-          <p className="mb-4">Premium templates, HTML/CSS export, no watermark</p>
-          <p className="text-xl font-bold">$9.99/mo</p>
-          <button className="px-6 py-3 mt-4 text-white bg-blue-600 rounded-lg">Upgrade to Pro</button>
-        </div>
+    <section id="pricing" className="py-16 bg-gray-50">
+      <h2 className="mb-10 text-3xl font-bold text-center">Choose the plan that fits you</h2>
+      <div className="grid grid-cols-1 gap-8 px-8 md:grid-cols-3">
+        {plans.map((plan, idx) => (
+          <div
+            key={idx}
+            className="p-8 transition transform bg-white border rounded-lg shadow-sm hover:shadow-lg hover:-translate-y-1"
+          >
+            <h3 className="mb-2 text-2xl font-semibold">{plan.name}</h3>
+            <p className="mb-4 text-xl text-blue-600">{plan.price}</p>
+            <ul className="mb-6 space-y-2">
+              {plan.features.map((f, i) => (
+                <li key={i} className="text-gray-700">✔ {f}</li>
+              ))}
+            </ul>
+            <button
+              onClick={onChoosePlan}
+              className="w-full px-6 py-3 text-white transition bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              Choose Plan
+            </button>
+          </div>
+        ))}
       </div>
     </section>
   )

@@ -1,26 +1,41 @@
-export default function FeaturesSection() {
+export default function FeatureSection() {
+  const features = [
+    {
+      title: "Drag & Drop Editing",
+      description: "Build pages visually, no code required.",
+      icon: "🖱️",
+    },
+    {
+      title: "Realtime Preview",
+      description: "See updates instantly across devices.",
+      icon: "⚡",
+    },
+    {
+      title: "Optimized Templates",
+      description: "High-converting designs ready to use.",
+      icon: "📑",
+    },
+    {
+      title: "Built-in Analytics",
+      description: "Track performance and conversions easily.",
+      icon: "📊",
+    },
+  ]
+
   return (
-    <section id="features" className="px-8 py-16">
-      <h3 className="mb-8 text-3xl font-semibold text-center">
-        Everything you need to design, iterate and ship
-      </h3>
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-        <div className="p-6 border rounded-lg shadow-sm">
-          <h4 className="mb-2 font-bold">🖱️ Drag & Drop Editing</h4>
-          <p>Build pages visually with no code.</p>
-        </div>
-        <div className="p-6 border rounded-lg shadow-sm">
-          <h4 className="mb-2 font-bold">⚡ Realtime Preview</h4>
-          <p>See updates instantly across devices.</p>
-        </div>
-        <div className="p-6 border rounded-lg shadow-sm">
-          <h4 className="mb-2 font-bold">📱 Responsive Design</h4>
-          <p>Preview across desktop, tablet, and mobile.</p>
-        </div>
-        <div className="p-6 border rounded-lg shadow-sm">
-          <h4 className="mb-2 font-bold">💾 Export Options</h4>
-          <p>Download ready-to-deploy HTML/CSS/JS.</p>
-        </div>
+    <section id="features" className="py-16 bg-white">
+      <h2 className="mb-10 text-3xl font-bold text-center">Everything you need to design, iterate and ship</h2>
+      <div className="grid grid-cols-1 gap-8 px-8 md:grid-cols-2 lg:grid-cols-4">
+        {features.map((f, idx) => (
+          <div
+            key={idx}
+            className="p-6 transition transform border rounded-lg shadow-sm hover:shadow-lg hover:-translate-y-1"
+          >
+            <div className="mb-4 text-4xl">{f.icon}</div>
+            <h3 className="mb-2 text-xl font-semibold">{f.title}</h3>
+            <p className="text-gray-600">{f.description}</p>
+          </div>
+        ))}
       </div>
     </section>
   )

@@ -1,4 +1,4 @@
-export default function Header({ user, onLogout }) {
+export default function Header({ user, onLogout, onLogin, onRegister }) {
   return (
     <header className="flex items-center justify-between px-8 py-4 bg-white shadow">
       <h1 className="text-xl font-bold">Landing Page Builder</h1>
@@ -21,8 +21,16 @@ export default function Header({ user, onLogout }) {
           </>
         ) : (
           <>
-            <button className="text-gray-600">Login</button>
-            <button className="px-4 py-2 text-white bg-blue-600 rounded-lg">
+            <button
+              onClick={onLogin}
+              className="text-gray-600"
+            >
+              Login
+            </button>
+            <button
+              onClick={onRegister}
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg"
+            >
               Get Started
             </button>
           </>
