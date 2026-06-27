@@ -49,6 +49,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	projectService := service.NewProjectService(projectRepo)
 	projectHandler := handlers.NewProjectHandler(projectService)
 
+	// Landing Page dependency
+	pageRepo := repository.NewLandingPageRepository(db)
+	pageService := service.NewLandingPageService(pageRepo, projectRepo)
+	pageHandler := handlers.NewLandingPageHandler(pageService)
+
 	templateRepo := repository.NewTemplateRepository(db)
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
@@ -85,6 +90,16 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			projects.GET("/:id", projectHandler.GetByID)
 			projects.PUT("/:id", projectHandler.Update)
 			projects.DELETE("/:id", projectHandler.Delete)
+		}
+
+		// ---- Landing Page API ----
+		pages := authorized.Group("/pages")
+		{
+			pages.POST("", pageHandler.Create)
+			pages.GET("", pageHandler.GetAll) // Cần truyền ?project_id=...
+			pages.GET("/:id", pageHandler.GetByID)
+			pages.PUT("/:id", pageHandler.Update)
+			pages.DELETE("/:id", pageHandler.Delete)
 		}
 
 		// Project — BE Dev 2
