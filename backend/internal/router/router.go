@@ -59,6 +59,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	sectionService := service.NewPageSectionService(sectionRepo, pageService) // Truyền pageService vào
 	sectionHandler := handlers.NewPageSectionHandler(sectionService)
 
+	// Section Template Library dependency
+	sectionTemplateRepo := repository.NewSectionTemplateRepository(db)
+	sectionTemplateService := service.NewSectionTemplateService(sectionTemplateRepo)
+	sectionTemplateHandler := handlers.NewSectionTemplateHandler(sectionTemplateService)
+
 	templateRepo := repository.NewTemplateRepository(db)
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
@@ -114,6 +119,13 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			sections.GET("", sectionHandler.GetAll) // GET /sections?page_id=...
 			sections.PUT("/:id", sectionHandler.Update)
 			sections.DELETE("/:id", sectionHandler.Delete)
+		}
+
+		// ---- Section Template Library API ----
+		sectionTemplates := authorized.Group("/section-templates")
+		{
+			sectionTemplates.POST("", sectionTemplateHandler.Create)
+			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
 		}
 
 		// Project — BE Dev 2
