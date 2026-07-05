@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-// Trang đăng nhập mẫu — FE Dev 1 phát triển tiếp UI/validation.
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -14,6 +13,12 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    if (!email || !password) {
+      setError('Vui lòng nhập đầy đủ thông tin')
+      return
+    }
+
     setLoading(true)
     try {
       await login(email, password)
@@ -26,15 +31,15 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white p-8 rounded-lg shadow"
+        className="w-full max-w-sm p-8 bg-white rounded-lg shadow"
       >
-        <h1 className="text-2xl font-semibold mb-6 text-center">Đăng nhập</h1>
+        <h1 className="mb-6 text-2xl font-semibold text-center">Đăng nhập</h1>
 
         {error && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded">
+          <div className="p-2 mb-4 text-sm text-red-600 rounded bg-red-50">
             {error}
           </div>
         )}
@@ -46,7 +51,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+            className="w-full px-3 py-2 mt-1 border rounded focus:outline-none focus:ring"
           />
         </label>
 
@@ -57,14 +62,15 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+            minLength={6}
+            className="w-full px-3 py-2 mt-1 border rounded focus:outline-none focus:ring"
           />
         </label>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? 'Đang xử lý...' : 'Đăng nhập'}
         </button>
