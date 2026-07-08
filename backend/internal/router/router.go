@@ -59,6 +59,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	sectionService := service.NewPageSectionService(sectionRepo, pageService) // Truyền pageService vào
 	sectionHandler := handlers.NewPageSectionHandler(sectionService)
 
+	// Snapshot dependency
+	snapshotRepo := repository.NewSnapshotRepository(db)
+	snapshotService := service.NewSnapshotService(snapshotRepo, pageService, sectionRepo)
+	snapshotHandler := handlers.NewSnapshotHandler(snapshotService)
+
 	// Section Template Library dependency
 	sectionTemplateRepo := repository.NewSectionTemplateRepository(db)
 	sectionTemplateService := service.NewSectionTemplateService(sectionTemplateRepo)
@@ -81,6 +86,13 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
+	}
+
+	// ---- PUBLIC API (Không cần Token) ----
+	publicAPI := api.Group("/p")
+	{
+		// Link public xem Landing Page
+		publicAPI.GET("/:url", snapshotHandler.ViewPublicPage) 
 	}
 
 	// Các nhóm route cần đăng nhập.
@@ -110,6 +122,9 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			pages.GET("/:id", pageHandler.GetByID)
 			pages.PUT("/:id", pageHandler.Update)
 			pages.DELETE("/:id", pageHandler.Delete)
+
+			//Nút bấm Publish
+			pages.POST("/:id/publish", snapshotHandler.Publish)
 		}
 
 		// ---- Section API ----
@@ -127,6 +142,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			sectionTemplates.POST("", sectionTemplateHandler.Create)
 			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
 		}
+
+		
 
 		// Project — BE Dev 2
 		// authorized.GET("/projects", projectHandler.List)
