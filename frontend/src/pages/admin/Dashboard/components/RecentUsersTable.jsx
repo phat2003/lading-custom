@@ -2,7 +2,7 @@ import Avatar from '../../../../components/common/Avatar'
 import Badge from '../../../../components/common/Badge'
 import { EyeIcon } from '../../../../components/icons'
 
-const PLAN_COLOR = { Pro: 'blue', Free: 'gray', Subscriber: 'purple' }
+const PLAN_COLOR = { Pro: 'blue', Free: 'gray' }
 const STATUS_COLOR = { Active: 'green', Inactive: 'red' }
 
 // Bảng "Recent Users" trên Dashboard.

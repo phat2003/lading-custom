@@ -6,6 +6,9 @@ import Home from './pages/Home/Home'
 import IconGallery from './pages/icons-list/IconGallery'
 import AdminLayout from './pages/admin/layout/AdminLayout'
 import AdminDashboard from './pages/admin/Dashboard/Dashboard'
+import AdminUsers from './pages/admin/Users/Users'
+import AdminTemplates from './pages/admin/Templates/Templates'
+import AdminSections from './pages/admin/Sections/Sections'
 
 // Bọc route cần đăng nhập: chưa login thì đẩy về /login.
 function ProtectedRoute({ children }) {
@@ -25,6 +28,9 @@ export default function App() {
       {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="templates" element={<AdminTemplates />} />
+        <Route path="sections" element={<AdminSections />} />
         <Route
           path="*"
           element={<div className="text-slate-400">Trang đang được phát triển…</div>}

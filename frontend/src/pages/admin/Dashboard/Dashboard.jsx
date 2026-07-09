@@ -3,7 +3,10 @@ import StatCard from './components/StatCard'
 import RecentUsersTable from './components/RecentUsersTable'
 import AiGeneratorLog from './components/AiGeneratorLog'
 import WorkspaceManagement from './components/WorkspaceManagement'
-import { stats, recentUsers, aiLogs, workspaceProjects } from './mockData'
+import { stats } from '../mock/stats'
+import { users } from '../mock/users'
+import { aiLogs } from '../mock/aiLogs'
+import { workspaceProjects } from '../mock/projects'
 
 export default function Dashboard() {
   return (
@@ -31,7 +34,7 @@ export default function Dashboard() {
       {/* Recent users + AI log */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RecentUsersTable users={recentUsers} />
+          <RecentUsersTable users={users.slice(0, 5)} />
         </div>
         <AiGeneratorLog logs={aiLogs} />
       </div>

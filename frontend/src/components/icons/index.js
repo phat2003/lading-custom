@@ -46,6 +46,9 @@ export { default as BellIcon } from './BellIcon'
 export { default as RefreshCwIcon } from './RefreshCwIcon'
 export { default as HelpCircleIcon } from './HelpCircleIcon'
 export { default as ZapIcon } from './ZapIcon'
+export { default as MailIcon } from './MailIcon'
+export { default as PhoneIcon } from './PhoneIcon'
+export { default as CalendarIcon } from './CalendarIcon'
 
 // Base wrapper (tạo icon mới: <Icon>...path...</Icon>)
 export { default as Icon } from './Icon'

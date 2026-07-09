@@ -5,6 +5,7 @@ const COLORS = {
   purple: 'bg-purple-500/15 text-purple-400',
   amber: 'bg-amber-500/15 text-amber-400',
   red: 'bg-red-500/15 text-red-400',
+  teal: 'bg-teal-500/15 text-teal-400',
   gray: 'bg-slate-600/30 text-slate-300',
 }
 
