@@ -73,10 +73,17 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 
+	// Media Asset dependency
+	assetRepo := repository.NewMediaAssetRepository(db)
+	assetService := service.NewMediaAssetService(assetRepo)
+	assetHandler := handlers.NewMediaAssetHandler(assetService)
+	
+
 	uploadHandler := handlers.NewUploadHandler()
 
 	// Serve file tĩnh đã upload (thumbnail, template file).
 	r.Static("/uploads", "./uploads")
+	
 
 	// --- Routes ---
 	api := r.Group("/api/v1")
@@ -143,6 +150,12 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
 		}
 
+		// ----Image Upload API ----
+		upload := authorized.Group("/upload")
+		{
+			upload.POST("", assetHandler.UploadImage)
+			upload.GET("/assets", assetHandler.GetAssets)
+		}
 		
 
 		// Project — BE Dev 2
