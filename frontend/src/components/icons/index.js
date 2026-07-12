@@ -49,6 +49,8 @@ export { default as ZapIcon } from './ZapIcon'
 export { default as MailIcon } from './MailIcon'
 export { default as PhoneIcon } from './PhoneIcon'
 export { default as CalendarIcon } from './CalendarIcon'
+export { default as MoreVerticalIcon } from './MoreVerticalIcon'
+export { default as FilterIcon } from './FilterIcon'
 
 // Base wrapper (tạo icon mới: <Icon>...path...</Icon>)
 export { default as Icon } from './Icon'

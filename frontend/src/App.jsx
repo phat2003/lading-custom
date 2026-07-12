@@ -9,6 +9,10 @@ import AdminDashboard from './pages/admin/Dashboard/Dashboard'
 import AdminUsers from './pages/admin/Users/Users'
 import AdminTemplates from './pages/admin/Templates/Templates'
 import AdminSections from './pages/admin/Sections/Sections'
+import AdminProjects from './pages/admin/Projects/Projects'
+import AdminPricingPlans from './pages/admin/PricingPlans/PricingPlans'
+import AdminAiGenerator from './pages/admin/AiGenerator/AiGenerator'
+import AdminSettings from './pages/admin/Settings/Settings'
 
 // Bọc route cần đăng nhập: chưa login thì đẩy về /login.
 function ProtectedRoute({ children }) {
@@ -31,6 +35,10 @@ export default function App() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="templates" element={<AdminTemplates />} />
         <Route path="sections" element={<AdminSections />} />
+        <Route path="projects" element={<AdminProjects />} />
+        <Route path="pricing" element={<AdminPricingPlans />} />
+        <Route path="ai" element={<AdminAiGenerator />} />
+        <Route path="settings" element={<AdminSettings />} />
         <Route
           path="*"
           element={<div className="text-slate-400">Trang đang được phát triển…</div>}
