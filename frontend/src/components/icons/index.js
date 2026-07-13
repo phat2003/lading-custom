@@ -37,5 +37,20 @@ export { default as LogOutIcon } from './LogOutIcon'
 export { default as UserIcon } from './UserIcon'
 export { default as AlertTriangleIcon } from './AlertTriangleIcon'
 
+// Admin (menu sidebar / topbar)
+export { default as LayoutDashboardIcon } from './LayoutDashboardIcon'
+export { default as LayersIcon } from './LayersIcon'
+export { default as CreditCardIcon } from './CreditCardIcon'
+export { default as SparklesIcon } from './SparklesIcon'
+export { default as BellIcon } from './BellIcon'
+export { default as RefreshCwIcon } from './RefreshCwIcon'
+export { default as HelpCircleIcon } from './HelpCircleIcon'
+export { default as ZapIcon } from './ZapIcon'
+export { default as MailIcon } from './MailIcon'
+export { default as PhoneIcon } from './PhoneIcon'
+export { default as CalendarIcon } from './CalendarIcon'
+export { default as MoreVerticalIcon } from './MoreVerticalIcon'
+export { default as FilterIcon } from './FilterIcon'
+
 // Base wrapper (tạo icon mới: <Icon>...path...</Icon>)
 export { default as Icon } from './Icon'
