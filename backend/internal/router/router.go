@@ -73,6 +73,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 
+	// Media Asset dependency
+	assetRepo := repository.NewMediaAssetRepository(db)
+	assetService := service.NewMediaAssetService(assetRepo)
+	assetHandler := handlers.NewMediaAssetHandler(assetService)
+	
 	// Export dependency (export landing page ra PDF — miễn phí)
 	exportRepo := repository.NewExportRepository(db)
 	exportService := service.NewExportService(exportRepo)
@@ -82,6 +87,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	// Serve file tĩnh đã upload (thumbnail, template file).
 	r.Static("/uploads", "./uploads")
+	
 
 	// --- Routes ---
 	api := r.Group("/api/v1")
@@ -151,6 +157,14 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			sectionTemplates.POST("", sectionTemplateHandler.Create)
 			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
 		}
+
+		// ----Image Upload API ----
+		upload := authorized.Group("/upload")
+		{
+			upload.POST("", assetHandler.UploadImage)
+			upload.GET("/assets", assetHandler.GetAssets)
+		}
+		
 
 		// Project — BE Dev 2
 		// authorized.GET("/projects", projectHandler.List)
