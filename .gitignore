@@ -28,3 +28,5 @@ yarn-error.log*
 
 # Docker
 *.pid
+# File upload từ user/admin
+backend/uploads/ 
