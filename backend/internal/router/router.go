@@ -78,6 +78,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	assetService := service.NewMediaAssetService(assetRepo)
 	assetHandler := handlers.NewMediaAssetHandler(assetService)
 	
+	// Export dependency (export landing page ra PDF — miễn phí)
+	exportRepo := repository.NewExportRepository(db)
+	exportService := service.NewExportService(exportRepo)
+	exportHandler := handlers.NewExportHandler(exportService)
 
 	uploadHandler := handlers.NewUploadHandler()
 
@@ -99,7 +103,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	publicAPI := api.Group("/p")
 	{
 		// Link public xem Landing Page
-		publicAPI.GET("/:url", snapshotHandler.ViewPublicPage) 
+		publicAPI.GET("/:url", snapshotHandler.ViewPublicPage)
 	}
 
 	// Các nhóm route cần đăng nhập.
@@ -133,6 +137,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			//Nút bấm Publish
 			pages.POST("/:id/publish", snapshotHandler.Publish)
 		}
+
+		// ---- Export API ----
+		// Export landing page ra PDF (miễn phí — cả gói Free lẫn Pro đều dùng được).
+		authorized.GET("/landing-pages/:id/export/pdf", exportHandler.ExportPDF)
 
 		// ---- Section API ----
 		sections := authorized.Group("/sections")
@@ -205,4 +213,3 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	return r
 }
-
