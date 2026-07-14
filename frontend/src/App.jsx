@@ -13,6 +13,7 @@ import AdminProjects from './pages/admin/Projects/Projects'
 import AdminPricingPlans from './pages/admin/PricingPlans/PricingPlans'
 import AdminAiGenerator from './pages/admin/AiGenerator/AiGenerator'
 import AdminSettings from './pages/admin/Settings/Settings'
+import TemplateBuilder from './pages/admin/builder/TemplateBuilder'
 
 // Bọc route cần đăng nhập: chưa login thì đẩy về /login.
 function ProtectedRoute({ children }) {
@@ -28,6 +29,9 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/home" element={<Home />} />
       <Route path="/icons" element={<IconGallery />} />
+
+      {/* Builder toàn màn hình — tách khỏi AdminLayout (có toolbar riêng, không sidebar admin) */}
+      <Route path="/admin/templates/new" element={<TemplateBuilder />} />
 
       {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
       <Route path="/admin" element={<AdminLayout />}>

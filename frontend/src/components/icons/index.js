@@ -51,6 +51,8 @@ export { default as PhoneIcon } from './PhoneIcon'
 export { default as CalendarIcon } from './CalendarIcon'
 export { default as MoreVerticalIcon } from './MoreVerticalIcon'
 export { default as FilterIcon } from './FilterIcon'
+export { default as UndoIcon } from './UndoIcon'
+export { default as RedoIcon } from './RedoIcon'
 
 // Base wrapper (tạo icon mới: <Icon>...path...</Icon>)
 export { default as Icon } from './Icon'
