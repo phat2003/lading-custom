@@ -65,8 +65,14 @@ npm run lint              # ESLint
 
 Templates are separate: `Template` → `TemplateSection` (system/user-saved templates)  
 `SectionTemplateLibrary` is the global section library managed by admins.  
-`PublishedSnapshot` stores a frozen JSONB snapshot at publish time (served at `/p/:slug`).  
 `MediaAsset` is attached to an owner and optionally to a `LandingPage`.
+
+### Publish model (slug thuộc về PAGE, không thuộc snapshot)
+Since migration `002_move_slug_to_page`:
+- **`landing_page.published_url`** holds the public slug (nullable, unique). It is the page's *address* — assigned on first publish, then **never changes**, not even across unpublish → republish. Sharing/ads links stay alive.
+- **`published_snapshot`** is *history*: one row per publish, holding `snapshot_content` JSONB `{ html, sections, generated_at }` and `published_at`. It has **no slug**; multiple snapshots per page is normal.
+- `GET /p/:slug` looks the slug up on `landing_page` (only `status = 'published'`), then serves the **latest** snapshot. Consequence: unpublish → 404 without deleting data, and no stale slug can ever serve outdated HTML.
+- Unpublish only flips `status` to `draft`; it deletes neither the snapshots nor `published_url`.
 
 ### API base path
 All endpoints: `/api/v1/...`  

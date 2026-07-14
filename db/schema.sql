@@ -153,12 +153,16 @@ CREATE TABLE landing_page (
     name              VARCHAR(200) NOT NULL,
     source_template_id UUID REFERENCES template(template_id) ON DELETE SET NULL,  -- NULL = Blank
     status            landing_page_status NOT NULL DEFAULT 'draft',
+    -- Slug công khai (/p/:slug). NULL = chưa từng publish.
+    -- Slug thuộc về TRANG nên bền qua mọi lần republish và cả unpublish -> publish lại.
+    published_url     VARCHAR(255) UNIQUE,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_lp_project ON landing_page (project_id);
 CREATE INDEX idx_lp_status  ON landing_page (status);
+CREATE INDEX idx_lp_published_url ON landing_page (published_url) WHERE published_url IS NOT NULL;
 
 -- =====================================================================
 -- 8. PAGE SECTION  (con của Landing Page)
@@ -198,13 +202,14 @@ CREATE INDEX idx_media_lp    ON media_asset (landing_page_id);
 
 -- =====================================================================
 -- 10. PUBLISHED SNAPSHOT
---     Bản chụp nội dung tại thời điểm publish (public link serve bản này).
---     snapshot mới nhất = bản đang live.
+--     Bản chụp nội dung tại thời điểm publish — bản ghi LỊCH SỬ.
+--     Mỗi lần publish tạo thêm 1 hàng; snapshot mới nhất = bản đang live.
+--     Slug công khai KHÔNG nằm ở đây mà ở landing_page.published_url
+--     (xem migration 002_move_slug_to_page): slug thuộc về trang, snapshot chỉ giữ nội dung.
 -- =====================================================================
 CREATE TABLE published_snapshot (
     snapshot_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     landing_page_id  UUID NOT NULL REFERENCES landing_page(landing_page_id) ON DELETE CASCADE,
-    published_url    VARCHAR(255) NOT NULL UNIQUE,   -- unique slug hoặc UUID
     snapshot_content JSONB NOT NULL,                 -- toàn bộ nội dung tại thời điểm publish
     published_by     UUID REFERENCES app_user(user_id) ON DELETE SET NULL,
     published_at     TIMESTAMPTZ NOT NULL DEFAULT now()
