@@ -59,11 +59,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	sectionService := service.NewPageSectionService(sectionRepo, pageService) // Truyền pageService vào
 	sectionHandler := handlers.NewPageSectionHandler(sectionService)
 
-	// Snapshot dependency
-	snapshotRepo := repository.NewSnapshotRepository(db)
-	snapshotService := service.NewSnapshotService(snapshotRepo, pageService, sectionRepo)
-	snapshotHandler := handlers.NewSnapshotHandler(snapshotService)
-
 	// Section Template Library dependency
 	sectionTemplateRepo := repository.NewSectionTemplateRepository(db)
 	sectionTemplateService := service.NewSectionTemplateService(sectionTemplateRepo)
@@ -83,6 +78,16 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	exportService := service.NewExportService(exportRepo)
 	exportHandler := handlers.NewExportHandler(exportService)
 
+	// Preview dependency (realtime preview — sinh HTML cho iframe của editor)
+	previewRepo := repository.NewPreviewRepository(db)
+	previewService := service.NewPreviewService(previewRepo)
+	previewHandler := handlers.NewPreviewHandler(previewService)
+
+	// Static dependency (sinh HTML tĩnh, publish snapshot và serve link công khai /p/:slug)
+	staticRepo := repository.NewStaticRepository(db)
+	staticService := service.NewStaticService(staticRepo)
+	staticHandler := handlers.NewStaticHandler(staticService)
+
 	uploadHandler := handlers.NewUploadHandler()
 
 	// Serve file tĩnh đã upload (thumbnail, template file).
@@ -97,13 +102,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
-	}
-
-	// ---- PUBLIC API (Không cần Token) ----
-	publicAPI := api.Group("/p")
-	{
-		// Link public xem Landing Page
-		publicAPI.GET("/:url", snapshotHandler.ViewPublicPage)
 	}
 
 	// Các nhóm route cần đăng nhập.
@@ -133,14 +131,30 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			pages.GET("/:id", pageHandler.GetByID)
 			pages.PUT("/:id", pageHandler.Update)
 			pages.DELETE("/:id", pageHandler.Delete)
-
-			//Nút bấm Publish
-			pages.POST("/:id/publish", snapshotHandler.Publish)
+			// Publish nằm ở /landing-pages/:id/publish (xem nhóm Static Preview / Publish bên dưới).
 		}
 
 		// ---- Export API ----
+		// Export landing page ra HTML/CSS/JS đóng gói ZIP (chỉ gói Pro — check trong handler).
+		authorized.GET("/landing-pages/:id/export/html", exportHandler.ExportHTML)
 		// Export landing page ra PDF (miễn phí — cả gói Free lẫn Pro đều dùng được).
 		authorized.GET("/landing-pages/:id/export/pdf", exportHandler.ExportPDF)
+
+		// ---- Realtime Preview API ----
+		// Preview realtime — trả JSON { html, updated_at } để FE nạp vào iframe (srcdoc).
+		authorized.GET("/landing-pages/:id/preview", previewHandler.GetRealtimePreview)
+		// Preview tĩnh — trả HTML thẳng, dùng trực tiếp cho iframe src.
+		authorized.GET("/landing-pages/:id/preview/static", previewHandler.GetStaticPreview)
+		// Preview theo thiết bị — ?device=desktop|tablet|mobile
+		authorized.GET("/landing-pages/:id/preview/device", previewHandler.PreviewByDevice)
+
+		// ---- Static Preview / Publish API ----
+		// Sinh HTML tĩnh để xem trước bản sẽ publish (chưa lưu snapshot).
+		authorized.POST("/landing-pages/:id/generate-static", staticHandler.GenerateStatic)
+		// Publish: sinh HTML tĩnh, lưu snapshot với slug duy nhất, đổi status sang published.
+		authorized.POST("/landing-pages/:id/publish", staticHandler.PublishPage)
+		// Unpublish: đổi status về draft -> /p/:slug trả 404. Snapshot cũ vẫn giữ trong DB.
+		authorized.POST("/landing-pages/:id/unpublish", staticHandler.UnpublishPage)
 
 		// ---- Section API ----
 		sections := authorized.Group("/sections")
@@ -209,7 +223,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	}
 
 	// Route công khai serve landing page đã publish (không cần đăng nhập).
-	// r.GET("/p/:slug", publishHandler.ServePublic)
+	// Trả thẳng HTML đã đóng băng trong snapshot; slug lạ -> trang 404 đơn giản.
+	r.GET("/p/:slug", staticHandler.ServePublic)
 
 	return r
 }
