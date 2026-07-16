@@ -68,6 +68,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 
+	// Template Action dependency (Save As Template)
+	templateSectionRepo := repository.NewTemplateSectionRepository(db)
+	templateActionService := service.NewTemplateActionService(templateRepo, templateSectionRepo, pageRepo, sectionRepo)
+	templateActionHandler := handlers.NewTemplateActionHandler(templateActionService)
+
 	// Media Asset dependency
 	assetRepo := repository.NewMediaAssetRepository(db)
 	assetService := service.NewMediaAssetService(assetRepo)
@@ -132,6 +137,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			pages.PUT("/:id", pageHandler.Update)
 			pages.DELETE("/:id", pageHandler.Delete)
 			// Publish nằm ở /landing-pages/:id/publish (xem nhóm Static Preview / Publish bên dưới).
+			// ---- (Chức năng Save as Template) ----
+			pages.POST("/save-as-template", templateActionHandler.SaveAsTemplate)
 		}
 
 		// ---- Export API ----
