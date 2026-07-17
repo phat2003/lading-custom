@@ -1,4 +1,4 @@
-import { PlusIcon, SearchIcon } from '../../../components/icons'
+import { PlusIcon, SearchIcon } from '../../../../components/icons'
 
 export default function ProjectHeader({
   searchTerm,
