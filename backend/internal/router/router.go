@@ -23,6 +23,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	r := gin.Default()
 
+	// Giới hạn phần multipart buffer trong RAM (mặc định 32MB); phần lớn hơn spill
+	// ra file temp. Trần cứng theo từng endpoint upload đặt bằng MaxBytesReader.
+	r.MaxMultipartMemory = 8 << 20 // 8 MB
+
 	// CORS — cho phép frontend gọi API.
 	// AllowCredentials không dùng vì auth qua Bearer token, không phải cookie.
 	// Production nên đổi AllowOrigins thành domain cụ thể thay vì "*".
@@ -71,8 +75,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	// Media Asset dependency
 	assetRepo := repository.NewMediaAssetRepository(db)
 	assetService := service.NewMediaAssetService(assetRepo)
-	assetHandler := handlers.NewMediaAssetHandler(assetService)
-	
+	assetHandler := handlers.NewMediaAssetHandler(assetService, cfg.PublicBaseURL)
+
 	// Export dependency (export landing page ra PDF — miễn phí)
 	exportRepo := repository.NewExportRepository(db)
 	exportService := service.NewExportService(exportRepo)
@@ -88,11 +92,12 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	staticService := service.NewStaticService(staticRepo)
 	staticHandler := handlers.NewStaticHandler(staticService)
 
-	uploadHandler := handlers.NewUploadHandler()
+	uploadHandler := handlers.NewUploadHandler(assetService, cfg.PublicBaseURL)
 
-	// Serve file tĩnh đã upload (thumbnail, template file).
-	r.Static("/uploads", "./uploads")
-	
+	// Serve file tĩnh đã upload (thumbnail, template file) qua handler an toàn:
+	// đặt header chống thực thi (nosniff, CSP) và ép tải về với file không phải ảnh,
+	// nhằm triệt tiêu Stored XSS. Xem handlers.ServeUploadedFile.
+	r.GET("/uploads/*filepath", handlers.ServeUploadedFile("./uploads"))
 
 	// --- Routes ---
 	api := r.Group("/api/v1")
@@ -178,7 +183,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			upload.POST("", assetHandler.UploadImage)
 			upload.GET("/assets", assetHandler.GetAssets)
 		}
-		
 
 		// Project — BE Dev 2
 		// authorized.GET("/projects", projectHandler.List)

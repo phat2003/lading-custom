@@ -16,6 +16,10 @@ type Config struct {
 	JWTSecret      string
 	JWTExpireHours int
 
+	// PublicBaseURL là origin công khai của backend (vd https://api.example.com)
+	// dùng để dựng URL tuyệt đối cho file upload. Để trống -> tự suy từ request.
+	PublicBaseURL string
+
 	DBHost     string
 	DBPort     string
 	DBUser     string
@@ -35,6 +39,7 @@ func Load() *Config {
 		AppEnv:         getEnv("APP_ENV", "development"),
 		JWTSecret:      getEnv("JWT_SECRET", "default-secret-change-me"),
 		JWTExpireHours: getEnvInt("JWT_EXPIRE_HOURS", 72),
+		PublicBaseURL:  getEnv("PUBLIC_BASE_URL", ""),
 
 		DBHost:     getEnv("POSTGRES_HOST", "localhost"),
 		DBPort:     getEnv("POSTGRES_PORT", "5432"),
@@ -67,4 +72,3 @@ func getEnvInt(key string, fallback int) int {
 	}
 	return fallback
 }
-
