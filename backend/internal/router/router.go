@@ -74,7 +74,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	// Template Action dependency (Save As Template)
 	templateSectionRepo := repository.NewTemplateSectionRepository(db)
-	templateActionService := service.NewTemplateActionService(templateRepo, templateSectionRepo, pageRepo, sectionRepo)
+	templateActionService := service.NewTemplateActionService(templateRepo, templateSectionRepo, pageRepo, sectionRepo, projectRepo)
 	templateActionHandler := handlers.NewTemplateActionHandler(templateActionService)
 
 	// Media Asset dependency
@@ -144,6 +144,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			// Publish nằm ở /landing-pages/:id/publish (xem nhóm Static Preview / Publish bên dưới).
 			// ---- (Chức năng Save as Template) ----
 			pages.POST("/save-as-template", templateActionHandler.SaveAsTemplate)
+			pages.POST("/from-template", templateActionHandler.CreateFromTemplate) // 👉 THÊM DÒNG NÀY CHO CLONE TEMPLATE
 		}
 
 		// ---- Export API ----

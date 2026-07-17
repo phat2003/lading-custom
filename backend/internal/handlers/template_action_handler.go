@@ -46,3 +46,32 @@ func (h *TemplateActionHandler) SaveAsTemplate(c *gin.Context) {
 
 	response.OK(c, http.StatusCreated, "Đã lưu Landing Page thành Template", template)
 }
+
+type createFromTemplateReq struct {
+	TemplateID string `json:"template_id" binding:"required,uuid"`
+	ProjectID  string `json:"project_id" binding:"required,uuid"`
+	Name       string `json:"name" binding:"required,min=2"`
+}
+
+// POST /pages/from-template
+func (h *TemplateActionHandler) CreateFromTemplate(c *gin.Context) {
+	userIDVal, _ := c.Get("user_id")
+	userID := userIDVal.(uuid.UUID)
+
+	var req createFromTemplateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	templateID, _ := uuid.Parse(req.TemplateID)
+	projectID, _ := uuid.Parse(req.ProjectID)
+
+	page, err := h.actionService.CreatePageFromTemplate(userID, projectID, templateID, req.Name)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.OK(c, http.StatusCreated, "Tạo trang từ Mẫu thành công", page)
+}

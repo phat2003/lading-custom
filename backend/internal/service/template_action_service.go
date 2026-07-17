@@ -13,6 +13,7 @@ type TemplateActionService struct {
 	templateSectionRepo *repository.TemplateSectionRepository
 	pageRepo            *repository.LandingPageRepository
 	pageSectionRepo     *repository.PageSectionRepository
+	projectRepo         *repository.ProjectRepository // 👉 THÊM DÒNG NÀY
 }
 
 func NewTemplateActionService(
@@ -20,12 +21,14 @@ func NewTemplateActionService(
 	tsRepo *repository.TemplateSectionRepository,
 	pRepo *repository.LandingPageRepository,
 	psRepo *repository.PageSectionRepository,
+	projRepo *repository.ProjectRepository, // 👉 THÊM DÒNG NÀY
 ) *TemplateActionService {
 	return &TemplateActionService{
 		templateRepo:        tRepo,
 		templateSectionRepo: tsRepo,
 		pageRepo:            pRepo,
 		pageSectionRepo:     psRepo,
+		projectRepo:         projRepo, // 👉 THÊM DÒNG NÀY
 	}
 }
 
@@ -70,4 +73,46 @@ func (s *TemplateActionService) SavePageAsTemplate(userID, pageID uuid.UUID, tem
 	}
 
 	return newTemplate, nil
+}
+
+// CreatePageFromTemplate tạo một Landing Page mới từ 1 Template có sẵn
+func (s *TemplateActionService) CreatePageFromTemplate(userID, projectID, templateID uuid.UUID, pageName string) (*models.LandingPage, error) {
+	// 1. Kiểm tra dự án (Project) có thuộc về User này không
+	_, err := s.projectRepo.FindByIDAndOwnerID(projectID, userID)
+	if err != nil {
+		return nil, errors.New("dự án không tồn tại hoặc bạn không có quyền truy cập")
+	}
+
+	// 2. Lấy Template (Nhờ Preload nên đã có sẵn danh sách các khối bên trong)
+	template, err := s.templateRepo.FindByID(templateID)
+	if err != nil {
+		return nil, errors.New("không tìm thấy mẫu giao diện")
+	}
+
+	// 3. Tạo Landing Page mới trước
+	newPage := &models.LandingPage{
+		ProjectID: projectID,
+		Name:      pageName,
+		Status:    models.LandingPageStatus("draft"), // Trạng thái nháp
+	}
+	if err := s.pageRepo.Create(newPage); err != nil {
+		return nil, errors.New("không thể tạo trang đích mới")
+	}
+
+	// 4. Lặp qua các Sections ĐÃ CÓ SẴN trong template và copy sang Page mới
+	if len(template.Sections) > 0 {
+		for _, ts := range template.Sections {
+			newPS := &models.PageSection{
+				LandingPageID: newPage.LandingPageID, // ID của trang vừa tạo
+				SectionType:   ts.SectionType,
+				Content:       ts.SectionContent, // Bê nguyên JSON Content về lại
+				OrderIndex:    ts.OrderIndex,
+				IsVisible:     true,
+			}
+			// Lưu thẳng xuống DB, tạm bỏ qua check lỗi cục bộ để tiếp tục clone các khối khác
+			s.pageSectionRepo.Create(newPS) 
+		}
+	}
+
+	return newPage, nil
 }
