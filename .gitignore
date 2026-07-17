@@ -5,7 +5,12 @@
 
 # Go
 backend/bin/
-backend/*.exe
+# Bắt file .exe ở MỌI cấp thư mục.
+# Pattern cũ `backend/*.exe` chỉ khớp con trực tiếp của backend/,
+# nên đã để lọt backend/tmp/main.exe (20MB) vào git.
+*.exe
+# air (hot reload) build vào đây — xem tmp_dir trong backend/.air.toml
+backend/tmp/
 *.test
 *.out
 vendor/
