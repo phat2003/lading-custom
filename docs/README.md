@@ -2,6 +2,7 @@
 
 - `landing-page-requirement-document-updated-timeline.docx` — Tài liệu yêu cầu (requirement) gốc.
 - ERD và schema database: xem `../db/schema.sql`.
+- `template-upload-orphan.md` — **Vấn đề mở cần team bàn**: endpoint upload template HTML đang mồ côi trong thiết kế.
 
 ## Quy ước API
 
