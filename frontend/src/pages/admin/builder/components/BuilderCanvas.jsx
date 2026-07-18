@@ -1,93 +1,128 @@
-import { useState } from 'react'
-import { PlusIcon, TrashIcon } from '../../../../components/icons'
-import { devices } from '../mock'
-import BlockRenderer from './BlockRenderer'
+import { useRef, useState } from 'react'
+import { PlusIcon, MinusIcon } from '../../../../components/icons'
+import CanvasElement from './CanvasElement'
 
-export default function BuilderCanvas({
+const BuilderCanvas = ({
   device,
-  blocks = [],
+  elements,
   selectedId,
+  onAddElement,
   onAddBlock,
   onSelect,
+  onBeginGesture,
+  onMove,
+  onResize,
+  onUpdate,
+  onDuplicate,
   onDelete,
-}) {
-  const [over, setOver] = useState(false)
+}) => {
+  const canvasRef = useRef(null)
+  const [pageHeight, setPageHeight] = useState(900)
 
   const handleDrop = (e) => {
     e.preventDefault()
-    setOver(false)
     const raw = e.dataTransfer.getData('application/json')
     if (!raw) return
+    let payload
     try {
-      onAddBlock?.(JSON.parse(raw))
+      payload = JSON.parse(raw)
     } catch {
-      /* payload không hợp lệ, bỏ qua */
+      return
     }
+    const rect = canvasRef.current.getBoundingClientRect()
+    const px = Math.max(0, e.clientX - rect.left)
+    const py = Math.max(0, e.clientY - rect.top)
+
+    // Block mẫu -> sinh Section + con.
+    if (payload.block) {
+      onAddBlock(payload.block, px, py)
+      return
+    }
+
+    // Nếu thả một phần tử (không phải Section) vào trong vùng một Section -> thành con của Section đó.
+    let parentId = null
+    let x = px
+    let y = py
+    if (payload.type !== 'section') {
+      const section = elements.find(
+        (s) =>
+          s.type === 'section' &&
+          !s.parentId &&
+          px >= s.x &&
+          px <= s.x + (s.style.width || 0) &&
+          py >= s.y &&
+          py <= s.y + (s.style.height || 0),
+      )
+      if (section) {
+        parentId = section.id
+        x = px - section.x
+        y = py - section.y
+      }
+    }
+    onAddElement(payload, x, y, parentId)
   }
 
+  const topLevel = elements.filter((el) => !el.parentId)
+
   return (
-    <div className="flex-1 overflow-auto bg-gray-100 p-8">
-      <div className={`mx-auto ${devices[device] || devices.desktop}`}>
+    <div className="flex-1 overflow-auto bg-[#2a2a2e] p-8">
+      <div className={`mx-auto ${device === 'mobile' ? 'w-[390px]' : 'w-full max-w-4xl'}`}>
         <div
+          ref={canvasRef}
           onDragOver={(e) => {
             e.preventDefault()
             e.dataTransfer.dropEffect = 'copy'
-            setOver(true)
           }}
-          onDragLeave={() => setOver(false)}
           onDrop={handleDrop}
-          className={`min-h-[70vh] rounded-lg border bg-white shadow-sm ${
-            over ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200'
-          }`}
+          onPointerDown={() => onSelect(null)}
+          style={{ height: pageHeight }}
+          className="relative rounded-lg bg-white shadow-lg"
         >
-          {blocks.length === 0 ? (
-            <div className="flex min-h-[60vh] items-center justify-center text-center">
+          {elements.length === 0 && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-gray-400">
               <div>
-                <p className="text-gray-400">Kéo phần tử vào đây</p>
+                <p>Kéo phần tử vào đây</p>
                 <p className="mt-1 text-sm text-gray-300">
-                  Chọn phần tử ở panel bên trái và thả vào trang để bắt đầu.
+                  Chọn phần tử ở panel trái và thả vào trang. Thả vào một Section để lồng vào trong.
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="space-y-1 p-4" onClick={() => onSelect?.(null)}>
-              {blocks.map((block) => {
-                const selected = block.id === selectedId
-                return (
-                  <div
-                    key={block.id}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelect?.(block.id)
-                    }}
-                    className={`relative rounded p-2 ${
-                      selected ? 'ring-2 ring-blue-500' : 'hover:ring-1 hover:ring-blue-200'
-                    }`}
-                  >
-                    <BlockRenderer block={block} />
-                    {selected && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDelete?.(block.id)
-                        }}
-                        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow"
-                        title="Xóa phần tử"
-                      >
-                        <TrashIcon size={14} />
-                      </button>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
           )}
 
-          <button className="flex w-full items-center justify-center gap-2 rounded-b-lg border-t border-dashed border-gray-300 py-3 text-sm font-medium text-blue-600 hover:bg-blue-50">
-            <PlusIcon size={16} /> Thêm mới Section
+          {topLevel.map((el) => (
+            <CanvasElement
+              key={el.id}
+              element={el}
+              elements={elements}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              onBeginGesture={onBeginGesture}
+              onMove={onMove}
+              onResize={onResize}
+              onUpdate={onUpdate}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
+            />
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPageHeight((h) => Math.max(400, h - 400))}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 px-4 py-2 text-sm text-gray-300 hover:border-yellow-400/50 hover:text-yellow-400"
+          >
+            <MinusIcon size={16} /> Thu ngắn trang
+          </button>
+          <button
+            onClick={() => setPageHeight((h) => h + 400)}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 px-4 py-2 text-sm text-gray-300 hover:border-yellow-400/50 hover:text-yellow-400"
+          >
+            <PlusIcon size={16} /> Tăng chiều dài trang
           </button>
         </div>
       </div>
     </div>
   )
 }
+
+export default BuilderCanvas

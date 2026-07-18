@@ -1,35 +1,25 @@
-import { primaryNav, secondaryNav } from '../mock'
+import { PlusIcon, LayersIcon } from '../../../../components/icons'
 
-export default function BuilderRail({ active, onSelect }) {
-  return (
-    <nav className="flex w-44 shrink-0 flex-col gap-1 overflow-y-auto border-r border-gray-200 bg-white p-2">
-      {primaryNav.map(({ value, label, icon: IconComp }) => {
-        const isActive = value === active
-        return (
-          <button
-            key={value}
-            onClick={() => onSelect?.(value)}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-              isActive ? 'bg-blue-50 font-medium text-blue-600' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <IconComp size={18} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
-            {label}
-          </button>
-        )
-      })}
+const ITEMS = [
+  { key: 'add', icon: PlusIcon, label: 'Thêm' },
+  { key: 'layers', icon: LayersIcon, label: 'Lớp' },
+]
 
-      <div className="my-2 h-px bg-gray-100" />
+const BuilderRail = ({ activePanel, onToggle }) => (
+  <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-[#161618] py-3">
+    {ITEMS.map(({ key, icon: IconComp, label }) => (
+      <button
+        key={key}
+        onClick={() => onToggle(key)}
+        className={`flex w-full flex-col items-center gap-1 py-2 text-[10px] ${
+          activePanel === key ? 'text-yellow-400' : 'text-gray-400 hover:text-gray-200'
+        }`}
+      >
+        <IconComp size={18} />
+        {label}
+      </button>
+    ))}
+  </nav>
+)
 
-      {secondaryNav.map(({ value, label }) => (
-        <button
-          key={value}
-          onClick={() => onSelect?.(value)}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
-        >
-          {label}
-        </button>
-      ))}
-    </nav>
-  )
-}
+export default BuilderRail
