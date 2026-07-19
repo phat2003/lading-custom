@@ -76,7 +76,7 @@ export default function App() {
           }
         />
 
-        {/* Khu vực Admin */}
+        {/* Khu vực Admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
@@ -91,35 +91,6 @@ export default function App() {
             element={<div className="text-slate-400">Trang đang được phát triển…</div>}
           />
         </Route>
-      </Routes>
-    </ProjectsProvider>
-  )
-}
-
-        {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="templates" element={<AdminTemplates />} />
-          <Route path="sections" element={<AdminSections />} />
-          <Route path="projects" element={<AdminProjects />} />
-          <Route path="pricing" element={<AdminPricingPlans />} />
-          <Route path="ai" element={<AdminAiGenerator />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route
-            path="*"
-            element={<div className="text-slate-400">Trang đang được phát triển…</div>}
-          />
-        </Route>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        {/* TODO(team): thêm route cho editor, project, pricing... */}
       </Routes>
     </ProjectsProvider>
   )
