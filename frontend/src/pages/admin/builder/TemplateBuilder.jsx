@@ -16,6 +16,10 @@ const TemplateBuilder = () => {
   const [future, setFuture] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
+  const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
+
+  const useRecent = (item) =>
+    setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
 
   // --- Lịch sử (undo/redo) ---
   const pushHistory = () => {
@@ -202,7 +206,7 @@ const TemplateBuilder = () => {
       />
       <div className="flex flex-1 overflow-hidden">
         <BuilderRail activePanel={activePanel} onToggle={togglePanel} />
-        {activePanel === 'add' && <ElementPanel />}
+        {activePanel === 'add' && <ElementPanel recent={recent} onUse={useRecent} />}
         {activePanel === 'layers' && (
           <LayersPanel
             elements={elements}

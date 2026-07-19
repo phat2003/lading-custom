@@ -1,4 +1,5 @@
 import { fonts } from '../mock'
+import { ICON_MAP, ICON_NAMES } from '../iconMap'
 import {
   TrashIcon,
   AlignLeftIcon,
@@ -26,7 +27,9 @@ const ALIGNS = [
 
 const TEXT_TYPES = ['heading', 'label', 'paragraph']
 const FIELD_TYPES = ['input', 'textarea']
-const RICH_TEXT = ['list', 'quote', 'card', 'iconbox']
+const RICH_TEXT = ['list', 'quote', 'card', 'iconbox', 'table', 'menu']
+const NUM_CONTENT = ['rating', 'progress', 'gallery']
+const AREA_CONTENT = ['list', 'select', 'table', 'menu', 'embed']
 
 const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
   if (!element) {
@@ -44,16 +47,18 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
   const isField = FIELD_TYPES.includes(type)
   const isImage = type === 'image'
   const isSection = type === 'section'
+  const isIcon = type === 'icon'
+  const isDivider = type === 'divider'
 
-  const hasContent = isText || isField || ['button', 'video', 'image', 'list', 'quote', 'checkbox', 'select', 'card', 'iconbox', 'countdown'].includes(type)
+  const hasContent = isText || isField || ['button', 'video', 'image', 'list', 'quote', 'checkbox', 'select', 'card', 'iconbox', 'countdown', 'rating', 'progress', 'gallery', 'table', 'menu', 'embed'].includes(type)
   const hasToolbar = isText || type === 'button' || ['list', 'quote'].includes(type)
   const hasFont = isText || isField || type === 'button' || type === 'checkbox' || RICH_TEXT.includes(type)
-  const hasSize = hasFont || type === 'icon' || type === 'countdown'
-  const hasColor = hasFont || type === 'icon' || type === 'divider' || type === 'countdown'
+  const hasSize = hasFont || isIcon || type === 'countdown' || type === 'rating'
+  const hasColor = hasFont || isIcon || isDivider || type === 'countdown' || type === 'rating' || type === 'progress'
   const hasBg = type === 'button' || type === 'box' || isField || isSection || type === 'card'
   const hasPadding = isText || type === 'button' || type === 'box' || isSection
   const hasBgImage = type === 'box' || isSection || type === 'card'
-  const hasRadius = type !== 'spacer' && type !== 'divider'
+  const hasRadius = type !== 'spacer' && !isDivider
 
   const contentLabel =
     type === 'video' ? 'URL video (YouTube/mp4)'
@@ -61,8 +66,14 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
       : isField ? 'Placeholder'
       : type === 'list' ? 'Các mục (mỗi dòng 1)'
       : type === 'select' ? 'Lựa chọn (mỗi dòng 1)'
+      : type === 'menu' ? 'Mục menu (mỗi dòng 1)'
+      : type === 'table' ? 'Bảng (dòng; cột cách nhau bằng |)'
+      : type === 'embed' ? 'Mã HTML'
       : type === 'quote' ? 'Nội dung trích dẫn'
       : type === 'checkbox' ? 'Nhãn'
+      : type === 'rating' ? 'Số sao (0-5)'
+      : type === 'progress' ? 'Phần trăm (0-100)'
+      : type === 'gallery' ? 'Số ảnh'
       : type === 'card' || type === 'iconbox' ? 'Tiêu đề | Mô tả'
       : type === 'countdown' ? 'Ngày kết thúc'
       : 'Nội dung'
@@ -97,12 +108,36 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
         </button>
       </div>
 
+      {isIcon && (
+        <div>
+          <label className={labelCls}>Chọn biểu tượng</label>
+          <div className="grid grid-cols-6 gap-1">
+            {ICON_NAMES.map((name) => {
+              const IconComp = ICON_MAP[name]
+              const on = content === name
+              return (
+                <button
+                  key={name}
+                  onClick={() => onUpdate(id, { content: name })}
+                  title={name}
+                  className={`flex items-center justify-center rounded p-1.5 ${on ? 'bg-yellow-400/20 text-yellow-400' : 'text-gray-300 hover:bg-white/10'}`}
+                >
+                  <IconComp size={16} />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {hasContent && (
         <div>
           <label className={labelCls}>{contentLabel}</label>
           {type === 'countdown' ? (
             <input type="datetime-local" value={(content || '').slice(0, 16)} onChange={(e) => onUpdate(id, { content: e.target.value })} className={inputCls} />
-          ) : type === 'list' || type === 'select' ? (
+          ) : NUM_CONTENT.includes(type) ? (
+            <input type="number" value={content} onChange={(e) => onUpdate(id, { content: e.target.value })} className={inputCls} />
+          ) : AREA_CONTENT.includes(type) ? (
             <textarea value={content} onChange={(e) => onUpdate(id, { content: e.target.value })} rows={4} className={`${inputCls} resize-none`} />
           ) : (
             <input value={content} onChange={(e) => onUpdate(id, { content: e.target.value })} className={inputCls} />
@@ -144,16 +179,33 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
         <div className="grid grid-cols-2 gap-3">
           {hasSize && (
             <div>
-              <label className={labelCls}>{type === 'icon' ? 'Cỡ icon (px)' : 'Cỡ chữ (px)'}</label>
+              <label className={labelCls}>{isIcon || type === 'rating' ? 'Cỡ (px)' : 'Cỡ chữ (px)'}</label>
               <input type="number" min="8" value={style.fontSize} onChange={(e) => setStyle({ fontSize: Number(e.target.value) })} className={inputCls} />
             </div>
           )}
           {hasColor && (
             <div>
-              <label className={labelCls}>{type === 'divider' ? 'Màu kẻ' : 'Màu chữ'}</label>
+              <label className={labelCls}>{isDivider ? 'Màu kẻ' : type === 'progress' || type === 'rating' ? 'Màu' : 'Màu chữ'}</label>
               <input type="color" value={style.color || '#000000'} onChange={(e) => setStyle({ color: e.target.value })} className={colorCls} />
             </div>
           )}
+        </div>
+      )}
+
+      {isDivider && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Kiểu nét</label>
+            <select value={style.borderStyle || 'solid'} onChange={(e) => setStyle({ borderStyle: e.target.value })} className={inputCls}>
+              <option value="solid">Nét liền</option>
+              <option value="dashed">Nét đứt</option>
+              <option value="dotted">Chấm</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Độ dày (px)</label>
+            <input type="number" min="1" value={style.lineWidth || 2} onChange={(e) => setStyle({ lineWidth: Number(e.target.value) })} className={inputCls} />
+          </div>
         </div>
       )}
 
@@ -162,9 +214,7 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
           <label className={labelCls}>Phông chữ</label>
           <select value={style.fontFamily} onChange={(e) => setStyle({ fontFamily: e.target.value })} className={inputCls}>
             {fonts.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
+              <option key={f} value={f}>{f}</option>
             ))}
           </select>
         </div>
@@ -210,8 +260,8 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
           <input type="number" min="0" placeholder="Dày" value={style.borderWidth || ''} onChange={(e) => setStyle({ borderWidth: e.target.value ? Number(e.target.value) : undefined })} className={inputCls} />
           <input type="color" value={style.borderColor || '#000000'} onChange={(e) => setStyle({ borderColor: e.target.value })} className={colorCls} />
           <select value={style.borderStyle || 'solid'} onChange={(e) => setStyle({ borderStyle: e.target.value })} className={inputCls}>
-            <option value="solid">Nét liền</option>
-            <option value="dashed">Nét đứt</option>
+            <option value="solid">Liền</option>
+            <option value="dashed">Đứt</option>
             <option value="dotted">Chấm</option>
           </select>
         </div>

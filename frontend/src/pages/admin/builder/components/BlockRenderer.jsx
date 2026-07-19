@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { SparklesIcon, ImageIcon, VideoIcon } from '../../../../components/icons'
+import { SparklesIcon, ImageIcon, VideoIcon, StarIcon } from '../../../../components/icons'
+import { ICON_MAP } from '../iconMap'
 
 const youtubeEmbed = (url) => {
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/)
@@ -64,6 +65,19 @@ const BlockRenderer = ({ element }) => {
         </div>
       )
 
+    case 'gallery': {
+      const n = Number(content) || 3
+      return (
+        <div className="grid h-full w-full grid-cols-3 gap-1.5" style={{ borderRadius: style.borderRadius }}>
+          {Array.from({ length: n }).map((_, i) => (
+            <div key={i} className="flex items-center justify-center rounded bg-gray-200 text-gray-400">
+              <ImageIcon size={18} />
+            </div>
+          ))}
+        </div>
+      )
+    }
+
     case 'video': {
       if (!content) {
         return (
@@ -127,23 +141,62 @@ const BlockRenderer = ({ element }) => {
         </blockquote>
       )
 
-    case 'social': {
-      const size = style.fontSize || 20
-      const socials = [
-        { l: 'f', c: '#1877f2' },
-        { l: 'IG', c: '#e4405f' },
-        { l: 'YT', c: '#ff0000' },
-      ]
+    case 'table': {
+      const rows = (content || '').split('\n').map((r) => r.split('|'))
       return (
-        <div className="flex h-full w-full items-center gap-2">
-          {socials.map((s) => (
-            <span key={s.l} className="flex items-center justify-center rounded-full font-semibold text-white" style={{ width: size * 1.9, height: size * 1.9, backgroundColor: s.c, fontSize: size * 0.7 }}>
-              {s.l}
-            </span>
+        <table style={{ fontSize: style.fontSize, fontFamily: style.fontFamily, color: style.color }} className="h-full w-full border-collapse text-left">
+          <tbody>
+            {rows.map((cells, ri) => (
+              <tr key={ri}>
+                {cells.map((c, ci) =>
+                  ri === 0 ? (
+                    <th key={ci} className="border border-gray-300 bg-gray-50 px-2 py-1 font-semibold">{c}</th>
+                  ) : (
+                    <td key={ci} className="border border-gray-300 px-2 py-1">{c}</td>
+                  ),
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+
+    case 'menu': {
+      const items = (content || '').split('\n').filter(Boolean)
+      return (
+        <nav className="flex h-full w-full items-center justify-center gap-6" style={{ fontSize: style.fontSize, fontFamily: style.fontFamily, color: style.color }}>
+          {items.map((it, i) => (
+            <span key={i} className="whitespace-nowrap">{it}</span>
+          ))}
+        </nav>
+      )
+    }
+
+    case 'rating': {
+      const v = Number(content) || 0
+      return (
+        <div className="flex h-full w-full items-center gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <StarIcon key={i} size={style.fontSize || 24} style={{ color: i < v ? style.color || '#f59e0b' : '#d1d5db' }} />
           ))}
         </div>
       )
     }
+
+    case 'progress': {
+      const p = Math.max(0, Math.min(100, Number(content) || 0))
+      return (
+        <div className="flex h-full w-full items-center">
+          <div className="h-full w-full overflow-hidden rounded-full bg-gray-200">
+            <div className="h-full rounded-full" style={{ width: `${p}%`, backgroundColor: style.color || '#2563eb' }} />
+          </div>
+        </div>
+      )
+    }
+
+    case 'embed':
+      return <div className="h-full w-full overflow-auto" dangerouslySetInnerHTML={{ __html: content || '' }} />
 
     case 'card': {
       const [title, desc] = (content || '').split('|')
@@ -169,12 +222,14 @@ const BlockRenderer = ({ element }) => {
     case 'countdown':
       return <Countdown target={content} style={style} />
 
-    case 'icon':
+    case 'icon': {
+      const IconComp = ICON_MAP[content] || SparklesIcon
       return (
         <span style={{ color: style.color }}>
-          <SparklesIcon size={style.fontSize} />
+          <IconComp size={style.fontSize} />
         </span>
       )
+    }
 
     case 'section': {
       const cols = style.columns || 1
@@ -194,7 +249,10 @@ const BlockRenderer = ({ element }) => {
     case 'divider':
       return (
         <div className="flex h-full w-full items-center">
-          <div className="w-full" style={{ height: 2, backgroundColor: style.color || '#d1d5db' }} />
+          <div
+            className="w-full"
+            style={{ borderTopWidth: style.lineWidth || 2, borderTopStyle: style.borderStyle || 'solid', borderTopColor: style.color || '#d1d5db' }}
+          />
         </div>
       )
 

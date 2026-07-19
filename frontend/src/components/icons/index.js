@@ -71,6 +71,11 @@ export { default as QuoteIcon } from './QuoteIcon'
 export { default as CheckSquareIcon } from './CheckSquareIcon'
 export { default as ChevronsUpDownIcon } from './ChevronsUpDownIcon'
 export { default as ClockIcon } from './ClockIcon'
+export { default as StarIcon } from './StarIcon'
+export { default as GridIcon } from './GridIcon'
+export { default as TableIcon } from './TableIcon'
+export { default as CodeIcon } from './CodeIcon'
+export { default as ActivityIcon } from './ActivityIcon'
 
 // Base wrapper (tạo icon mới: <Icon>...path...</Icon>)
 export { default as Icon } from './Icon'
