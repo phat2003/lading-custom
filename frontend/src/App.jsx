@@ -2,7 +2,7 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Home from './pages/Home/Home'
+import Home from './pages/Home'
 import IconGallery from './pages/icons-list/IconGallery'
 import AdminLayout from './pages/admin/layout/AdminLayout'
 import AdminDashboard from './pages/admin/Dashboard/Dashboard'
@@ -36,8 +36,13 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/home" element={<Home />} />
         <Route path="/icons" element={<IconGallery />} />
+
+        {/* Trang chủ Landing Page công khai */}
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
+
+        {/* Quản lý dự án của người dùng */}
         <Route
           path="/projects"
           element={
@@ -71,7 +76,7 @@ export default function App() {
           }
         />
 
-        {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
+        {/* Khu vực Admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
@@ -86,15 +91,6 @@ export default function App() {
             element={<div className="text-slate-400">Trang đang được phát triển…</div>}
           />
         </Route>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        {/* TODO(team): thêm route cho editor, project, pricing... */}
       </Routes>
     </ProjectsProvider>
   )

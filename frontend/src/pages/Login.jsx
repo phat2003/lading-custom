@@ -22,7 +22,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email, password)
-      navigate('/')
+      navigate('/projects')
     } catch (err) {
       setError(err.response?.data?.error || 'Đăng nhập thất bại')
     } finally {
