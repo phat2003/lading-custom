@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PlusIcon, UserIcon, XIcon } from '../../../components/icons'
+import { PlusIcon, UserIcon, XIcon } from '../../../../components/icons'
 
 const MIN_NAME_LENGTH = 3
 const MAX_NAME_LENGTH = 150
