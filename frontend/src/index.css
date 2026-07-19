@@ -7,3 +7,8 @@
       linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     background-size: 20px 20px;
   }
+.editor-canvas-grid {
+  background-color: #0e0e10;
+  background-image: radial-gradient(rgba(141, 144, 160, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+}

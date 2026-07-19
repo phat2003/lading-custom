@@ -1,4 +1,4 @@
-import { FolderIcon } from '../../../components/icons'
+import { FolderIcon } from '../../../../components/icons'
 
 function ProjectPreview({ type }) {
   if (type === 1) {

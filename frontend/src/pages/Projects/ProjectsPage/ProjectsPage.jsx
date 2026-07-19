@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../../context/AuthContext'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../../context/AuthContext'
+import { useProjects } from '../context/ProjectsContext'
 import CreateProjectModal from './components/CreateProjectModal'
 import EmptyProjectState from './components/EmptyProjectState'
 import ProjectCard from './components/ProjectCard'
 import ProjectHeader from './components/ProjectHeader'
-import ProjectSidebar from './components/ProjectSidebar'
-import { MenuIcon } from '../../components/icons'
+import ProjectMobileHeader from '../components/ProjectMobileHeader'
+import ProjectSidebar from '../components/ProjectSidebar'
+import StatusNotice from '../components/StatusNotice'
 
 export default function ProjectsPage() {
   const { user } = useAuth()
-  const [projects, setProjects] = useState([])
+  const { projects, createProject } = useProjects()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -34,16 +39,15 @@ export default function ProjectsPage() {
     return () => window.clearTimeout(timer)
   }, [notice])
 
-  const handleCreateProject = (name) => {
-    const newProject = {
-      id: window.crypto?.randomUUID?.() || String(Date.now()),
-      name,
-      status: 'draft',
-      updatedAt: 'Vừa tạo',
-      previewType: projects.length % 3,
-    }
+  useEffect(() => {
+    if (!location.state?.openCreateProject) return
 
-    setProjects((currentProjects) => [newProject, ...currentProjects])
+    setIsCreateModalOpen(true)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
+
+  const handleCreateProject = (name) => {
+    createProject(name)
     setSearchTerm('')
     setIsCreateModalOpen(false)
     setNotice(`Đã tạo Project “${name}” trên giao diện thử nghiệm.`)
@@ -67,33 +71,7 @@ export default function ProjectsPage() {
         onShowMessage={showComingSoon}
       />
 
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-[#201f21]/95 px-4 backdrop-blur lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#2563eb] shadow-[0_0_18px_rgba(37,99,235,0.35)]">
-            <span className="grid grid-cols-2 gap-0.5" aria-hidden="true">
-              <span className="h-1.5 w-1.5 rounded-[1px] border border-white" />
-              <span className="h-1.5 w-1.5 rounded-[1px] border border-white" />
-              <span className="h-1.5 w-1.5 rounded-[1px] border border-white" />
-              <span className="h-1.5 w-1.5 rounded-[1px] border border-white" />
-            </span>
-          </div>
-          <div>
-            <p className="font-semibold leading-none">Myproject</p>
-            <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-[#c3c6d7]">
-              Builder Platform
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="rounded-lg border border-white/10 p-2 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
-          aria-label="Mở menu"
-        >
-          <MenuIcon size={22} />
-        </button>
-      </header>
+      <ProjectMobileHeader onOpenMenu={() => setIsMobileMenuOpen(true)} />
 
       <main className="min-h-screen pt-16 lg:ml-[280px] lg:pt-0">
         <ProjectHeader
@@ -117,11 +95,7 @@ export default function ProjectsPage() {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onOpen={() =>
-                    showComingSoon(
-                      `Trang chi tiết của “${project.name}” sẽ được làm ở bước tiếp theo.`,
-                    )
-                  }
+                  onOpen={() => navigate(`/projects/${project.id}/templates`)}
                 />
               ))}
             </section>
@@ -143,14 +117,7 @@ export default function ProjectsPage() {
         </div>
       </main>
 
-      {notice && (
-        <div
-          className="fixed bottom-5 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-cyan-300/25 bg-[#201f21] px-4 py-3 text-center text-sm text-[#d3fbff] shadow-2xl"
-          role="status"
-        >
-          {notice}
-        </div>
-      )}
+      <StatusNotice>{notice}</StatusNotice>
 
       <CreateProjectModal
         open={isCreateModalOpen}

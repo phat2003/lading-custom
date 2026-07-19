@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -13,7 +13,10 @@ import AdminProjects from './pages/admin/Projects/Projects'
 import AdminPricingPlans from './pages/admin/PricingPlans/PricingPlans'
 import AdminAiGenerator from './pages/admin/AiGenerator/AiGenerator'
 import AdminSettings from './pages/admin/Settings/Settings'
-import ProjectsPage from './pages/Projects/ProjectsPage'
+import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
+import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
+import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
+import { ProjectsProvider } from './pages/Projects/context/ProjectsContext'
 
 // Bọc route cần đăng nhập: chưa login thì đẩy về /login.
 function ProtectedRoute({ children }) {
@@ -22,46 +25,77 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
+function ProjectEntryRedirect() {
+  const { projectId } = useParams()
+  return <Navigate to={`/projects/${projectId}/templates`} replace />
+}
+
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/icons" element={<IconGallery />} />
-      <Route
-        path="/projects"
-        element={
-          <ProtectedRoute>
-            <ProjectsPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="templates" element={<AdminTemplates />} />
-        <Route path="sections" element={<AdminSections />} />
-        <Route path="projects" element={<AdminProjects />} />
-        <Route path="pricing" element={<AdminPricingPlans />} />
-        <Route path="ai" element={<AdminAiGenerator />} />
-        <Route path="settings" element={<AdminSettings />} />
+    <ProjectsProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/icons" element={<IconGallery />} />
         <Route
-          path="*"
-          element={<div className="text-slate-400">Trang đang được phát triển…</div>}
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <ProjectsPage />
+            </ProtectedRoute>
+          }
         />
-      </Route>
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
-      {/* TODO(team): thêm route cho editor, project, pricing... */}
-    </Routes>
+        <Route
+          path="/projects/:projectId"
+          element={
+            <ProtectedRoute>
+              <ProjectEntryRedirect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/templates"
+          element={
+            <ProtectedRoute>
+              <TemplateGalleryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/editor/:landingPageId"
+          element={
+            <ProtectedRoute>
+              <LandingPageEditorPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="templates" element={<AdminTemplates />} />
+          <Route path="sections" element={<AdminSections />} />
+          <Route path="projects" element={<AdminProjects />} />
+          <Route path="pricing" element={<AdminPricingPlans />} />
+          <Route path="ai" element={<AdminAiGenerator />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route
+            path="*"
+            element={<div className="text-slate-400">Trang đang được phát triển…</div>}
+          />
+        </Route>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        {/* TODO(team): thêm route cho editor, project, pricing... */}
+      </Routes>
+    </ProjectsProvider>
   )
 }
