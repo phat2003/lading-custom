@@ -1,10 +1,34 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
 const STORAGE_KEY = 'myproject.frontend.projects.v1'
 const ProjectsContext = createContext(null)
 
 function createId() {
   return window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
+}
+
+function createStarterSections(sourceType) {
+  if (sourceType === 'blank') return []
+
+  return [
+    {
+      id: createId(),
+      type: 'hero',
+      title: 'Mẫu Hero Section',
+      text: 'Đây là ví dụ về một khối nội dung bạn có thể tùy chỉnh. Nhấp vào các phần tử để thay đổi thuộc tính bên phải.',
+      buttonText: 'Khám phá ngay',
+      backgroundColor: '#f8faff',
+      textColor: '#0f172a',
+      align: 'center',
+    },
+  ]
 }
 
 function loadProjects() {
@@ -34,56 +58,102 @@ export function ProjectsProvider({ children }) {
     }
   }, [projects])
 
+  const createProject = useCallback((name) => {
+    const newProject = {
+      id: createId(),
+      name,
+      status: 'draft',
+      updatedAt: 'Vừa tạo',
+      previewType: Date.now() % 3,
+      landingPages: [],
+    }
+
+    setProjects((currentProjects) => [newProject, ...currentProjects])
+    return newProject
+  }, [])
+
+  const getProject = useCallback(
+    (projectId) => projects.find((project) => project.id === projectId),
+    [projects],
+  )
+
+  const createLandingPage = useCallback((projectId, payload) => {
+    const newLandingPage = {
+      id: createId(),
+      name: payload.name,
+      sourceId: payload.source.id,
+      sourceType: payload.source.type,
+      sourceName: payload.source.name,
+      status: 'draft',
+      updatedAt: 'Vừa tạo',
+      sections: createStarterSections(payload.source.type),
+    }
+
+    setProjects((currentProjects) =>
+      currentProjects.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              updatedAt: 'Vừa cập nhật',
+              landingPages: [newLandingPage, ...project.landingPages],
+            }
+          : project,
+      ),
+    )
+
+    return newLandingPage
+  }, [])
+
+  const getLandingPage = useCallback(
+    (projectId, landingPageId) => {
+      const project = projects.find((item) => item.id === projectId)
+      return project?.landingPages.find((page) => page.id === landingPageId)
+    },
+    [projects],
+  )
+
+  const updateLandingPageSections = useCallback(
+    (projectId, landingPageId, sections) => {
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project.id === projectId
+            ? {
+                ...project,
+                updatedAt: 'Vừa cập nhật',
+                landingPages: project.landingPages.map((page) =>
+                  page.id === landingPageId
+                    ? {
+                        ...page,
+                        sections,
+                        updatedAt: 'Vừa cập nhật',
+                      }
+                    : page,
+                ),
+              }
+            : project,
+        ),
+      )
+    },
+    [],
+  )
+
   const value = useMemo(
     () => ({
       projects,
-      createProject(name) {
-        const newProject = {
-          id: createId(),
-          name,
-          status: 'draft',
-          updatedAt: 'Vừa tạo',
-          previewType: projects.length % 3,
-          landingPages: [],
-        }
-
-        setProjects((currentProjects) => [newProject, ...currentProjects])
-        return newProject
-      },
-      getProject(projectId) {
-        return projects.find((project) => project.id === projectId)
-      },
-      createLandingPage(projectId, payload) {
-        const newLandingPage = {
-          id: createId(),
-          name: payload.name,
-          sourceId: payload.source.id,
-          sourceType: payload.source.type,
-          sourceName: payload.source.name,
-          status: 'draft',
-          updatedAt: 'Vừa tạo',
-        }
-
-        setProjects((currentProjects) =>
-          currentProjects.map((project) =>
-            project.id === projectId
-              ? {
-                  ...project,
-                  updatedAt: 'Vừa cập nhật',
-                  landingPages: [newLandingPage, ...project.landingPages],
-                }
-              : project,
-          ),
-        )
-
-        return newLandingPage
-      },
-      getLandingPage(projectId, landingPageId) {
-        const project = projects.find((item) => item.id === projectId)
-        return project?.landingPages.find((page) => page.id === landingPageId)
-      },
+      createProject,
+      getProject,
+      createLandingPage,
+      getLandingPage,
+      updateLandingPageSections,
     }),
-    [projects],
+    [
+      projects,
+      createProject,
+      getProject,
+      createLandingPage,
+      getLandingPage,
+      updateLandingPageSections,
+    ],
   )
 
   return (
