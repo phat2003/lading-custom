@@ -23,6 +23,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	r := gin.Default()
 
+	// Giới hạn phần multipart buffer trong RAM (mặc định 32MB); phần lớn hơn spill
+	// ra file temp. Trần cứng theo từng endpoint upload đặt bằng MaxBytesReader.
+	r.MaxMultipartMemory = 8 << 20 // 8 MB
+
 	// CORS — cho phép frontend gọi API.
 	// AllowCredentials không dùng vì auth qua Bearer token, không phải cookie.
 	// Production nên đổi AllowOrigins thành domain cụ thể thay vì "*".
@@ -54,14 +58,51 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	pageService := service.NewLandingPageService(pageRepo, projectRepo)
 	pageHandler := handlers.NewLandingPageHandler(pageService)
 
+	// Section dependency
+	sectionRepo := repository.NewPageSectionRepository(db)
+	sectionService := service.NewPageSectionService(sectionRepo, pageService) // Truyền pageService vào
+	sectionHandler := handlers.NewPageSectionHandler(sectionService)
+
+	// Section Template Library dependency
+	sectionTemplateRepo := repository.NewSectionTemplateRepository(db)
+	sectionTemplateService := service.NewSectionTemplateService(sectionTemplateRepo)
+	sectionTemplateHandler := handlers.NewSectionTemplateHandler(sectionTemplateService)
+
 	templateRepo := repository.NewTemplateRepository(db)
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 
-	uploadHandler := handlers.NewUploadHandler()
+	// Template Action dependency (Save As Template)
+	templateSectionRepo := repository.NewTemplateSectionRepository(db)
+	templateActionService := service.NewTemplateActionService(templateRepo, templateSectionRepo, pageRepo, sectionRepo, projectRepo)
+	templateActionHandler := handlers.NewTemplateActionHandler(templateActionService)
 
-	// Serve file tĩnh đã upload (thumbnail, template file).
-	r.Static("/uploads", "./uploads")
+	// Media Asset dependency
+	assetRepo := repository.NewMediaAssetRepository(db)
+	assetService := service.NewMediaAssetService(assetRepo)
+	assetHandler := handlers.NewMediaAssetHandler(assetService, cfg.PublicBaseURL)
+
+	// Export dependency (export landing page ra PDF — miễn phí)
+	exportRepo := repository.NewExportRepository(db)
+	exportService := service.NewExportService(exportRepo)
+	exportHandler := handlers.NewExportHandler(exportService)
+
+	// Preview dependency (realtime preview — sinh HTML cho iframe của editor)
+	previewRepo := repository.NewPreviewRepository(db)
+	previewService := service.NewPreviewService(previewRepo)
+	previewHandler := handlers.NewPreviewHandler(previewService)
+
+	// Static dependency (sinh HTML tĩnh, publish snapshot và serve link công khai /p/:slug)
+	staticRepo := repository.NewStaticRepository(db)
+	staticService := service.NewStaticService(staticRepo)
+	staticHandler := handlers.NewStaticHandler(staticService)
+
+	uploadHandler := handlers.NewUploadHandler(assetService, cfg.PublicBaseURL)
+
+	// Serve file tĩnh đã upload (thumbnail, template file) qua handler an toàn:
+	// đặt header chống thực thi (nosniff, CSP) và ép tải về với file không phải ảnh,
+	// nhằm triệt tiêu Stored XSS. Xem handlers.ServeUploadedFile.
+	r.GET("/uploads/*filepath", handlers.ServeUploadedFile("./uploads"))
 
 	// --- Routes ---
 	api := r.Group("/api/v1")
@@ -100,6 +141,55 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			pages.GET("/:id", pageHandler.GetByID)
 			pages.PUT("/:id", pageHandler.Update)
 			pages.DELETE("/:id", pageHandler.Delete)
+			// Publish nằm ở /landing-pages/:id/publish (xem nhóm Static Preview / Publish bên dưới).
+			// ---- (Chức năng Save as Template) ----
+			pages.POST("/save-as-template", templateActionHandler.SaveAsTemplate)
+			pages.POST("/from-template", templateActionHandler.CreateFromTemplate) // 👉 THÊM DÒNG NÀY CHO CLONE TEMPLATE
+		}
+
+		// ---- Export API ----
+		// Export landing page ra HTML/CSS/JS đóng gói ZIP (chỉ gói Pro — check trong handler).
+		authorized.GET("/landing-pages/:id/export/html", exportHandler.ExportHTML)
+		// Export landing page ra PDF (miễn phí — cả gói Free lẫn Pro đều dùng được).
+		authorized.GET("/landing-pages/:id/export/pdf", exportHandler.ExportPDF)
+
+		// ---- Realtime Preview API ----
+		// Preview realtime — trả JSON { html, updated_at } để FE nạp vào iframe (srcdoc).
+		authorized.GET("/landing-pages/:id/preview", previewHandler.GetRealtimePreview)
+		// Preview tĩnh — trả HTML thẳng, dùng trực tiếp cho iframe src.
+		authorized.GET("/landing-pages/:id/preview/static", previewHandler.GetStaticPreview)
+		// Preview theo thiết bị — ?device=desktop|tablet|mobile
+		authorized.GET("/landing-pages/:id/preview/device", previewHandler.PreviewByDevice)
+
+		// ---- Static Preview / Publish API ----
+		// Sinh HTML tĩnh để xem trước bản sẽ publish (chưa lưu snapshot).
+		authorized.POST("/landing-pages/:id/generate-static", staticHandler.GenerateStatic)
+		// Publish: sinh HTML tĩnh, lưu snapshot với slug duy nhất, đổi status sang published.
+		authorized.POST("/landing-pages/:id/publish", staticHandler.PublishPage)
+		// Unpublish: đổi status về draft -> /p/:slug trả 404. Snapshot cũ vẫn giữ trong DB.
+		authorized.POST("/landing-pages/:id/unpublish", staticHandler.UnpublishPage)
+
+		// ---- Section API ----
+		sections := authorized.Group("/sections")
+		{
+			sections.POST("", sectionHandler.Create)
+			sections.GET("", sectionHandler.GetAll) // GET /sections?page_id=...
+			sections.PUT("/:id", sectionHandler.Update)
+			sections.DELETE("/:id", sectionHandler.Delete)
+		}
+
+		// ---- Section Template Library API ----
+		sectionTemplates := authorized.Group("/section-templates")
+		{
+			sectionTemplates.POST("", sectionTemplateHandler.Create)
+			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
+		}
+
+		// ----Image Upload API ----
+		upload := authorized.Group("/upload")
+		{
+			upload.POST("", assetHandler.UploadImage)
+			upload.GET("/assets", assetHandler.GetAssets)
 		}
 
 		// Project — BE Dev 2
@@ -145,8 +235,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	}
 
 	// Route công khai serve landing page đã publish (không cần đăng nhập).
-	// r.GET("/p/:slug", publishHandler.ServePublic)
+	// Trả thẳng HTML đã đóng băng trong snapshot; slug lạ -> trang 404 đơn giản.
+	r.GET("/p/:slug", staticHandler.ServePublic)
 
 	return r
 }
-

@@ -17,6 +17,10 @@ export default {
         'fade-in-up': 'fade-in-up 0.25s ease-out both',
         'slide-in-left': 'slide-in-left 0.2s ease-out both',
       },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Playfair Display', 'serif'],
+      },
     },
   },
   plugins: [],

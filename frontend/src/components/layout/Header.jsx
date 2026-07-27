@@ -1,20 +1,20 @@
 export default function Header({ user, onLogout, onLogin, onRegister }) {
   return (
-    <header className="flex items-center justify-between px-8 py-4 bg-white shadow">
-      <h1 className="text-xl font-bold">Landing Page Builder</h1>
-      <nav className="flex gap-6 text-gray-700">
-        <a href="#features">Features</a>
-        <a href="#templates">Templates</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#reviews">Review</a>
+    <header className="flex items-center justify-between px-8 py-4 text-white bg-gray-900">
+      <h1 className="text-xl font-bold">Amazing Tech</h1>
+      <nav className="flex gap-6 text-gray-300">
+        <a href="#features" className="hover:text-white">Tính năng</a>
+        <a href="#templates" className="hover:text-white">Template</a>
+        <a href="#pricing" className="hover:text-white">Bảng giá</a>
+        <a href="#reviews" className="hover:text-white">Đánh giá</a>
       </nav>
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <span className="text-gray-600">{user.full_name || user.email}</span>
+            <span className="text-gray-300">{user.full_name || user.email}</span>
             <button
               onClick={onLogout}
-              className="text-sm text-red-600 hover:underline"
+              className="text-sm text-red-400 hover:underline"
             >
               Đăng xuất
             </button>
@@ -23,15 +23,15 @@ export default function Header({ user, onLogout, onLogin, onRegister }) {
           <>
             <button
               onClick={onLogin}
-              className="text-gray-600"
+              className="text-gray-300 hover:text-white"
             >
-              Login
+              Đăng nhập
             </button>
             <button
               onClick={onRegister}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg"
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
-              Get Started
+              Bắt đầu ngay
             </button>
           </>
         )}

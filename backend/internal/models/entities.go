@@ -67,8 +67,12 @@ type LandingPage struct {
 	Name             string            `gorm:"column:name;not null" json:"name"`
 	SourceTemplateID *uuid.UUID        `gorm:"column:source_template_id;type:uuid" json:"source_template_id,omitempty"` // null nếu blank
 	Status           LandingPageStatus `gorm:"column:status;type:landing_page_status;default:'draft'" json:"status"`
-	CreatedAt        time.Time         `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt        time.Time         `gorm:"column:updated_at" json:"updated_at"`
+	// PublishedURL — slug công khai của trang (/p/:slug). Null nếu chưa từng publish.
+	// Slug thuộc về TRANG (không thuộc snapshot) nên bền qua mọi lần republish và cả
+	// chu kỳ unpublish -> publish lại. Xem migration 002_move_slug_to_page.
+	PublishedURL *string   `gorm:"column:published_url;uniqueIndex" json:"published_url,omitempty"`
+	CreatedAt    time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"column:updated_at" json:"updated_at"`
 
 	Sections []PageSection `gorm:"foreignKey:LandingPageID" json:"sections,omitempty"`
 }
@@ -102,11 +106,12 @@ type MediaAsset struct {
 
 func (MediaAsset) TableName() string { return "media_asset" }
 
-// PublishedSnapshot — bản chụp nội dung tại thời điểm publish.
+// PublishedSnapshot — bản chụp nội dung tại thời điểm publish (bản ghi LỊCH SỬ).
+// Mỗi lần publish tạo thêm 1 hàng; nhiều snapshot cùng 1 page là bình thường.
+// Slug công khai KHÔNG nằm ở đây nữa mà ở landing_page.published_url (migration 002).
 type PublishedSnapshot struct {
 	SnapshotID      uuid.UUID      `gorm:"column:snapshot_id;type:uuid;default:gen_random_uuid();primaryKey" json:"snapshot_id"`
 	LandingPageID   uuid.UUID      `gorm:"column:landing_page_id;type:uuid;not null" json:"landing_page_id"`
-	PublishedURL    string         `gorm:"column:published_url;uniqueIndex;not null" json:"published_url"`
 	SnapshotContent datatypes.JSON `gorm:"column:snapshot_content;type:jsonb;not null" json:"snapshot_content"`
 	PublishedBy     *uuid.UUID     `gorm:"column:published_by;type:uuid" json:"published_by,omitempty"`
 	PublishedAt     time.Time      `gorm:"column:published_at" json:"published_at"`
