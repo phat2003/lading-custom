@@ -22,6 +22,15 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
+// Bọc khu admin: chưa login -> /login; đã login nhưng không phải admin -> trang chủ.
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="p-8">Đang tải...</div>
+  if (!user) return <Navigate to="/login" replace />
+  const isAdmin = user.role === 'admin' || user.role === 'super_admin'
+  return isAdmin ? children : <Navigate to="/" replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -31,13 +40,13 @@ export default function App() {
       <Route path="/icons" element={<IconGallery />} />
 
       {/* Builder toàn màn hình — tách khỏi AdminLayout (có toolbar riêng, không sidebar admin) */}
-      <Route path="/admin/templates/new" element={<TemplateBuilder />} />
+      <Route path="/admin/templates/new" element={<AdminRoute><TemplateBuilder /></AdminRoute>} />
       {/* Cùng builder, chế độ Section: admin dựng section mẫu để tái sử dụng */}
-      <Route path="/admin/sections/new" element={<TemplateBuilder mode="section" />} />
-      <Route path="/admin/sections/:id/edit" element={<TemplateBuilder mode="section" />} />
+      <Route path="/admin/sections/new" element={<AdminRoute><TemplateBuilder mode="section" /></AdminRoute>} />
+      <Route path="/admin/sections/:id/edit" element={<AdminRoute><TemplateBuilder mode="section" /></AdminRoute>} />
 
-      {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
-      <Route path="/admin" element={<AdminLayout />}>
+      {/* Khu admin — chỉ admin/super_admin mới vào được (AdminRoute) */}
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="templates" element={<AdminTemplates />} />

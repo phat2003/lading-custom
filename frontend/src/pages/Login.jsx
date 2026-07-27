@@ -16,8 +16,10 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
-      navigate('/')
+      const u = await login(email, password)
+      // Admin/super_admin vào thẳng khu quản trị; user thường về trang chủ.
+      const isAdmin = u.role === 'admin' || u.role === 'super_admin'
+      navigate(isAdmin ? '/admin' : '/')
     } catch (err) {
       setError(err.response?.data?.error || 'Đăng nhập thất bại')
     } finally {
