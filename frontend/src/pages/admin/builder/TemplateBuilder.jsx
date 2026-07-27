@@ -1,17 +1,45 @@
 import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import BuilderTopbar from './components/BuilderTopbar'
 import BuilderRail from './components/BuilderRail'
 import ElementPanel from './components/ElementPanel'
 import LayersPanel from './components/LayersPanel'
 import BuilderCanvas from './components/BuilderCanvas'
 import PropertiesPanel from './components/PropertiesPanel'
+import SectionSaveDialog from './components/SectionSaveDialog'
+import { getSectionDraft, saveSectionDraft } from './sectionStore'
 
 const newId = () =>
   crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())
 
-const TemplateBuilder = () => {
+// mode: 'template' (dựng cả trang) | 'section' (dựng 1 section mẫu để tái sử dụng).
+const TemplateBuilder = ({ mode = 'template' }) => {
+  const isSection = mode === 'section'
+  const navigate = useNavigate()
+  const { id } = useParams()
+
   const [device, setDevice] = useState('desktop')
-  const [elements, setElements] = useState([])
+  const [elements, setElements] = useState(() => {
+    if (isSection) {
+      const draft = id ? getSectionDraft(id) : null
+      if (draft?.elements?.length) return draft.elements
+      // Chế độ Section: seed sẵn 1 khung Section rỗng để admin dựng nội dung bên trong.
+      return [
+        {
+          id: newId(),
+          type: 'section',
+          content: '',
+          x: 0,
+          y: 0,
+          parentId: null,
+          style: { width: 860, height: 400, bgColor: '#ffffff', borderRadius: 0, columns: 1 },
+        },
+      ]
+    }
+    return []
+  })
+  const [sectionMeta] = useState(() => (isSection && id ? getSectionDraft(id) : null))
+  const [saveOpen, setSaveOpen] = useState(false)
   const [past, setPast] = useState([])
   const [future, setFuture] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -20,6 +48,20 @@ const TemplateBuilder = () => {
 
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
+
+  // Lưu Section mẫu (chế độ Section) vào thư viện rồi quay lại danh sách.
+  const handleSaveSection = ({ name, type }) => {
+    const draftId = sectionMeta?.id || id || Date.now()
+    saveSectionDraft({
+      id: draftId,
+      name,
+      type,
+      usedIn: sectionMeta?.usedIn || 0,
+      elements,
+      updatedAt: Date.now(),
+    })
+    navigate('/admin/sections')
+  }
 
   // --- Lịch sử (undo/redo) ---
   const pushHistory = () => {
@@ -203,6 +245,8 @@ const TemplateBuilder = () => {
         onRedo={redo}
         canUndo={past.length > 0}
         canRedo={future.length > 0}
+        mode={mode}
+        onSave={() => setSaveOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
         <BuilderRail activePanel={activePanel} onToggle={togglePanel} />
@@ -233,6 +277,15 @@ const TemplateBuilder = () => {
         />
         {selected && <PropertiesPanel element={selected} onUpdate={updateElement} onDelete={deleteElement} />}
       </div>
+
+      {isSection && (
+        <SectionSaveDialog
+          open={saveOpen}
+          initial={sectionMeta}
+          onCancel={() => setSaveOpen(false)}
+          onConfirm={handleSaveSection}
+        />
+      )}
     </div>
   )
 }

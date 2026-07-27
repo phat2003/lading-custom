@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PlusIcon } from '../../../components/icons'
 import FilterTabs from '../components/FilterTabs'
 import ConfirmDialog from '../components/ConfirmDialog'
 import SectionCard from './components/SectionCard'
-import SectionFormModal from './components/SectionFormModal'
 import { SECTION_TYPES } from './sectionTypes'
 import { sectionsMock } from '../mock/sections'
+import { loadSectionDrafts, deleteSectionDraft } from '../builder/sectionStore'
 // Khi backend sẵn sàng: import { sectionsApi } from '../../../api/sections'
 
 const TABS = [
@@ -16,41 +17,29 @@ const TABS = [
 const TOTAL_MOCK = 64 // tổng "thành phần" giả lập cho phần phân trang
 
 export default function Sections() {
-  const [items, setItems] = useState(sectionsMock)
+  const navigate = useNavigate()
+  // Gộp section admin đã dựng trong builder (lưu tạm localStorage) lên trước danh sách mock.
+  // Bản lưu tạm cùng id sẽ đè lên mock (tránh trùng thẻ khi sửa lại section có sẵn).
+  const [items, setItems] = useState(() => {
+    const drafts = loadSectionDrafts()
+    const draftIds = new Set(drafts.map((d) => String(d.id)))
+    return [...drafts, ...sectionsMock.filter((m) => !draftIds.has(String(m.id)))]
+  })
   const [filter, setFilter] = useState('All')
   const [page, setPage] = useState(1)
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
   const totalPages = 5 // mock
 
   const filtered = items.filter((s) => filter === 'All' || s.type === filter)
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (s) => {
-    setEditing(s)
-    setFormOpen(true)
-  }
-
-  const handleSubmit = (data) => {
-    if (editing) {
-      // TODO(API): await sectionsApi.update(editing.id, data)
-      setItems((list) => list.map((s) => (s.id === editing.id ? { ...s, ...data } : s)))
-    } else {
-      // TODO(API): await sectionsApi.create(data)
-      setItems((list) => [{ id: Date.now(), usedIn: 0, ...data }, ...list])
-    }
-    setFormOpen(false)
-    setEditing(null)
-  }
+  // Tạo/sửa section = mở builder ở chế độ Section (kéo-thả, chỉnh style thật).
+  const openCreate = () => navigate('/admin/sections/new')
+  const openEdit = (s) => navigate(`/admin/sections/${s.id}/edit`)
 
   const handleDelete = () => {
     // TODO(API): await sectionsApi.remove(deleting.id)
+    deleteSectionDraft(deleting.id) // xóa bản lưu tạm nếu là section do admin dựng
     setItems((list) => list.filter((s) => s.id !== deleting.id))
     setDeleting(null)
   }
@@ -114,15 +103,6 @@ export default function Sections() {
       </div>
 
       {/* Modals */}
-      <SectionFormModal
-        open={formOpen}
-        initial={editing}
-        onClose={() => {
-          setFormOpen(false)
-          setEditing(null)
-        }}
-        onSubmit={handleSubmit}
-      />
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Xóa Thành phần"

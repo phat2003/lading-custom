@@ -32,6 +32,9 @@ export default function App() {
 
       {/* Builder toàn màn hình — tách khỏi AdminLayout (có toolbar riêng, không sidebar admin) */}
       <Route path="/admin/templates/new" element={<TemplateBuilder />} />
+      {/* Cùng builder, chế độ Section: admin dựng section mẫu để tái sử dụng */}
+      <Route path="/admin/sections/new" element={<TemplateBuilder mode="section" />} />
+      <Route path="/admin/sections/:id/edit" element={<TemplateBuilder mode="section" />} />
 
       {/* Khu admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
       <Route path="/admin" element={<AdminLayout />}>

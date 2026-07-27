@@ -1,25 +1,26 @@
 import { useNavigate } from 'react-router-dom'
 import { MonitorIcon, SmartphoneIcon, ZapIcon, UndoIcon, RedoIcon } from '../../../../components/icons'
 
-const BuilderTopbar = ({ device, onDeviceChange, onUndo, onRedo, canUndo, canRedo }) => {
+const BuilderTopbar = ({ device, onDeviceChange, onUndo, onRedo, canUndo, canRedo, mode = 'template', onSave }) => {
   const navigate = useNavigate()
+  const isSection = mode === 'section'
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#161618] px-3 text-gray-200">
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate('/admin/templates')}
+          onClick={() => navigate(isSection ? '/admin/sections' : '/admin/templates')}
           className="flex items-center gap-2 text-sm font-semibold"
-          title="Về danh sách template"
+          title={isSection ? 'Về thư viện thành phần' : 'Về danh sách template'}
         >
           <span className="grid h-7 w-7 place-items-center rounded bg-blue-600 text-white">
             <ZapIcon size={16} />
           </span>
-          Template Editor
+          {isSection ? 'Section Editor' : 'Template Editor'}
           <span className="rounded bg-yellow-400/20 px-1.5 py-0.5 text-[10px] font-bold text-yellow-400">PRO</span>
         </button>
         <span className="ml-2 hidden text-sm text-gray-400 md:inline">
-          Dự án: <span className="text-gray-200">Template mới</span>
+          {isSection ? 'Section mẫu' : 'Dự án'}: <span className="text-gray-200">{isSection ? 'Thành phần mới' : 'Template mới'}</span>
         </span>
       </div>
 
@@ -49,11 +50,22 @@ const BuilderTopbar = ({ device, onDeviceChange, onUndo, onRedo, canUndo, canRed
       </div>
 
       <div className="flex items-center gap-2 text-sm">
-        <button className="rounded-md px-3 py-1.5 text-gray-300 hover:bg-white/10">Xem trước</button>
-        <button className="rounded-md px-3 py-1.5 text-gray-300 hover:bg-white/10">Lưu bản nháp</button>
-        <button className="rounded-md bg-yellow-400 px-3 py-1.5 font-semibold text-black hover:bg-yellow-300">
-          Xuất bản
-        </button>
+        {isSection ? (
+          <button
+            onClick={onSave}
+            className="rounded-md bg-yellow-400 px-4 py-1.5 font-semibold text-black hover:bg-yellow-300"
+          >
+            Lưu Section
+          </button>
+        ) : (
+          <>
+            <button className="rounded-md px-3 py-1.5 text-gray-300 hover:bg-white/10">Xem trước</button>
+            <button className="rounded-md px-3 py-1.5 text-gray-300 hover:bg-white/10">Lưu bản nháp</button>
+            <button className="rounded-md bg-yellow-400 px-3 py-1.5 font-semibold text-black hover:bg-yellow-300">
+              Xuất bản
+            </button>
+          </>
+        )}
       </div>
     </header>
   )
