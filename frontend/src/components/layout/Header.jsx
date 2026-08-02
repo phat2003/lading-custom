@@ -1,7 +1,15 @@
+import { Link } from 'react-router-dom'
+
 export default function Header({ user, onLogout, onLogin, onRegister }) {
   return (
     <header className="flex items-center justify-between px-8 py-4 text-white bg-gray-900">
-      <h1 className="text-xl font-bold">Amazing Tech</h1>
+      <Link
+        to="/"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="text-xl font-bold hover:text-white"
+      >
+        Amazing Tech
+      </Link>
       <nav className="flex gap-6 text-gray-300">
         <a href="#features" className="hover:text-white">Tính năng</a>
         <a href="#templates" className="hover:text-white">Template</a>
