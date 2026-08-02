@@ -55,7 +55,12 @@ export default function TemplateGalleryPage() {
       source: selectedTemplate,
     })
 
-    navigate(`/projects/${projectId}/editor/${landingPage.id}`)
+    const dashboardParams = new URLSearchParams({
+      projectId,
+      landingPageId: landingPage.id,
+    })
+
+    navigate(`/dashboard?${dashboardParams.toString()}`)
   }
 
   const showMessage = (message) => {

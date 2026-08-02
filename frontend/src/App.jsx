@@ -14,6 +14,7 @@ import AdminPricingPlans from './pages/admin/PricingPlans/PricingPlans'
 import AdminAiGenerator from './pages/admin/AiGenerator/AiGenerator'
 import AdminSettings from './pages/admin/Settings/Settings'
 import TemplateBuilder from './pages/admin/builder/TemplateBuilder'
+import DashboardPage from './pages/Dashboard/DashboardPage'
 import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
 import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
 import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
@@ -52,6 +53,26 @@ export default function App() {
         {/* Trang chủ Landing Page công khai */}
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
+
+        {/* Dashboard người dùng — Realtime Preview workspace */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dashboard người dùng — Realtime Preview workspace */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Quản lý dự án của người dùng (cần đăng nhập) */}
         <Route

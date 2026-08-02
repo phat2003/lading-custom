@@ -55,7 +55,7 @@ export default function Navbar() {
                 Hi, <strong className="text-white">{user.full_name || user.email}</strong>
               </span>
               <Link
-                to="/projects"
+                to="/dashboard"
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0"
               >
                 Vào Dashboard

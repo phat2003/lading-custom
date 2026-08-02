@@ -52,13 +52,24 @@ export default function EditorTopbar({
         <p className="max-w-[300px] truncate font-mono text-xs text-[#c3c6d7]">
           Dự án: <span className="text-white">{landingPageName}</span>⌄
         </p>
-        <span
-          className={`font-mono text-[9px] uppercase tracking-wider ${
-            saveStatus === 'saving' ? 'text-[#eec200]' : 'text-[#00eefc]'
-          }`}
-        >
-          {saveStatus === 'saving' ? 'Đang lưu...' : 'Đã lưu'}
-        </span>
+        <div className="flex items-center gap-2" aria-live="polite">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              saveStatus === 'saving'
+                ? 'animate-pulse bg-[#eec200]'
+                : 'bg-[#00eefc] shadow-[0_0_8px_rgba(0,238,252,0.65)]'
+            }`}
+          />
+          <span
+            className={`font-mono text-[9px] uppercase tracking-wider ${
+              saveStatus === 'saving' ? 'text-[#eec200]' : 'text-[#00eefc]'
+            }`}
+          >
+            {saveStatus === 'saving'
+              ? 'Preview đang cập nhật...'
+              : 'Realtime đã đồng bộ'}
+          </span>
+        </div>
         <div className="h-6 w-px bg-white/10" />
         <button
           type="button"

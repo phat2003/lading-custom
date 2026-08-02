@@ -3,6 +3,7 @@ import {
   ChevronDownIcon,
   FolderIcon,
   GlobeIcon,
+  LayoutDashboardIcon,
   LayoutTemplateIcon,
   PlusIcon,
   SettingsIcon,
@@ -97,6 +98,12 @@ export default function ProjectSidebar({
 
         <nav className="flex-1 space-y-1 px-4" aria-label="Điều hướng chính">
           <NavigationItem to="/home" icon={GlobeIcon} label="Trang chủ" onClick={onClose} />
+          <NavigationItem
+            to="/dashboard"
+            icon={LayoutDashboardIcon}
+            label="Dashboard"
+            onClick={onClose}
+          />
           <NavigationItem to="/projects" icon={FolderIcon} label="Dự án" onClick={onClose} />
           {templatePath ? (
             <NavigationItem

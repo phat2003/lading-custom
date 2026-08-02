@@ -19,8 +19,13 @@ function getInitialSections(landingPage) {
   return [createLegacyStarterSection()]
 }
 
-export default function LandingPageEditorPage() {
-  const { projectId, landingPageId } = useParams()
+export default function LandingPageEditorPage({
+  projectIdOverride,
+  landingPageIdOverride,
+}) {
+  const routeParams = useParams()
+  const projectId = projectIdOverride || routeParams.projectId
+  const landingPageId = landingPageIdOverride || routeParams.landingPageId
   const navigate = useNavigate()
   const {
     getProject,
@@ -162,7 +167,9 @@ export default function LandingPageEditorPage() {
         onBack={() => navigate(`/projects/${projectId}/templates`)}
         onUndo={() => setNotice('Undo sẽ được triển khai ở task Editor tiếp theo.')}
         onRedo={() => setNotice('Redo sẽ được triển khai ở task Editor tiếp theo.')}
-        onPreview={() => setNotice('Preview sẽ được triển khai ở task tiếp theo.')}
+        onPreview={() =>
+          setNotice('Realtime Preview đang hiển thị trực tiếp trên canvas.')
+        }
         onPublish={() => setNotice('Publish cần tích hợp API ở task riêng.')}
       />
 
