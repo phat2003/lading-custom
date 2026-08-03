@@ -23,8 +23,17 @@ CREATE TYPE template_type AS ENUM ('system', 'user');
 -- Nguồn gốc sinh ra template (phục vụ audit & phân quyền)
 CREATE TYPE template_source AS ENUM ('created_by_admin', 'saved_from_landing_page');
 
+-- Trạng thái hiển thị của template trong thư viện (trang admin Templates)
+CREATE TYPE template_status AS ENUM ('draft', 'published');
+
+-- Phân hạng template: free dùng được cho mọi user, premium chỉ gói Pro
+CREATE TYPE template_tier AS ENUM ('free', 'premium');
+
 -- Trạng thái landing page
 CREATE TYPE landing_page_status AS ENUM ('draft', 'published');
+
+-- Trạng thái một lượt tạo thiết kế bằng AI
+CREATE TYPE ai_generation_status AS ENUM ('generating', 'done', 'failed');
 
 -- =====================================================================
 -- 1. USER
@@ -37,11 +46,21 @@ CREATE TABLE app_user (
     full_name     VARCHAR(150),
     role          user_role NOT NULL DEFAULT 'user',
     plan_type     plan_type NOT NULL DEFAULT 'free',   -- denormalized: gói hiện tại
+
+    -- Field quản trị (xem migration 004).
+    phone           VARCHAR(20),                                   -- cột Contact ở trang admin Users
+    -- Công tắc khoá tài khoản do admin bật/tắt thủ công.
+    -- KHÔNG suy ra từ "lâu không đăng nhập" nên không cần last_login_at.
+    is_active       BOOLEAN     NOT NULL DEFAULT true,
+    timezone        VARCHAR(64) NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
+    session_timeout VARCHAR(16) NOT NULL DEFAULT 'never',           -- never | 30m | 1h | 1d
+
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_user_role ON app_user (role);
+CREATE INDEX idx_user_role      ON app_user (role);
+CREATE INDEX idx_user_is_active ON app_user (is_active);
 
 -- =====================================================================
 -- 2. PLAN / SUBSCRIPTION
@@ -108,7 +127,16 @@ CREATE TABLE template (
     type            template_type NOT NULL,
     owner_id        UUID REFERENCES app_user(user_id) ON DELETE CASCADE,  -- NULL nếu system
     template_source template_source NOT NULL,
+
+    -- Metadata phục vụ trang admin Templates (xem migration 003).
+    -- Số section KHÔNG lưu ở đây — đếm từ template_section để không bị lệch.
+    category        VARCHAR(50),                                  -- SaaS | Agency | Startup | Webinar | Portfolio ...
+    status          template_status NOT NULL DEFAULT 'draft',
+    tier            template_tier   NOT NULL DEFAULT 'free',
+    thumbnail_url   TEXT,                                         -- ảnh xem trước trên thẻ template
+
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     -- Ràng buộc tính nhất quán giữa type / owner / source:
     --  system  => không có owner, sinh bởi admin
@@ -120,8 +148,11 @@ CREATE TABLE template (
     )
 );
 
-CREATE INDEX idx_template_owner ON template (owner_id);
-CREATE INDEX idx_template_type  ON template (type);
+CREATE INDEX idx_template_owner    ON template (owner_id);
+CREATE INDEX idx_template_type     ON template (type);
+-- Phục vụ bộ lọc của trang admin: ?category=&status=&tier=
+CREATE INDEX idx_template_status   ON template (status);
+CREATE INDEX idx_template_category ON template (category);
 
 -- =====================================================================
 -- 6. TEMPLATE SECTION  (con của Template)
@@ -218,7 +249,98 @@ CREATE TABLE published_snapshot (
 CREATE INDEX idx_snapshot_lp ON published_snapshot (landing_page_id);
 
 -- =====================================================================
--- 11. TRIGGER cập nhật updated_at tự động
+-- 11. PLATFORM SETTING — cấu hình hệ thống (xem migration 005)
+--     Chỉ tồn tại ĐÚNG 1 dòng cho toàn hệ thống, ràng buộc bằng unique
+--     index trên cột hằng is_singleton.
+--     Phần "tài khoản" của trang Settings (họ tên, múi giờ, thời gian phiên)
+--     KHÔNG nằm ở đây mà ở app_user của admin đang đăng nhập.
+-- =====================================================================
+CREATE TABLE platform_setting (
+    setting_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    platform_name    VARCHAR(150) NOT NULL DEFAULT 'Amazing Tech — Template Studio',
+    logo_url         TEXT,
+
+    -- Nhóm AI Engine
+    ai_enabled          BOOLEAN     NOT NULL DEFAULT true,
+    ai_daily_limit      INT         NOT NULL DEFAULT 2500,
+    ai_default_model    VARCHAR(50) NOT NULL DEFAULT 'amazing-ui-v2.0',
+    ai_concurrent_limit INT         NOT NULL DEFAULT 100,
+
+    updated_by  UUID REFERENCES app_user(user_id) ON DELETE SET NULL,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    is_singleton BOOLEAN NOT NULL DEFAULT true CHECK (is_singleton)
+);
+
+CREATE UNIQUE INDEX uq_platform_setting_singleton ON platform_setting (is_singleton);
+
+-- Dòng cấu hình mặc định
+INSERT INTO platform_setting DEFAULT VALUES;
+
+-- =====================================================================
+-- 12. PRICING PLAN — bảng giá hiển thị (xem migration 006)
+--     code là VARCHAR, ĐỘC LẬP với ENUM plan_type: bảng này lo phần hiển thị
+--     (giá, tính năng, thứ tự), còn user thuộc gói nào vẫn do app_user.plan_type
+--     quyết định. Thêm gói mới bán được cho user thì phải ALTER TYPE plan_type.
+-- =====================================================================
+CREATE TABLE pricing_plan (
+    plan_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code         VARCHAR(30)  NOT NULL UNIQUE,          -- 'free' | 'pro' | ...
+    name         VARCHAR(100) NOT NULL,
+    label        VARCHAR(100),                          -- nhãn phụ: 'Cơ bản' | 'Doanh nghiệp'
+    price        BIGINT       NOT NULL DEFAULT 0,       -- VNĐ, số nguyên
+    unit         VARCHAR(20)  NOT NULL DEFAULT '/tháng',
+    highlighted  BOOLEAN      NOT NULL DEFAULT false,
+    badge        VARCHAR(50),
+    sort_order   INT          NOT NULL DEFAULT 0,
+    is_active    BOOLEAN      NOT NULL DEFAULT true,
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+
+CREATE TABLE plan_feature (
+    feature_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    plan_id     UUID NOT NULL REFERENCES pricing_plan(plan_id) ON DELETE CASCADE,
+    label       VARCHAR(200) NOT NULL,
+    included    BOOLEAN NOT NULL DEFAULT true,          -- ✓ hay ✕
+    sort_order  INT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_plan_feature_plan ON plan_feature (plan_id);
+
+-- =====================================================================
+-- 13. AI GENERATION — lịch sử tạo thiết kế bằng AI (xem migration 007)
+--     Phần gọi mô hình AI thật nằm ngoài phạm vi hiện tại; bảng và API đã
+--     sẵn sàng, chỗ cắm mô hình nằm ở internal/service/ai_service.go.
+-- =====================================================================
+CREATE TABLE ai_generation (
+    generation_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id        UUID NOT NULL REFERENCES app_user(user_id) ON DELETE CASCADE,
+    prompt         TEXT NOT NULL,
+    template_type  VARCHAR(50),                 -- 'landing' | 'portfolio' | ...
+    style          VARCHAR(50),
+    status         ai_generation_status NOT NULL DEFAULT 'generating',
+    tokens_used    INT DEFAULT 0,
+    error_message  TEXT,                        -- chỉ có khi status = 'failed'
+    result_template_id UUID REFERENCES template(template_id) ON DELETE SET NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at   TIMESTAMPTZ
+);
+
+CREATE INDEX idx_ai_generation_user_created ON ai_generation (user_id, created_at DESC);
+CREATE INDEX idx_ai_generation_created      ON ai_generation (created_at DESC);
+
+-- Hạn mức AI theo user; dòng được tạo lười khi user dùng AI lần đầu.
+CREATE TABLE ai_credit (
+    user_id   UUID PRIMARY KEY REFERENCES app_user(user_id) ON DELETE CASCADE,
+    used      INT NOT NULL DEFAULT 0,
+    total     INT NOT NULL DEFAULT 1000,
+    reset_at  TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '30 days')
+);
+
+-- =====================================================================
+-- 14. TRIGGER cập nhật updated_at tự động
 -- =====================================================================
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -236,9 +358,15 @@ CREATE TRIGGER trg_lp_updated        BEFORE UPDATE ON landing_page
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_pagesection_updated BEFORE UPDATE ON page_section
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_template_updated  BEFORE UPDATE ON template
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_platform_setting_updated BEFORE UPDATE ON platform_setting
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_pricing_plan_updated BEFORE UPDATE ON pricing_plan
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- =====================================================================
--- 12. SEED DATA mẫu (tùy chọn — để test nhanh)
+-- 15. SEED DATA mẫu (tùy chọn — để test nhanh)
 -- =====================================================================
 -- Admin & user demo
 -- Tài khoản dev: admin / Admin@123 | user / User@123

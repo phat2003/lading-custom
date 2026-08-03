@@ -19,7 +19,8 @@ export default function TemplateCard({ template, onEdit, onDelete }) {
       <div className="relative flex h-40 items-center justify-center border-b border-slate-800 bg-slate-900/40">
         <div className="absolute left-3 top-3">
           <Badge color={CATEGORY_COLOR[template.category] || 'gray'}>
-            {template.category}
+            {/* Template cũ (trước migration 003) chưa có danh mục */}
+            {template.category || 'Chưa phân loại'}
           </Badge>
         </div>
         <div className="w-2/3 space-y-2 opacity-40">

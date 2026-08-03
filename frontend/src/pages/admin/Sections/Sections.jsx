@@ -1,47 +1,138 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
 import { PlusIcon } from '../../../components/icons'
 import FilterTabs from '../components/FilterTabs'
 import ConfirmDialog from '../components/ConfirmDialog'
 import SectionCard from './components/SectionCard'
+import SectionFormModal from './components/SectionFormModal'
 import { SECTION_TYPES } from './sectionTypes'
-import { sectionsMock } from '../mock/sections'
-import { loadSectionDrafts, deleteSectionDraft } from '../builder/sectionStore'
-// Khi backend sẵn sàng: import { sectionsApi } from '../../../api/sections'
+import { sectionsApi } from '../../../api/sections'
 
 const TABS = [
   { label: 'Tất cả', value: 'All' },
   ...SECTION_TYPES.map((t) => ({ label: t.tab, value: t.value })),
 ]
 
-const TOTAL_MOCK = 64 // tổng "thành phần" giả lập cho phần phân trang
+const PAGE_SIZE = 9 // vừa đúng 3 hàng x 3 cột của lưới
 
-export default function Sections() {
-  const navigate = useNavigate()
-  // Gộp section admin đã dựng trong builder (lưu tạm localStorage) lên trước danh sách mock.
-  // Bản lưu tạm cùng id sẽ đè lên mock (tránh trùng thẻ khi sửa lại section có sẵn).
-  const [items, setItems] = useState(() => {
-    const drafts = loadSectionDrafts()
-    const draftIds = new Set(drafts.map((d) => String(d.id)))
-    return [...drafts, ...sectionsMock.filter((m) => !draftIds.has(String(m.id)))]
-  })
+// Backend trả snake_case; UI dùng tên ngắn gọn.
+// Giữ defaultContent để form sửa hiển thị lại đúng JSON đang lưu.
+const toUI = (s) => ({
+  id: s.section_template_id,
+  name: s.display_name,
+  type: s.section_type,
+  usedIn: s.used_in ?? 0,
+  defaultContent: s.default_content,
+})
+
+// Chiều ngược lại: form UI -> payload API.
+const toPayload = (data) => ({
+  display_name: data.name,
+  section_type: data.type,
+  default_content: data.defaultContent,
+})
+
+const errMsg = (err, fallback) => err?.response?.data?.error || fallback
+
+const Sections = () => {
+  const [items, setItems] = useState([])
+  const [meta, setMeta] = useState({ page: 1, total: 0, total_pages: 1 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   const [filter, setFilter] = useState('All')
   const [page, setPage] = useState(1)
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const totalPages = 5 // mock
+  // Đổi tab thì luôn về trang 1.
+  useEffect(() => {
+    setPage(1)
+  }, [filter])
 
-  const filtered = items.filter((s) => filter === 'All' || s.type === filter)
+  const fetchSections = useCallback(
+    async (signal) => {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await sectionsApi.list(
+          { page, limit: PAGE_SIZE, type: filter === 'All' ? 'all' : filter },
+          { signal },
+        )
+        setItems((res.data.data || []).map(toUI))
+        setMeta(res.data.meta || { page, total: 0, total_pages: 1 })
+      } catch (err) {
+        if (err.name === 'CanceledError') return // request cũ bị hủy, bỏ qua
+        setError(errMsg(err, 'Không tải được thư viện thành phần.'))
+        setItems([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [page, filter],
+  )
 
-  // Tạo/sửa section = mở builder ở chế độ Section (kéo-thả, chỉnh style thật).
-  const openCreate = () => navigate('/admin/sections/new')
-  const openEdit = (s) => navigate(`/admin/sections/${s.id}/edit`)
+  // AbortController: hủy request cũ khi đổi tab nhanh,
+  // để response về trễ không ghi đè kết quả mới.
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchSections(controller.signal)
+    return () => controller.abort()
+  }, [fetchSections])
 
-  const handleDelete = () => {
-    // TODO(API): await sectionsApi.remove(deleting.id)
-    deleteSectionDraft(deleting.id) // xóa bản lưu tạm nếu là section do admin dựng
-    setItems((list) => list.filter((s) => s.id !== deleting.id))
-    setDeleting(null)
+  const openCreate = () => {
+    setEditing(null)
+    setFormError('')
+    setFormOpen(true)
+  }
+
+  const openEdit = (s) => {
+    setEditing(s)
+    setFormError('')
+    setFormOpen(true)
+  }
+
+  const handleSubmit = async (data) => {
+    setSubmitting(true)
+    setFormError('')
+    try {
+      if (editing) {
+        await sectionsApi.update(editing.id, toPayload(data))
+      } else {
+        await sectionsApi.create(toPayload(data))
+      }
+      setFormOpen(false)
+      setEditing(null)
+      await fetchSections()
+    } catch (err) {
+      // Lỗi hiện ngay trong modal để không mất JSON đang soạn.
+      setFormError(errMsg(err, editing ? 'Cập nhật thất bại.' : 'Tạo thành phần thất bại.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setSubmitting(true)
+    setError('')
+    try {
+      await sectionsApi.remove(deleting.id)
+      const isLastItemOnPage = items.length === 1 && page > 1
+      setDeleting(null)
+      if (isLastItemOnPage) {
+        setPage((p) => p - 1) // đổi page -> useEffect tự fetch lại
+      } else {
+        await fetchSections()
+      }
+    } catch (err) {
+      setError(errMsg(err, 'Xóa thành phần thất bại.'))
+      setDeleting(null)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -63,20 +154,35 @@ export default function Sections() {
       {/* Tabs */}
       <FilterTabs tabs={TABS} active={filter} onChange={setFilter} />
 
+      {error && (
+        <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </p>
+      )}
+
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div
+              key={i}
+              className="h-60 animate-pulse rounded-xl border border-slate-800 bg-[#111725]"
+            />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <p className="rounded-xl border border-slate-800 bg-[#111725] px-5 py-10 text-center text-sm text-slate-500">
           Không có thành phần nào.
         </p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((s) => (
+          {items.map((s) => (
             <SectionCard key={s.id} section={s} onEdit={openEdit} onDelete={setDeleting} />
           ))}
         </div>
       )}
 
-      {/* Pagination (mock) */}
+      {/* Phân trang */}
       <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
         <div className="flex items-center gap-3 rounded-full border border-slate-800 bg-[#111725] px-4 py-2">
           <button
@@ -87,28 +193,39 @@ export default function Sections() {
             ‹
           </button>
           <span className="text-sm text-slate-300">
-            Trang {page}/{totalPages}
+            Trang {page}/{meta.total_pages}
           </span>
           <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(meta.total_pages, p + 1))}
+            disabled={page >= meta.total_pages}
             className="text-slate-400 hover:text-white disabled:opacity-40"
           >
             ›
           </button>
         </div>
         <span className="text-xs uppercase tracking-wide text-slate-500">
-          Đang hiển thị {filtered.length} trên {TOTAL_MOCK} thành phần
+          Đang hiển thị {items.length} trên {meta.total} thành phần
         </span>
       </div>
 
       {/* Modals */}
+      <SectionFormModal
+        open={formOpen}
+        initial={editing}
+        submitting={submitting}
+        error={formError}
+        onClose={() => {
+          setFormOpen(false)
+          setEditing(null)
+        }}
+        onSubmit={handleSubmit}
+      />
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Xóa Thành phần"
         message={
           deleting
-            ? `Bạn có chắc muốn xóa "${deleting.name}"? Hành động này không thể hoàn tác.`
+            ? `Xóa "${deleting.name}"? Các template đã dùng mẫu này (${deleting.usedIn}) vẫn giữ nguyên nội dung, chỉ mất dấu vết nguồn gốc.`
             : ''
         }
         confirmText="Xóa"
@@ -118,3 +235,5 @@ export default function Sections() {
     </div>
   )
 }
+
+export default Sections

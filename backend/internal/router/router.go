@@ -53,6 +53,35 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	projectService := service.NewProjectService(projectRepo)
 	projectHandler := handlers.NewProjectHandler(projectService)
 
+	// Admin User dependency (trang admin Users) — cần projectRepo để đếm số dự án.
+	adminUserService := service.NewAdminUserService(userRepo, projectRepo)
+	adminUserHandler := handlers.NewAdminUserHandler(adminUserService)
+
+	// Admin Project dependency (trang admin Projects — xem dự án của mọi user).
+	adminProjectService := service.NewAdminProjectService(projectRepo)
+	adminProjectHandler := handlers.NewAdminProjectHandler(adminProjectService)
+
+	// Pricing Plan dependency (trang admin Pricing Plans).
+	planRepo := repository.NewPricingPlanRepository(db)
+	planService := service.NewPricingPlanService(planRepo)
+	planHandler := handlers.NewPricingPlanHandler(planService)
+
+	// Settings dependency (cấu hình hệ thống + tài khoản admin đang đăng nhập).
+	settingRepo := repository.NewPlatformSettingRepository(db)
+	settingsService := service.NewSettingsService(settingRepo, userRepo)
+	settingsHandler := handlers.NewSettingsHandler(settingsService, cfg.PublicBaseURL)
+
+	// AI Generator dependency. LƯU Ý: chưa tích hợp mô hình AI thật —
+	// xem ghi chú trong service.AIService.Generate.
+	aiRepo := repository.NewAIRepository(db)
+	aiService := service.NewAIService(aiRepo, settingRepo)
+	aiHandler := handlers.NewAIHandler(aiService)
+
+	// Stats dependency (số liệu tổng quan cho Admin Dashboard).
+	statsRepo := repository.NewStatsRepository(db)
+	statsService := service.NewStatsService(statsRepo, aiRepo)
+	statsHandler := handlers.NewStatsHandler(statsService)
+
 	// Landing Page dependency
 	pageRepo := repository.NewLandingPageRepository(db)
 	pageService := service.NewLandingPageService(pageRepo, projectRepo)
@@ -72,9 +101,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	templateService := service.NewTemplateService(templateRepo)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 
-	// Template Action dependency (Save As Template)
-	templateSectionRepo := repository.NewTemplateSectionRepository(db)
-	templateActionService := service.NewTemplateActionService(templateRepo, templateSectionRepo, pageRepo, sectionRepo, projectRepo)
+	// Template Action dependency (Save As Template / Clone Template).
+	// Section con được ghi kèm cha trong transaction ở tầng repository
+	// (TemplateRepository.CreateWithSections), nên không cần TemplateSectionRepository ở đây.
+	templateActionService := service.NewTemplateActionService(templateRepo, pageRepo, sectionRepo, projectRepo)
 	templateActionHandler := handlers.NewTemplateActionHandler(templateActionService)
 
 	// Media Asset dependency
@@ -122,6 +152,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// ---- Profile API ----
 		authorized.GET("/profile", userHandler.GetProfile)
 		authorized.PUT("/profile", userHandler.UpdateProfile)
+		authorized.PUT("/profile/password", userHandler.ChangePassword)
 
 		// ---- Project API (THÊM MỚI TỪ ĐÂY) ----
 		projects := authorized.Group("/projects")
@@ -178,10 +209,21 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			sections.DELETE("/:id", sectionHandler.Delete)
 		}
 
+		// ---- AI Generator API ----
+		// CHƯA tích hợp mô hình AI: /generate ghi lịch sử và trừ hạn mức thật,
+		// nhưng không sinh ra nội dung nào (xem service.AIService.Generate).
+		ai := authorized.Group("/ai")
+		{
+			ai.POST("/generate", aiHandler.Generate)
+			ai.GET("/history", aiHandler.History)
+			ai.GET("/credits", aiHandler.Credits)
+		}
+
 		// ---- Section Template Library API ----
+		// Chỉ ĐỌC ở đây. Thư viện section là tài nguyên dùng chung toàn hệ thống,
+		// quyền ghi nằm ở nhóm /admin bên dưới.
 		sectionTemplates := authorized.Group("/section-templates")
 		{
-			sectionTemplates.POST("", sectionTemplateHandler.Create)
 			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
 		}
 
@@ -227,11 +269,51 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		admin.DELETE("/templates/:id", templateHandler.Delete)
 		admin.POST("/templates/upload", uploadHandler.UploadTemplateFile)
 
+		// Pricing Plans — bảng giá hiển thị. DELETE chỉ xoá dòng bảng giá,
+		// KHÔNG đụng tới gói hiện tại của user (app_user.plan_type là ENUM riêng);
+		// muốn ngừng bán mà giữ dữ liệu thì PUT với is_active = false.
+		admin.GET("/plans", planHandler.List)
+		admin.POST("/plans", planHandler.Create)
+		admin.GET("/plans/:id", planHandler.GetByID)
+		admin.PUT("/plans/:id", planHandler.Update)
+		admin.DELETE("/plans/:id", planHandler.Delete)
+
+		// Settings — cấu hình hệ thống (platform + AI engine).
+		// Nhóm "account" trong response lấy từ app_user của admin đang đăng nhập
+		// và được sửa qua PUT /profile, KHÔNG sửa qua đây.
+		admin.GET("/settings", settingsHandler.Get)
+		admin.PUT("/settings", settingsHandler.Update)
+		admin.POST("/settings/logo", settingsHandler.UploadLogo)
+
+		// Dashboard — số liệu tổng quan + log AI toàn hệ thống.
+		admin.GET("/stats", statsHandler.GetDashboardStats)
+		admin.GET("/ai/logs", aiHandler.AdminLogs)
+
+		// User management — trang admin Users.
+		// DELETE là XOÁ CỨNG, kéo theo project/landing page của user (CASCADE);
+		// muốn tạm khoá thì PUT với is_active = false.
+		admin.GET("/users", adminUserHandler.List)
+		admin.POST("/users", adminUserHandler.Create)
+		admin.GET("/users/:id", adminUserHandler.GetByID)
+		admin.PUT("/users/:id", adminUserHandler.Update)
+		admin.DELETE("/users/:id", adminUserHandler.Delete)
+
+		// Project management — xem dự án của MỌI user (khác /projects chỉ trả
+		// dự án của chính mình). DELETE là xoá cứng, kéo theo landing page.
+		admin.GET("/projects", adminProjectHandler.List)
+		admin.DELETE("/projects/:id", adminProjectHandler.Delete)
+
 		// Media upload
 		admin.POST("/media/upload", uploadHandler.UploadThumbnail)
 
-		// Section library — BE Dev 3
-		// admin.POST("/section-library", libHandler.Create)
+		// Section library — thư viện section dùng chung, chỉ admin được ghi.
+		// Bản GET ở nhóm authorized bên trên trả toàn bộ (cho panel editor);
+		// bản ở đây có phân trang + đếm used_in cho trang quản trị.
+		admin.POST("/section-templates", sectionTemplateHandler.Create)
+		admin.GET("/section-templates", sectionTemplateHandler.List)
+		admin.GET("/section-templates/:id", sectionTemplateHandler.GetByID)
+		admin.PUT("/section-templates/:id", sectionTemplateHandler.Update)
+		admin.DELETE("/section-templates/:id", sectionTemplateHandler.Delete)
 	}
 
 	// Route công khai serve landing page đã publish (không cần đăng nhập).

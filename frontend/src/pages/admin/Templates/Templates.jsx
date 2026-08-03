@@ -1,56 +1,160 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
 import { PlusIcon } from '../../../components/icons'
 import SearchInput from '../components/SearchInput'
 import FilterTabs from '../components/FilterTabs'
+import Pagination from '../components/Pagination'
 import ConfirmDialog from '../components/ConfirmDialog'
 import TemplateCard from './components/TemplateCard'
 import TemplateFormModal from './components/TemplateFormModal'
-import { templatesMock } from '../mock/templates'
-// Khi backend sẵn sàng: import { templatesApi } from '../../../api/templates'
-// rồi thay các thao tác setItems bên dưới bằng gọi API + refetch.
+import { templatesApi } from '../../../api/templates'
 
 const TABS = ['All', 'SaaS', 'Agency', 'Startup', 'Webinar', 'Portfolio'].map((v) => ({
   label: v,
   value: v,
 }))
 
-export default function Templates() {
-  const navigate = useNavigate()
-  const [items, setItems] = useState(templatesMock)
+const PAGE_SIZE = 9 // vừa đúng 3 hàng x 3 cột của lưới
+const SEARCH_DELAY = 400 // ms chờ người dùng ngừng gõ trước khi gọi API
+
+// Backend trả snake_case + enum chữ thường ('draft'/'premium'),
+// còn UI hiển thị nhãn viết hoa ('Draft'/'Premium') -> quy đổi ở đây
+// để TemplateCard và TemplateFormModal giữ nguyên như cũ.
+const toUI = (t) => ({
+  id: t.template_id,
+  name: t.name,
+  category: t.category || '',
+  status: t.status === 'published' ? 'Published' : 'Draft',
+  tier: t.tier === 'premium' ? 'Premium' : 'Free',
+  sections: t.section_count ?? 0,
+  thumbnailUrl: t.thumbnail_url || '',
+  updatedAt: t.updated_at,
+})
+
+// Chiều ngược lại: form UI -> payload API.
+// sections KHÔNG gửi lên: backend tự đếm từ bảng template_section.
+const toPayload = (form) => ({
+  name: form.name.trim(),
+  category: form.category,
+  status: form.status.toLowerCase(),
+  tier: form.tier.toLowerCase(),
+  thumbnail_url: form.thumbnailUrl || '',
+})
+
+// Lấy thông báo lỗi backend trả về; không có thì dùng câu mặc định.
+const errMsg = (err, fallback) => err?.response?.data?.error || fallback
+
+const Templates = () => {
+  const [items, setItems] = useState([])
+  const [meta, setMeta] = useState({ page: 1, total: 0, total_pages: 1 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   const [query, setQuery] = useState('')
+  const [search, setSearch] = useState('') // bản đã debounce, dùng để gọi API
   const [filter, setFilter] = useState('All')
+  const [page, setPage] = useState(1)
+
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null) // template đang sửa; null = tạo mới
   const [deleting, setDeleting] = useState(null) // template chờ xác nhận xóa
+  const [submitting, setSubmitting] = useState(false)
 
-  const filtered = items.filter((t) => {
-    const matchTab = filter === 'All' || t.category === filter
-    const matchQuery = t.name.toLowerCase().includes(query.trim().toLowerCase())
-    return matchTab && matchQuery
-  })
+  // Debounce ô tìm kiếm để mỗi ký tự gõ không thành một request.
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(query.trim()), SEARCH_DELAY)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  // Đổi từ khóa hoặc danh mục thì luôn về trang 1,
+  // tránh trường hợp đang ở trang 3 mà kết quả mới chỉ có 1 trang.
+  useEffect(() => {
+    setPage(1)
+  }, [search, filter])
+
+  const fetchTemplates = useCallback(
+    async (signal) => {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await templatesApi.list(
+          {
+            page,
+            limit: PAGE_SIZE,
+            search,
+            category: filter === 'All' ? 'all' : filter,
+          },
+          { signal },
+        )
+        setItems((res.data.data || []).map(toUI))
+        setMeta(res.data.meta || { page, total: 0, total_pages: 1 })
+      } catch (err) {
+        if (err.name === 'CanceledError') return // request cũ bị hủy, bỏ qua
+        setError(errMsg(err, 'Không tải được danh sách template.'))
+        setItems([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [page, search, filter],
+  )
+
+  // AbortController: hủy request cũ khi bộ lọc đổi nhanh,
+  // để response về trễ không ghi đè kết quả mới.
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchTemplates(controller.signal)
+    return () => controller.abort()
+  }, [fetchTemplates])
+
+  const openCreate = () => {
+    setEditing(null)
+    setFormOpen(true)
+  }
 
   const openEdit = (t) => {
     setEditing(t)
     setFormOpen(true)
   }
 
-  const handleSubmit = (data) => {
-    if (editing) {
-      // TODO(API): await templatesApi.update(editing.id, data)
-      setItems((list) => list.map((t) => (t.id === editing.id ? { ...t, ...data } : t)))
-    } else {
-      // TODO(API): const { data: created } = await templatesApi.create(data)
-      setItems((list) => [{ id: Date.now(), updatedAt: 'vừa xong', ...data }, ...list])
+  const handleSubmit = async (data) => {
+    setSubmitting(true)
+    setError('')
+    try {
+      if (editing) {
+        await templatesApi.update(editing.id, toPayload(data))
+      } else {
+        await templatesApi.create(toPayload(data))
+      }
+      setFormOpen(false)
+      setEditing(null)
+      await fetchTemplates()
+    } catch (err) {
+      setError(errMsg(err, editing ? 'Cập nhật template thất bại.' : 'Tạo template thất bại.'))
+    } finally {
+      setSubmitting(false)
     }
-    setFormOpen(false)
-    setEditing(null)
   }
 
-  const handleDelete = () => {
-    // TODO(API): await templatesApi.remove(deleting.id)
-    setItems((list) => list.filter((t) => t.id !== deleting.id))
-    setDeleting(null)
+  const handleDelete = async () => {
+    setSubmitting(true)
+    setError('')
+    try {
+      await templatesApi.remove(deleting.id)
+      // Xóa phần tử cuối cùng của trang thì lùi về trang trước,
+      // nếu không người dùng sẽ nhìn thấy một trang trống.
+      const isLastItemOnPage = items.length === 1 && page > 1
+      setDeleting(null)
+      if (isLastItemOnPage) {
+        setPage((p) => p - 1) // đổi page -> useEffect tự fetch lại
+      } else {
+        await fetchTemplates()
+      }
+    } catch (err) {
+      setError(errMsg(err, 'Xóa template thất bại.'))
+      setDeleting(null)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -62,7 +166,7 @@ export default function Templates() {
           <h1 className="text-2xl font-bold text-white">Templates</h1>
         </div>
         <button
-          onClick={() => navigate('/admin/templates/new')}
+          onClick={openCreate}
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
         >
           <PlusIcon size={16} /> Create Template
@@ -79,20 +183,42 @@ export default function Templates() {
             placeholder="Search templates..."
             className="w-56"
           />
-          <span className="text-sm text-slate-400">{filtered.length} Templates</span>
+          <span className="text-sm text-slate-400">{meta.total} Templates</span>
         </div>
       </div>
 
+      {error && (
+        <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </p>
+      )}
+
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div
+              key={i}
+              className="h-64 animate-pulse rounded-xl border border-slate-800 bg-[#111725]"
+            />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <p className="rounded-xl border border-slate-800 bg-[#111725] px-5 py-10 text-center text-sm text-slate-500">
           Không có template nào.
         </p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((t) => (
+          {items.map((t) => (
             <TemplateCard key={t.id} template={t} onEdit={openEdit} onDelete={setDeleting} />
           ))}
+        </div>
+      )}
+
+      {/* Phân trang — chỉ hiện khi có nhiều hơn 1 trang */}
+      {!loading && meta.total_pages > 1 && (
+        <div className="flex justify-end">
+          <Pagination page={page} totalPages={meta.total_pages} onChange={setPage} />
         </div>
       )}
 
@@ -100,6 +226,7 @@ export default function Templates() {
       <TemplateFormModal
         open={formOpen}
         initial={editing}
+        submitting={submitting}
         onClose={() => {
           setFormOpen(false)
           setEditing(null)
@@ -121,3 +248,5 @@ export default function Templates() {
     </div>
   )
 }
+
+export default Templates

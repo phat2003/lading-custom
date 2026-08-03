@@ -14,6 +14,7 @@ import (
 var (
 	ErrEmailExists        = errors.New("email đã được đăng ký")
 	ErrInvalidCredentials = errors.New("email hoặc mật khẩu không đúng")
+	ErrAccountLocked      = errors.New("tài khoản đã bị khoá, vui lòng liên hệ quản trị viên")
 )
 
 // AuthService chứa business logic đăng ký / đăng nhập.
@@ -54,6 +55,7 @@ func (s *AuthService) Register(in RegisterInput) (*models.User, error) {
 		FullName:     in.FullName,
 		Role:         models.RoleUser,
 		PlanType:     models.PlanFree,
+		IsActive:     true, // set tường minh: GORM bỏ qua bool false khi INSERT
 	}
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err
@@ -72,10 +74,15 @@ func (s *AuthService) Login(email, password string) (string, *models.User, error
 		return "", nil, ErrInvalidCredentials
 	}
 
+	// Kiểm tra SAU khi đã xác thực mật khẩu: báo "tài khoản bị khoá" cho người
+	// chưa nhập đúng mật khẩu sẽ tiết lộ email nào có thật trong hệ thống.
+	if !user.IsActive {
+		return "", nil, ErrAccountLocked
+	}
+
 	token, err := middleware.GenerateToken(s.cfg.JWTSecret, s.cfg.JWTExpireHours, user.UserID, user.Role, user.PlanType)
 	if err != nil {
 		return "", nil, err
 	}
 	return token, user, nil
 }
-

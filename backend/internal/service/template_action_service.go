@@ -2,55 +2,56 @@ package service
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/nhienthai/lading-custom/backend/internal/models"
 	"github.com/nhienthai/lading-custom/backend/internal/repository"
 )
 
 type TemplateActionService struct {
-	templateRepo        *repository.TemplateRepository
-	templateSectionRepo *repository.TemplateSectionRepository
-	pageRepo            *repository.LandingPageRepository
-	pageSectionRepo     *repository.PageSectionRepository
-	projectRepo         *repository.ProjectRepository // 👉 THÊM DÒNG NÀY
+	templateRepo    *repository.TemplateRepository
+	pageRepo        *repository.LandingPageRepository
+	pageSectionRepo *repository.PageSectionRepository
+	projectRepo     *repository.ProjectRepository
 }
 
 func NewTemplateActionService(
 	tRepo *repository.TemplateRepository,
-	tsRepo *repository.TemplateSectionRepository,
 	pRepo *repository.LandingPageRepository,
 	psRepo *repository.PageSectionRepository,
-	projRepo *repository.ProjectRepository, // 👉 THÊM DÒNG NÀY
+	projRepo *repository.ProjectRepository,
 ) *TemplateActionService {
 	return &TemplateActionService{
-		templateRepo:        tRepo,
-		templateSectionRepo: tsRepo,
-		pageRepo:            pRepo,
-		pageSectionRepo:     psRepo,
-		projectRepo:         projRepo, // 👉 THÊM DÒNG NÀY
+		templateRepo:    tRepo,
+		pageRepo:        pRepo,
+		pageSectionRepo: psRepo,
+		projectRepo:     projRepo,
 	}
 }
 
 // SavePageAsTemplate sẽ nhân bản 1 Landing Page thành 1 Template (loại 'user' hoặc 'system')
 // Đã xóa 2 tham số thừa ở phần khai báo để giữ đúng 3 tham số như Handler truyền vào
 func (s *TemplateActionService) SavePageAsTemplate(userID, pageID uuid.UUID, templateName string) (*models.Template, error) {
-	// 1. Kiểm tra xem trang gốc có tồn tại không
-	_, err := s.pageRepo.FindByID(pageID)
+	// 1. BẢO MẬT: Kiểm tra trang gốc có tồn tại VÀ có thuộc về user này không.
+	// Không được chỉ FindByID: nếu bỏ qua bước check chủ sở hữu thì bất kỳ user nào
+	// cũng copy được toàn bộ nội dung trang của người khác thành template của mình.
+	page, err := s.pageRepo.FindByID(pageID)
 	if err != nil {
-		return nil, errors.New("không tìm thấy landing page gốc")
+		return nil, fmt.Errorf("không tìm thấy landing page gốc: %w", gorm.ErrRecordNotFound)
+	}
+	if _, err := s.projectRepo.FindByIDAndOwnerID(page.ProjectID, userID); err != nil {
+		return nil, fmt.Errorf("không được lưu trang của người khác: %w", repository.ErrForbidden)
 	}
 
 	// 2. Tạo bản ghi Template mới
 	newTemplate := &models.Template{
 		Name:           templateName,
-		Type:           models.TemplateType("user"),                    // Mẫu của người dùng
-		TemplateSource: models.TemplateSource("saved_from_landing_page"), // Nguồn: Lưu từ Landing Page
+		Type:           models.TemplateUser,               // Mẫu của người dùng
+		TemplateSource: models.SourceSavedFromLandingPage, // Nguồn: Lưu từ Landing Page
 		OwnerID:        &userID,
-	}
-
-	if err := s.templateRepo.Create(newTemplate); err != nil {
-		return nil, errors.New("lỗi khi tạo Template: " + err.Error())
 	}
 
 	// 3. Lấy tất cả Sections của Landing Page gốc
@@ -59,17 +60,21 @@ func (s *TemplateActionService) SavePageAsTemplate(userID, pageID uuid.UUID, tem
 		return nil, err
 	}
 
-	// 4. Lặp qua từng Page Section và tạo bản sao sang Template Section
+	// 4. Dựng danh sách TemplateSection tương ứng (TemplateID do repo gán trong tx)
+	templateSections := make([]models.TemplateSection, 0, len(pageSections))
 	for _, ps := range pageSections {
-		newTS := &models.TemplateSection{
-			TemplateID:     newTemplate.TemplateID, // Nếu lỗi thì đổi thành newTemplate.ID nhé
+		templateSections = append(templateSections, models.TemplateSection{
 			SectionType:    ps.SectionType,
 			SectionContent: ps.Content,
 			OrderIndex:     ps.OrderIndex,
-		}
-		if err := s.templateSectionRepo.Create(newTS); err != nil {
-			continue 
-		}
+		})
+	}
+
+	// 5. Ghi template + toàn bộ section trong 1 transaction.
+	// Trước đây lỗi copy section bị `continue` bỏ qua -> template lưu thiếu khối
+	// nhưng API vẫn trả 201. Giờ hỏng 1 khối là rollback sạch và báo lỗi.
+	if err := s.templateRepo.CreateWithSections(newTemplate, templateSections); err != nil {
+		return nil, errors.New("lỗi khi tạo Template: " + err.Error())
 	}
 
 	return newTemplate, nil
@@ -80,38 +85,46 @@ func (s *TemplateActionService) CreatePageFromTemplate(userID, projectID, templa
 	// 1. Kiểm tra dự án (Project) có thuộc về User này không
 	_, err := s.projectRepo.FindByIDAndOwnerID(projectID, userID)
 	if err != nil {
-		return nil, errors.New("dự án không tồn tại hoặc bạn không có quyền truy cập")
+		return nil, fmt.Errorf("dự án không tồn tại hoặc không thuộc về bạn: %w", repository.ErrForbidden)
 	}
 
 	// 2. Lấy Template (Nhờ Preload nên đã có sẵn danh sách các khối bên trong)
 	template, err := s.templateRepo.FindByID(templateID)
 	if err != nil {
-		return nil, errors.New("không tìm thấy mẫu giao diện")
+		return nil, fmt.Errorf("không tìm thấy mẫu giao diện: %w", gorm.ErrRecordNotFound)
 	}
 
-	// 3. Tạo Landing Page mới trước
+	// BẢO MẬT: Chỉ được clone mẫu hệ thống (dùng chung) hoặc mẫu do chính mình sở hữu.
+	// Mẫu 'user' của người khác là riêng tư — không cho clone.
+	isSystem := template.Type == models.TemplateSystem
+	isOwner := template.OwnerID != nil && *template.OwnerID == userID
+	if !isSystem && !isOwner {
+		return nil, fmt.Errorf("mẫu giao diện này là riêng tư: %w", repository.ErrForbidden)
+	}
+
+	// 3. Dựng trang mới + các section copy từ template
+	// (LandingPageID của section do repo gán trong tx)
 	newPage := &models.LandingPage{
 		ProjectID: projectID,
 		Name:      pageName,
-		Status:    models.LandingPageStatus("draft"), // Trạng thái nháp
-	}
-	if err := s.pageRepo.Create(newPage); err != nil {
-		return nil, errors.New("không thể tạo trang đích mới")
+		Status:    models.StatusDraft, // Trạng thái nháp
 	}
 
-	// 4. Lặp qua các Sections ĐÃ CÓ SẴN trong template và copy sang Page mới
-	if len(template.Sections) > 0 {
-		for _, ts := range template.Sections {
-			newPS := &models.PageSection{
-				LandingPageID: newPage.LandingPageID, // ID của trang vừa tạo
-				SectionType:   ts.SectionType,
-				Content:       ts.SectionContent, // Bê nguyên JSON Content về lại
-				OrderIndex:    ts.OrderIndex,
-				IsVisible:     true,
-			}
-			// Lưu thẳng xuống DB, tạm bỏ qua check lỗi cục bộ để tiếp tục clone các khối khác
-			s.pageSectionRepo.Create(newPS) 
-		}
+	newSections := make([]models.PageSection, 0, len(template.Sections))
+	for _, ts := range template.Sections {
+		newSections = append(newSections, models.PageSection{
+			SectionType: ts.SectionType,
+			Content:     ts.SectionContent, // Bê nguyên JSON Content về lại
+			OrderIndex:  ts.OrderIndex,
+			IsVisible:   true,
+		})
+	}
+
+	// 4. Ghi trang + toàn bộ section trong 1 transaction.
+	// Trước đây lỗi copy section bị bỏ qua hoàn toàn -> trang clone thiếu khối
+	// nhưng API vẫn trả 201. Giờ hỏng 1 khối là rollback sạch và báo lỗi.
+	if err := s.pageRepo.CreateWithSections(newPage, newSections); err != nil {
+		return nil, errors.New("không thể tạo trang đích mới: " + err.Error())
 	}
 
 	return newPage, nil

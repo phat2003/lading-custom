@@ -1,26 +1,142 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { SaveIcon, ZapIcon, AlertTriangleIcon } from '../../../components/icons'
 import Badge from '../../../components/common/Badge'
 import Avatar from '../../../components/common/Avatar'
 import Toggle from '../../../components/common/Toggle'
 import SettingsSection from './components/SettingsSection'
+import ChangePasswordModal from './components/ChangePasswordModal'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { settings as initialSettings, AI_MODELS, TIMEZONES, SESSION_TIMEOUTS } from '../mock/settings'
+import { settingsApi } from '../../../api/settings'
+import { profileApi } from '../../../api/profile'
+import { errMsg } from '../adapters'
+// Danh sách lựa chọn (model AI, múi giờ, thời gian phiên) vẫn lấy từ mock:
+// đây là hằng số cấu hình của UI, không phải dữ liệu backend quản lý.
+import { AI_MODELS, TIMEZONES, SESSION_TIMEOUTS } from '../mock/settings'
 
 const cardCls = 'rounded-xl border border-slate-800 bg-[#111725] p-5'
 const labelCls = 'mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500'
 const inputCls =
   'w-full rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 focus:border-slate-600 focus:outline-none'
 
-export default function Settings() {
-  const [form, setForm] = useState(initialSettings)
+const ROLE_LABEL = {
+  super_admin: 'Siêu quản trị',
+  admin: 'Quản trị viên',
+  user: 'Người dùng',
+}
+
+// Khung rỗng để render được trước khi API trả về.
+const EMPTY_SETTINGS = {
+  platform: { name: '', logo_url: null },
+  ai_engine: { enabled: false, daily_limit: 0, default_model: '', concurrent_limit: 0 },
+  account: { full_name: '', email: '', role: 'admin', timezone: '', session_timeout: 'never' },
+}
+
+const Settings = () => {
+  const [form, setForm] = useState(EMPTY_SETTINGS)
+  const [original, setOriginal] = useState(EMPTY_SETTINGS) // bản gốc để so sánh / hoàn tác
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [savedAt, setSavedAt] = useState(null)
+
+  const [passwordOpen, setPasswordOpen] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
   const [archiving, setArchiving] = useState(false)
+
+  const logoInputRef = useRef(null)
+
+  const dirty = JSON.stringify(form) !== JSON.stringify(original)
+
+  const applySettings = (data) => {
+    setForm(data)
+    setOriginal(data)
+  }
+
+  const fetchSettings = useCallback(async (signal) => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await settingsApi.get({ signal })
+      applySettings(res.data.data)
+    } catch (err) {
+      if (err.name === 'CanceledError') return
+      setError(errMsg(err, 'Không tải được cấu hình hệ thống.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchSettings(controller.signal)
+    return () => controller.abort()
+  }, [fetchSettings])
 
   const update = (section, key, value) =>
     setForm((f) => ({ ...f, [section]: { ...f[section], [key]: value } }))
 
-  const handleSave = () => {
-    // TODO(API): await settingsApi.update(form)
+  // Lưu đi 2 nơi: platform + ai_engine vào platform_setting,
+  // còn múi giờ / thời gian phiên thuộc app_user nên phải qua PUT /profile.
+  const handleSave = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      // Chạy TUẦN TỰ, không Promise.all: response của PUT /admin/settings có
+      // kèm nhóm account đọc từ app_user, nên phải ghi profile xong trước —
+      // chạy song song thì response có thể mang múi giờ cũ và ghi đè lại form.
+      await profileApi.update({
+        timezone: form.account.timezone,
+        session_timeout: form.account.session_timeout,
+      })
+      const settingsRes = await settingsApi.update({
+        platform: { name: form.platform.name },
+        ai_engine: {
+          enabled: form.ai_engine.enabled,
+          daily_limit: Number(form.ai_engine.daily_limit) || 0,
+          default_model: form.ai_engine.default_model,
+          concurrent_limit: Number(form.ai_engine.concurrent_limit) || 0,
+        },
+      })
+      applySettings(settingsRes.data.data)
+      setSavedAt(new Date())
+    } catch (err) {
+      setError(errMsg(err, 'Lưu cấu hình thất bại.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleLogoPick = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // reset để chọn lại đúng file đó vẫn kích hoạt onChange
+    if (!file) return
+
+    setSaving(true)
+    setError('')
+    try {
+      const res = await settingsApi.uploadLogo(file)
+      applySettings(res.data.data) // backend trả về settings đã có logo mới
+      setSavedAt(new Date())
+    } catch (err) {
+      setError(errMsg(err, 'Tải logo thất bại.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async (payload) => {
+    setChangingPassword(true)
+    setPasswordError('')
+    try {
+      await profileApi.changePassword(payload)
+      setPasswordOpen(false)
+    } catch (err) {
+      // Lỗi hiện trong modal (vd "mật khẩu hiện tại không đúng").
+      setPasswordError(errMsg(err, 'Đổi mật khẩu thất bại.'))
+    } finally {
+      setChangingPassword(false)
+    }
   }
 
   return (
@@ -31,6 +147,12 @@ export default function Settings() {
           Cấu hình các tham số toàn cục của Template Studio, ngưỡng AI và quyền quản trị.
         </p>
       </div>
+
+      {error && (
+        <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </p>
+      )}
 
       <SettingsSection
         number="01"
@@ -43,6 +165,7 @@ export default function Settings() {
             <input
               value={form.platform.name}
               onChange={(e) => update('platform', 'name', e.target.value)}
+              disabled={loading}
               className={inputCls}
             />
           </div>
@@ -50,15 +173,37 @@ export default function Settings() {
             <label className={labelCls}>Tài sản thương hiệu</label>
             <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-700 p-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-600">
-                  <ZapIcon size={20} className="text-white" />
-                </span>
+                {form.platform.logo_url ? (
+                  <img
+                    src={form.platform.logo_url}
+                    alt="Logo nền tảng"
+                    className="h-11 w-11 rounded-lg object-contain"
+                  />
+                ) : (
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-600">
+                    <ZapIcon size={20} className="text-white" />
+                  </span>
+                )}
                 <div>
-                  <p className="text-sm font-medium text-white">Tải lên logo mới</p>
-                  <p className="text-xs text-slate-500">SVG, PNG hoặc JPG (Tối đa 800×400px)</p>
+                  <p className="text-sm font-medium text-white">
+                    {form.platform.logo_url ? 'Logo hiện tại' : 'Tải lên logo mới'}
+                  </p>
+                  {/* Backend chỉ nhận JPEG/PNG/WebP — SVG bị loại vì có thể chứa script */}
+                  <p className="text-xs text-slate-500">PNG, JPG hoặc WebP (tối đa 5MB)</p>
                 </div>
               </div>
-              <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800">
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleLogoPick}
+                className="hidden"
+              />
+              <button
+                onClick={() => logoInputRef.current?.click()}
+                disabled={saving || loading}
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              >
                 Thay thế
               </button>
             </div>
@@ -74,6 +219,7 @@ export default function Settings() {
         headerRight={
           <Toggle
             checked={form.ai_engine.enabled}
+            disabled={loading}
             onChange={(v) => update('ai_engine', 'enabled', v)}
           />
         }
@@ -85,8 +231,10 @@ export default function Settings() {
               <div className="relative">
                 <input
                   type="number"
+                  min="0"
                   value={form.ai_engine.daily_limit}
                   onChange={(e) => update('ai_engine', 'daily_limit', Number(e.target.value))}
+                  disabled={loading}
                   className={`${inputCls} pr-20`}
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
@@ -99,6 +247,7 @@ export default function Settings() {
               <select
                 value={form.ai_engine.default_model}
                 onChange={(e) => update('ai_engine', 'default_model', e.target.value)}
+                disabled={loading}
                 className={inputCls}
               >
                 {AI_MODELS.map((m) => (
@@ -128,17 +277,24 @@ export default function Settings() {
         <div className={`${cardCls} space-y-5`}>
           <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 p-4">
             <div className="flex items-center gap-3">
-              <Avatar name={form.account.full_name} size="lg" />
+              <Avatar name={form.account.full_name || form.account.email} size="lg" />
               <div>
                 <p className="font-semibold text-white">{form.account.full_name}</p>
                 <p className="text-xs text-slate-500">{form.account.email}</p>
                 <div className="mt-1.5 flex gap-2">
-                  <Badge color="purple">Siêu quản trị</Badge>
-                  <Badge color="teal">Liên hệ thanh toán</Badge>
+                  <Badge color="purple">
+                    {ROLE_LABEL[form.account.role] || form.account.role}
+                  </Badge>
                 </div>
               </div>
             </div>
-            <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800">
+            <button
+              onClick={() => {
+                setPasswordError('')
+                setPasswordOpen(true)
+              }}
+              className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+            >
               Đổi mật khẩu
             </button>
           </div>
@@ -148,6 +304,7 @@ export default function Settings() {
               <select
                 value={form.account.timezone}
                 onChange={(e) => update('account', 'timezone', e.target.value)}
+                disabled={loading}
                 className={inputCls}
               >
                 {TIMEZONES.map((t) => (
@@ -162,6 +319,7 @@ export default function Settings() {
               <select
                 value={form.account.session_timeout}
                 onChange={(e) => update('account', 'session_timeout', e.target.value)}
+                disabled={loading}
                 className={inputCls}
               >
                 {SESSION_TIMEOUTS.map((s) => (
@@ -184,6 +342,7 @@ export default function Settings() {
                 Xuất tất cả mẫu và người dùng sau đó xóa thực thể hiện tại.
               </p>
             </div>
+            {/* Chưa nối: không có endpoint export/huỷ toàn bộ nền tảng */}
             <button
               onClick={() => setArchiving(true)}
               className="rounded-lg border border-red-500/40 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10"
@@ -196,32 +355,61 @@ export default function Settings() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
         <p className="flex items-center gap-2 text-sm text-slate-500">
-          <span className="h-2 w-2 rounded-full bg-green-500" /> Đã lưu 4 phút trước
+          {loading ? (
+            <>
+              <span className="h-2 w-2 rounded-full bg-slate-600" /> Đang tải cấu hình...
+            </>
+          ) : dirty ? (
+            <>
+              <span className="h-2 w-2 rounded-full bg-amber-500" /> Có thay đổi chưa lưu
+            </>
+          ) : savedAt ? (
+            <>
+              <span className="h-2 w-2 rounded-full bg-green-500" /> Đã lưu lúc{' '}
+              {savedAt.toLocaleTimeString('vi-VN')}
+            </>
+          ) : (
+            <>
+              <span className="h-2 w-2 rounded-full bg-green-500" /> Không có thay đổi
+            </>
+          )}
         </p>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setForm(initialSettings)}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+            onClick={() => setForm(original)}
+            disabled={!dirty || saving}
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            disabled={saving || loading || !dirty}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            <SaveIcon size={16} /> Lưu tất cả thay đổi
+            <SaveIcon size={16} /> {saving ? 'Đang lưu...' : 'Lưu tất cả thay đổi'}
           </button>
         </div>
       </div>
 
+      <ChangePasswordModal
+        open={passwordOpen}
+        submitting={changingPassword}
+        error={passwordError}
+        onClose={() => setPasswordOpen(false)}
+        onSubmit={handleChangePassword}
+      />
       <ConfirmDialog
         open={archiving}
         title="Lưu trữ dữ liệu nền tảng"
-        message="Hành động này sẽ xuất toàn bộ dữ liệu rồi xóa thực thể hiện tại và không thể hoàn tác. Bạn có chắc chắn?"
-        confirmText="Lưu trữ"
+        message="Chức năng này chưa được triển khai ở backend — chưa có endpoint xuất dữ liệu và xóa thực thể. Hiện tại nút này không làm gì cả."
+        confirmText="Đã hiểu"
+        danger={false}
         onConfirm={() => setArchiving(false)}
         onCancel={() => setArchiving(false)}
       />
     </div>
   )
 }
+
+export default Settings
