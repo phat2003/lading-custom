@@ -92,7 +92,7 @@ const THUMBS = {
 }
 
 const BlockThumb = ({ label }) => (
-  <div className="h-12 w-full overflow-hidden rounded-md border border-white/10">
+  <div className="h-12 w-full overflow-hidden rounded-md border border-[var(--bd-border)]">
     {THUMBS[label] || <div className="h-full w-full bg-slate-200" />}
   </div>
 )

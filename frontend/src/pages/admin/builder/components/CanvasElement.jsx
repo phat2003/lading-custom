@@ -15,6 +15,7 @@ const CanvasElement = ({
   element,
   elements,
   selectedId,
+  scale = 1, // tỉ lệ thu nhỏ của canvas — quy đổi px hiển thị về px thiết kế
   onSelect,
   onBeginGesture,
   onMove,
@@ -53,7 +54,11 @@ const CanvasElement = ({
       gestureBegun.current = true
     }
     const { startX, startY, origX, origY } = drag.current
-    onMove(element.id, Math.max(0, origX + e.clientX - startX), Math.max(0, origY + e.clientY - startY))
+    onMove(
+      element.id,
+      Math.max(0, origX + (e.clientX - startX) / scale),
+      Math.max(0, origY + (e.clientY - startY) / scale),
+    )
   }
 
   const handlePointerUp = (e) => {
@@ -71,7 +76,16 @@ const CanvasElement = ({
     e.currentTarget.setPointerCapture(e.pointerId)
     gestureBegun.current = false
     const rect = wrapperRef.current.getBoundingClientRect()
-    resize.current = { corner, sx: e.clientX, sy: e.clientY, ox: element.x, oy: element.y, ow: rect.width, oh: rect.height }
+    // rect là kích thước ĐÃ thu nhỏ -> chia scale để lấy kích thước thiết kế thật.
+    resize.current = {
+      corner,
+      sx: e.clientX,
+      sy: e.clientY,
+      ox: element.x,
+      oy: element.y,
+      ow: rect.width / scale,
+      oh: rect.height / scale,
+    }
   }
 
   const onResizeMove = (e) => {
@@ -81,8 +95,8 @@ const CanvasElement = ({
       onBeginGesture?.()
       gestureBegun.current = true
     }
-    const dx = e.clientX - r.sx
-    const dy = e.clientY - r.sy
+    const dx = (e.clientX - r.sx) / scale
+    const dy = (e.clientY - r.sy) / scale
     let x = r.ox
     let y = r.oy
     let w = r.ow
@@ -140,8 +154,10 @@ const CanvasElement = ({
       onPointerUp={handlePointerUp}
       onDoubleClick={() => canEdit && setEditing(true)}
       style={wrapperStyle}
-      className={`absolute select-none ${editing ? 'cursor-text' : 'cursor-move'} ${
-        selected ? 'ring-2 ring-yellow-400' : 'hover:ring-1 hover:ring-yellow-300/60'
+      className={`absolute select-none transition-shadow duration-150 ${editing ? 'cursor-text' : 'cursor-move'} ${
+        selected
+          ? 'shadow-[0_0_0_2px_#8B5CF6,0_0_18px_-2px_rgba(139,92,246,.7)]'
+          : 'hover:shadow-[0_0_0_1.5px_rgba(139,92,246,.45)]'
       }`}
     >
       {editing ? (
@@ -162,6 +178,7 @@ const CanvasElement = ({
           element={child}
           elements={elements}
           selectedId={selectedId}
+          scale={scale}
           onSelect={onSelect}
           onBeginGesture={onBeginGesture}
           onMove={onMove}
@@ -176,12 +193,12 @@ const CanvasElement = ({
         <>
           <div
             onPointerDown={(e) => e.stopPropagation()}
-            className="absolute -top-7 right-0 flex items-center gap-0.5"
+            className="absolute -top-9 right-0 flex animate-pop-in items-center gap-0.5 rounded-lg bg-[#12121B] p-1 shadow-[0_4px_16px_-4px_rgba(0,0,0,.6)] ring-1 ring-white/10"
           >
-            <button onClick={() => onDuplicate(element.id)} title="Nhân bản" className="rounded p-1 text-gray-600 hover:bg-black/5 hover:text-gray-900">
+            <button onClick={() => onDuplicate(element.id)} title="Nhân bản" className="rounded-md p-1 text-slate-300 transition-colors hover:bg-violet-500/20 hover:text-violet-300">
               <CopyIcon size={14} />
             </button>
-            <button onClick={() => onDelete(element.id)} title="Xóa" className="rounded p-1 text-red-500 hover:bg-red-500/10">
+            <button onClick={() => onDelete(element.id)} title="Xóa" className="rounded-md p-1 text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300">
               <TrashIcon size={14} />
             </button>
           </div>
@@ -192,7 +209,7 @@ const CanvasElement = ({
               onPointerDown={startResize(h.corner)}
               onPointerMove={onResizeMove}
               onPointerUp={endResize}
-              className={`absolute h-2.5 w-2.5 rounded-sm border border-yellow-500 bg-white ${h.cls}`}
+              className={`absolute h-2.5 w-2.5 rounded-full border-2 border-violet-500 bg-white shadow-[0_0_8px_-1px_rgba(139,92,246,.9)] transition-transform duration-150 hover:scale-125 ${h.cls}`}
             />
           ))}
         </>
