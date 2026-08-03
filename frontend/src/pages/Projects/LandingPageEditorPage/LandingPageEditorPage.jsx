@@ -5,7 +5,9 @@ import { useProjects } from '../context/ProjectsContext'
 import EditorCanvas from './components/EditorCanvas'
 import EditorTopbar from './components/EditorTopbar'
 import ElementsPanel from './components/ElementsPanel'
+import PreviewDialog from './components/PreviewDialog'
 import PropertiesPanel from './components/PropertiesPanel'
+import { useRealtimePreview } from './hooks/useRealtimePreview'
 import { getDevicePreset } from './preview/devicePresets'
 import { createLegacyStarterSection, createSection } from './sectionPresets'
 
@@ -43,8 +45,17 @@ export default function LandingPageEditorPage({
   const [viewport, setViewport] = useState('desktop')
   const [zoom, setZoom] = useState(100)
   const [notice, setNotice] = useState('')
-  const [saveStatus, setSaveStatus] = useState('saved')
+  const [, setSaveStatus] = useState('saved')
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
   const isEditable = getDevicePreset(viewport).editable
+  const {
+    previewSections,
+    status: previewStatus,
+    lastUpdatedAt,
+    error: previewError,
+    retry: retryPreview,
+    reportRenderError: reportPreviewRenderError,
+  } = useRealtimePreview(sections)
 
   useEffect(() => {
     if (!notice) return undefined
@@ -182,6 +193,14 @@ export default function LandingPageEditorPage({
     setSelectedSectionId(sectionId)
   }, [isEditable, notifyReadOnly])
 
+  const openPreviewDialog = useCallback(() => {
+    setIsPreviewDialogOpen(true)
+  }, [])
+
+  const closePreviewDialog = useCallback(() => {
+    setIsPreviewDialogOpen(false)
+  }, [])
+
   if (!project || !landingPage) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white">
@@ -203,13 +222,13 @@ export default function LandingPageEditorPage({
     <div className="flex h-screen min-w-[1000px] flex-col overflow-hidden bg-[#0e0e10] text-[#e5e1e4]">
       <EditorTopbar
         landingPageName={landingPage.name}
-        saveStatus={saveStatus}
+        previewStatus={previewStatus}
+        previewError={previewError}
         onBack={() => navigate(`/projects/${projectId}/templates`)}
         onUndo={() => setNotice('Undo sẽ được triển khai ở task Editor tiếp theo.')}
         onRedo={() => setNotice('Redo sẽ được triển khai ở task Editor tiếp theo.')}
-        onPreview={() =>
-          setNotice('Realtime Preview đang hiển thị trực tiếp trên canvas.')
-        }
+        onPreview={openPreviewDialog}
+        onRetryPreview={retryPreview}
         onPublish={() => setNotice('Publish cần tích hợp API ở task riêng.')}
       />
 
@@ -221,6 +240,7 @@ export default function LandingPageEditorPage({
         />
         <EditorCanvas
           sections={sections}
+          previewSections={previewSections}
           selectedSectionId={selectedSectionId}
           viewport={viewport}
           zoom={zoom}
@@ -231,6 +251,7 @@ export default function LandingPageEditorPage({
           onMoveSection={moveSection}
           onDuplicateSection={duplicateSection}
           onDeleteSection={deleteSection}
+          onPreviewRenderError={reportPreviewRenderError}
         />
         <PropertiesPanel
           section={selectedSection}
@@ -240,6 +261,18 @@ export default function LandingPageEditorPage({
       </div>
 
       <StatusNotice>{notice}</StatusNotice>
+      <PreviewDialog
+        open={isPreviewDialogOpen}
+        landingPageName={landingPage.name}
+        initialDevice={viewport}
+        sections={previewSections}
+        status={previewStatus}
+        lastUpdatedAt={lastUpdatedAt}
+        error={previewError}
+        onRetry={retryPreview}
+        onRenderError={reportPreviewRenderError}
+        onClose={closePreviewDialog}
+      />
     </div>
   )
 }

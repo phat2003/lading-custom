@@ -125,6 +125,7 @@ function CanvasSection({
 
 export default function EditorCanvas({
   sections,
+  previewSections,
   selectedSectionId,
   viewport,
   zoom,
@@ -135,6 +136,7 @@ export default function EditorCanvas({
   onMoveSection,
   onDuplicateSection,
   onDeleteSection,
+  onPreviewRenderError,
 }) {
   const activePreset = getDevicePreset(viewport)
 
@@ -237,7 +239,8 @@ export default function EditorCanvas({
           <ReadOnlyPreview
             key={activePreset.id}
             preset={activePreset}
-            sections={sections}
+            sections={previewSections}
+            onRenderError={onPreviewRenderError}
           />
         )}
       </PreviewFrame>

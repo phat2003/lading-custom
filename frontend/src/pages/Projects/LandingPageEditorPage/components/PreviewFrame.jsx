@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import LandingPageSectionContent from '../../components/LandingPageSectionContent'
+import PreviewErrorBoundary from './PreviewErrorBoundary'
 
 const FRAME_INSET = 16
 const MIN_USER_ZOOM = 50
@@ -94,7 +95,7 @@ const PreviewFrame = ({ preset, zoom, children }) => {
   )
 }
 
-export const ReadOnlyPreview = ({ preset, sections }) => {
+export const ReadOnlyPreview = ({ preset, sections, onRenderError }) => {
   const [portalRoot, setPortalRoot] = useState(null)
 
   const mountPreview = useCallback((event) => {
@@ -102,13 +103,20 @@ export const ReadOnlyPreview = ({ preset, sections }) => {
     const previewRoot = previewDocument?.getElementById('preview-root')
     if (!previewDocument || !previewRoot) return
 
+    previewDocument.head
+      .querySelectorAll('[data-local-preview-style]')
+      .forEach((styleNode) => styleNode.remove())
+
     document
       .querySelectorAll('style, link[rel="stylesheet"]')
       .forEach((styleNode) => {
-        previewDocument.head.appendChild(styleNode.cloneNode(true))
+        const clonedStyleNode = styleNode.cloneNode(true)
+        clonedStyleNode.setAttribute('data-local-preview-style', '')
+        previewDocument.head.appendChild(clonedStyleNode)
       })
 
     const previewStyles = previewDocument.createElement('style')
+    previewStyles.setAttribute('data-local-preview-style', '')
     previewStyles.textContent = `
       html, body { min-height: 100%; margin: 0; overflow-x: hidden; overflow-y: auto; }
       body { background: #ffffff; -webkit-overflow-scrolling: touch; }
@@ -131,32 +139,52 @@ export const ReadOnlyPreview = ({ preset, sections }) => {
         className="block h-full w-full border-0 bg-white"
       />
       {portalRoot &&
-        createPortal(
-          <div className="min-h-full space-y-8 bg-white p-4 text-[#0e0e10] sm:p-12">
-            {sections.map((section) => (
-              <section
-                key={section.id}
-                className="rounded px-4 py-8 sm:px-8 sm:py-12"
-                style={{
-                  backgroundColor: section.backgroundColor,
-                  color: section.textColor,
-                  textAlign: section.align,
-                }}
-              >
-                <LandingPageSectionContent section={section} />
-              </section>
-            ))}
-
-            {sections.length === 0 && (
-              <div className="grid min-h-[260px] place-items-center rounded-lg border-2 border-dashed border-[#c7cad2] text-[#8d90a0]">
-                <div className="text-center">
-                  <p className="text-2xl font-bold">Landing Page chưa có Section</p>
-                  <p className="mt-2 text-sm">Quay lại Desktop để bắt đầu thiết kế.</p>
+        (
+          <PreviewErrorBoundary
+            resetKey={sections}
+            onError={onRenderError}
+            fallback={createPortal(
+              <div className="grid min-h-screen place-items-center bg-white p-8 text-center text-[#0e0e10]">
+                <div>
+                  <p className="text-xl font-bold">Không thể hiển thị bản xem trước</p>
+                  <p className="mt-2 text-sm text-[#616575]">
+                    Hãy thử cập nhật lại bản xem trước từ Editor.
+                  </p>
                 </div>
-              </div>
+              </div>,
+              portalRoot,
             )}
-          </div>,
-          portalRoot,
+          >
+            {createPortal(
+              <div className="min-h-full space-y-8 bg-white p-4 text-[#0e0e10] sm:p-12">
+                {sections.map((section) => (
+                  <section
+                    key={section.id}
+                    className="rounded px-4 py-8 sm:px-8 sm:py-12"
+                    style={{
+                      backgroundColor: section.backgroundColor,
+                      color: section.textColor,
+                      textAlign: section.align,
+                    }}
+                  >
+                    <LandingPageSectionContent section={section} />
+                  </section>
+                ))}
+
+                {sections.length === 0 && (
+                  <div className="grid min-h-[260px] place-items-center rounded-lg border-2 border-dashed border-[#c7cad2] text-[#8d90a0]">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">Landing Page chưa có Section</p>
+                      <p className="mt-2 text-sm">
+                        Quay lại Desktop để bắt đầu thiết kế.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>,
+              portalRoot,
+            )}
+          </PreviewErrorBoundary>
         )}
     </>
   )
