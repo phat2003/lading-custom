@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PlusIcon } from '../../../components/icons'
 import SearchInput from '../components/SearchInput'
 import FilterTabs from '../components/FilterTabs'
@@ -15,6 +16,7 @@ const TABS = ['All', 'SaaS', 'Agency', 'Startup', 'Webinar', 'Portfolio'].map((v
 }))
 
 export default function Templates() {
+  const navigate = useNavigate()
   const [items, setItems] = useState(templatesMock)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('All')
@@ -27,11 +29,6 @@ export default function Templates() {
     const matchQuery = t.name.toLowerCase().includes(query.trim().toLowerCase())
     return matchTab && matchQuery
   })
-
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
 
   const openEdit = (t) => {
     setEditing(t)
@@ -65,7 +62,7 @@ export default function Templates() {
           <h1 className="text-2xl font-bold text-white">Templates</h1>
         </div>
         <button
-          onClick={openCreate}
+          onClick={() => navigate('/admin/templates/new')}
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
         >
           <PlusIcon size={16} /> Create Template

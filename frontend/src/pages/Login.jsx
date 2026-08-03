@@ -22,8 +22,11 @@ export default function Login() {
 
     setLoading(true)
     try {
-      await login(email, password)
-      setIsSuccess(true)
+      const u = await login(email, password)
+      // Admin/super_admin vào thẳng khu quản trị; user thường thấy màn hình chào rồi vào /projects.
+      const isAdmin = u.role === 'admin' || u.role === 'super_admin'
+      if (isAdmin) navigate('/admin')
+      else setIsSuccess(true)
     } catch (err) {
       setError(err.response?.data?.error || 'Đăng nhập thất bại')
     } finally {

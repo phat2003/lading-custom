@@ -13,6 +13,7 @@ import AdminProjects from './pages/admin/Projects/Projects'
 import AdminPricingPlans from './pages/admin/PricingPlans/PricingPlans'
 import AdminAiGenerator from './pages/admin/AiGenerator/AiGenerator'
 import AdminSettings from './pages/admin/Settings/Settings'
+import TemplateBuilder from './pages/admin/builder/TemplateBuilder'
 import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
 import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
 import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
@@ -25,6 +26,16 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
+// Bọc khu admin: chưa login -> /login; đã login nhưng không phải admin -> trang chủ.
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="p-8">Đang tải...</div>
+  if (!user) return <Navigate to="/login" replace />
+  const isAdmin = user.role === 'admin' || user.role === 'super_admin'
+  return isAdmin ? children : <Navigate to="/" replace />
+}
+
+// Điều hướng /projects/:projectId -> tab templates mặc định.
 function ProjectEntryRedirect() {
   const { projectId } = useParams()
   return <Navigate to={`/projects/${projectId}/templates`} replace />
@@ -42,7 +53,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
 
-        {/* Quản lý dự án của người dùng */}
+        {/* Quản lý dự án của người dùng (cần đăng nhập) */}
         <Route
           path="/projects"
           element={
@@ -76,8 +87,14 @@ export default function App() {
           }
         />
 
-        {/* Khu vực Admin — TODO(team): bọc AdminRoute (chỉ admin/super_admin) trước khi lên production */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Builder toàn màn hình — admin dựng template/section mẫu (AdminRoute) */}
+        <Route path="/admin/templates/new" element={<AdminRoute><TemplateBuilder /></AdminRoute>} />
+        {/* Cùng builder, chế độ Section: admin dựng section mẫu để tái sử dụng */}
+        <Route path="/admin/sections/new" element={<AdminRoute><TemplateBuilder mode="section" /></AdminRoute>} />
+        <Route path="/admin/sections/:id/edit" element={<AdminRoute><TemplateBuilder mode="section" /></AdminRoute>} />
+
+        {/* Khu vực Admin — chỉ admin/super_admin mới vào được (AdminRoute) */}
+        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="templates" element={<AdminTemplates />} />
