@@ -1,4 +1,4 @@
-import { PlusIcon } from '../../../components/icons'
+import { PlusIcon } from '../../../../components/icons'
 
 export default function EmptyProjectState({ onCreateProject }) {
   return (

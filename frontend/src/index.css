@@ -7,3 +7,54 @@
       linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     background-size: 20px 20px;
   }
+.editor-canvas-grid {
+  background-color: #0e0e10;
+  background-image: radial-gradient(rgba(141, 144, 160, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ===== Template Builder — bảng màu 2 chế độ (dark/light) =====
+   Đổi data-mode ở thẻ gốc là toàn bộ builder đổi theo, không cần truyền props. */
+.builder-theme[data-mode='dark'] {
+  --bd-app: #0a0a12;
+  --bd-panel: rgba(15, 15, 25, 0.85);
+  --bd-panel-solid: #0f0f19;
+  --bd-topbar: rgba(13, 13, 22, 0.85);
+  --bd-border: rgba(255, 255, 255, 0.07);
+  --bd-fill: rgba(255, 255, 255, 0.03);
+  --bd-fill-hover: rgba(255, 255, 255, 0.07);
+  --bd-text: #e2e8f0;
+  --bd-dim: #94a3b8;
+  --bd-muted: #64748b;
+  --bd-grid: rgba(255, 255, 255, 0.06);
+  --bd-orb-a: rgba(124, 58, 237, 0.1);
+  --bd-orb-b: rgba(6, 182, 212, 0.1);
+  --bd-accent: #c4b5fd;
+  --bd-page-shadow: 0 20px 70px -25px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.builder-theme[data-mode='light'] {
+  --bd-app: #eef0f6;
+  --bd-panel: rgba(255, 255, 255, 0.88);
+  --bd-panel-solid: #ffffff;
+  --bd-topbar: rgba(255, 255, 255, 0.88);
+  --bd-border: rgba(15, 23, 42, 0.1);
+  --bd-fill: rgba(15, 23, 42, 0.04);
+  --bd-fill-hover: rgba(15, 23, 42, 0.08);
+  --bd-text: #0f172a;
+  --bd-dim: #475569;
+  --bd-muted: #94a3b8;
+  --bd-grid: rgba(15, 23, 42, 0.05);
+  --bd-orb-a: rgba(124, 58, 237, 0.13);
+  --bd-orb-b: rgba(6, 182, 212, 0.13);
+  --bd-accent: #7c3aed;
+  --bd-page-shadow: 0 18px 50px -22px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+/* Chuyển chế độ mượt, không giật */
+.builder-theme,
+.builder-theme aside,
+.builder-theme header,
+.builder-theme nav {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

@@ -27,6 +27,15 @@ export default function Home() {
     navigate('/login')
   }
 
+  const handleLoginSuccess = () => {
+    navigate('/projects')
+  }
+
+  const handleRegisterSuccess = () => {
+    setShowRegister(false)
+    setShowLogin(true)
+  }
+
   return (
     <div className="flex flex-col min-h-screen text-white bg-gray-900">
       {/* Header */}
@@ -58,8 +67,16 @@ export default function Home() {
       <Footer />
 
       {/* Popups */}
-      <LoginModal isOpen={showLogin} onClose={() => setShowLogin(false)} />
-      <RegisterModal isOpen={showRegister} onClose={() => setShowRegister(false)} />
+      <LoginModal
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        onSuccess={handleLoginSuccess}
+      />
+      <RegisterModal
+        isOpen={showRegister}
+        onClose={() => setShowRegister(false)}
+        onSuccess={handleRegisterSuccess}
+      />
     </div>
   )
 }
