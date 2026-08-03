@@ -6,6 +6,7 @@ import EditorCanvas from './components/EditorCanvas'
 import EditorTopbar from './components/EditorTopbar'
 import ElementsPanel from './components/ElementsPanel'
 import PropertiesPanel from './components/PropertiesPanel'
+import { getDevicePreset } from './preview/devicePresets'
 import { createLegacyStarterSection, createSection } from './sectionPresets'
 
 function createId() {
@@ -43,6 +44,7 @@ export default function LandingPageEditorPage({
   const [zoom, setZoom] = useState(100)
   const [notice, setNotice] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
+  const isEditable = getDevicePreset(viewport).editable
 
   useEffect(() => {
     if (!notice) return undefined
@@ -72,22 +74,41 @@ export default function LandingPageEditorPage({
     [sections, selectedSectionId],
   )
 
+  const notifyReadOnly = useCallback(() => {
+    setNotice('Chỉnh sửa chỉ khả dụng ở chế độ Desktop.')
+  }, [])
+
   const addSection = useCallback((type) => {
+    if (!isEditable) {
+      notifyReadOnly()
+      return
+    }
+
     const newSection = createSection(type)
     setSections((currentSections) => [...currentSections, newSection])
     setSelectedSectionId(newSection.id)
     setNotice('Đã thêm Section mới vào Landing Page.')
-  }, [])
+  }, [isEditable, notifyReadOnly])
 
   const updateSection = useCallback((updatedSection) => {
+    if (!isEditable) {
+      notifyReadOnly()
+      return
+    }
+
     setSections((currentSections) =>
       currentSections.map((section) =>
         section.id === updatedSection.id ? updatedSection : section,
       ),
     )
-  }, [])
+  }, [isEditable, notifyReadOnly])
 
   const moveSection = useCallback((sectionId, direction) => {
+    if (!isEditable) {
+      notifyReadOnly()
+      return
+    }
+
     setSections((currentSections) => {
       const currentIndex = currentSections.findIndex(
         (section) => section.id === sectionId,
@@ -107,9 +128,14 @@ export default function LandingPageEditorPage({
       reorderedSections.splice(nextIndex, 0, movedSection)
       return reorderedSections
     })
-  }, [])
+  }, [isEditable, notifyReadOnly])
 
   const duplicateSection = useCallback((sectionId) => {
+    if (!isEditable) {
+      notifyReadOnly()
+      return
+    }
+
     const currentIndex = sections.findIndex(
       (section) => section.id === sectionId,
     )
@@ -124,9 +150,14 @@ export default function LandingPageEditorPage({
     setSections(nextSections)
     setSelectedSectionId(duplicatedSection.id)
     setNotice('Đã nhân bản Section.')
-  }, [sections])
+  }, [isEditable, notifyReadOnly, sections])
 
   const deleteSection = useCallback((sectionId) => {
+    if (!isEditable) {
+      notifyReadOnly()
+      return
+    }
+
     const currentIndex = sections.findIndex(
       (section) => section.id === sectionId,
     )
@@ -140,7 +171,16 @@ export default function LandingPageEditorPage({
     setSections(nextSections)
     setSelectedSectionId(nextSelectedSection?.id || null)
     setNotice('Đã xóa Section khỏi Landing Page.')
-  }, [sections])
+  }, [isEditable, notifyReadOnly, sections])
+
+  const selectSection = useCallback((sectionId) => {
+    if (!isEditable) {
+      notifyReadOnly()
+      return
+    }
+
+    setSelectedSectionId(sectionId)
+  }, [isEditable, notifyReadOnly])
 
   if (!project || !landingPage) {
     return (
@@ -174,7 +214,11 @@ export default function LandingPageEditorPage({
       />
 
       <div className="flex min-h-0 flex-1">
-        <ElementsPanel onAddSection={addSection} onMessage={setNotice} />
+        <ElementsPanel
+          readOnly={!isEditable}
+          onAddSection={addSection}
+          onMessage={setNotice}
+        />
         <EditorCanvas
           sections={sections}
           selectedSectionId={selectedSectionId}
@@ -182,13 +226,17 @@ export default function LandingPageEditorPage({
           zoom={zoom}
           onViewportChange={setViewport}
           onZoomChange={setZoom}
-          onSelectSection={setSelectedSectionId}
+          onSelectSection={selectSection}
           onAddSection={addSection}
           onMoveSection={moveSection}
           onDuplicateSection={duplicateSection}
           onDeleteSection={deleteSection}
         />
-        <PropertiesPanel section={selectedSection} onChange={updateSection} />
+        <PropertiesPanel
+          section={selectedSection}
+          readOnly={!isEditable}
+          onChange={updateSection}
+        />
       </div>
 
       <StatusNotice>{notice}</StatusNotice>

@@ -8,11 +8,13 @@ import {
   TrashIcon,
 } from '../../../../components/icons'
 import LandingPageSectionContent from '../../components/LandingPageSectionContent'
+import { DEVICE_PRESETS, getDevicePreset } from '../preview/devicePresets'
+import PreviewFrame, { ReadOnlyPreview } from './PreviewFrame'
 
-const VIEWPORTS = {
-  desktop: { width: '100%', icon: MonitorIcon, label: 'Desktop' },
-  tablet: { width: '760px', icon: TabletIcon, label: 'Tablet' },
-  mobile: { width: '390px', icon: SmartphoneIcon, label: 'Mobile' },
+const DEVICE_ICONS = {
+  desktop: MonitorIcon,
+  tablet: TabletIcon,
+  mobile: SmartphoneIcon,
 }
 
 function CanvasSection({
@@ -134,29 +136,27 @@ export default function EditorCanvas({
   onDuplicateSection,
   onDeleteSection,
 }) {
-  const canvasStyle = {
-    width: VIEWPORTS[viewport].width,
-    transform: `scale(${zoom / 100})`,
-    transformOrigin: 'top center',
-  }
+  const activePreset = getDevicePreset(viewport)
 
   return (
-    <main className="editor-canvas-grid relative min-w-0 flex-1 overflow-auto px-8 pb-28 pt-28">
-      <div className="fixed left-1/2 top-20 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-[#252a3a]/95 px-4 py-2 shadow-2xl backdrop-blur">
+    <main className="editor-canvas-grid relative flex min-w-0 flex-1 flex-col overflow-hidden px-8 pb-8 pt-20">
+      <div className="absolute left-1/2 top-4 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-[#252a3a]/95 px-4 py-2 shadow-2xl backdrop-blur">
         <div className="flex items-center gap-1">
-          {Object.entries(VIEWPORTS).map(([key, option]) => {
-            const ViewportIcon = option.icon
+          {DEVICE_PRESETS.map((preset) => {
+            const ViewportIcon = DEVICE_ICONS[preset.id]
             return (
               <button
-                key={key}
+                key={preset.id}
                 type="button"
-                onClick={() => onViewportChange(key)}
+                onClick={() => onViewportChange(preset.id)}
                 className={`rounded-full p-2 transition ${
-                  viewport === key
+                  viewport === preset.id
                     ? 'bg-[#2563eb] text-white'
                     : 'text-[#c3c6d7] hover:text-white'
                 }`}
-                aria-label={option.label}
+                aria-label={`Xem ở chế độ ${preset.label}`}
+                aria-pressed={viewport === preset.id}
+                title={`${preset.label} — ${preset.width} × ${preset.height}`}
               >
                 <ViewportIcon size={18} />
               </button>
@@ -164,55 +164,83 @@ export default function EditorCanvas({
           })}
         </div>
         <div className="h-5 w-px bg-white/15" />
+        <span className="whitespace-nowrap font-mono text-[10px] text-[#c3c6d7]">
+          {activePreset.width} × {activePreset.height}
+        </span>
+        {!activePreset.editable && (
+          <span className="whitespace-nowrap rounded-full border border-[#eec200]/30 bg-[#eec200]/10 px-2 py-1 font-mono text-[9px] uppercase text-[#ffe083]">
+            Chỉ đọc
+          </span>
+        )}
+        <div className="h-5 w-px bg-white/15" />
         <button
           type="button"
-          onClick={() => onZoomChange(Math.max(60, zoom - 10))}
+          onClick={() => onZoomChange(Math.max(50, zoom - 10))}
           className="px-1 text-[#c3c6d7]"
+          aria-label="Thu nhỏ preview"
+          title="Giảm zoom 10%"
         >
           −
         </button>
-        <span className="w-12 text-center font-mono text-xs text-white">{zoom}%</span>
         <button
           type="button"
-          onClick={() => onZoomChange(Math.min(120, zoom + 10))}
+          onClick={() => onZoomChange(100)}
+          className="w-12 text-center font-mono text-xs text-white"
+          aria-label="Đặt lại zoom về mức fit mặc định 100%"
+          title="Đặt lại về Fit 100%"
+        >
+          {zoom}%
+        </button>
+        <button
+          type="button"
+          onClick={() => onZoomChange(Math.min(200, zoom + 10))}
           className="px-1 text-[#c3c6d7]"
+          aria-label="Phóng to preview"
+          title="Tăng zoom 10%"
         >
           +
         </button>
       </div>
 
-      <div
-        className="mx-auto min-h-[850px] max-w-[1000px] transition-all duration-300"
-        style={canvasStyle}
-      >
-        <div className="min-h-[800px] space-y-8 bg-white p-12 text-[#0e0e10] shadow-2xl sm:p-16">
-          {sections.map((section, index) => (
-            <CanvasSection
-              key={section.id}
-              section={section}
-              index={index}
-              total={sections.length}
-              selected={selectedSectionId === section.id}
-              onSelect={onSelectSection}
-              onMove={onMoveSection}
-              onDuplicate={onDuplicateSection}
-              onDelete={onDeleteSection}
-            />
-          ))}
+      <PreviewFrame preset={activePreset} zoom={zoom}>
+        {activePreset.editable ? (
+          <div className="h-full space-y-8 overflow-y-auto bg-white p-12 text-[#0e0e10] sm:p-16">
+            {sections.map((section, index) => (
+              <CanvasSection
+                key={section.id}
+                section={section}
+                index={index}
+                total={sections.length}
+                selected={selectedSectionId === section.id}
+                onSelect={onSelectSection}
+                onMove={onMoveSection}
+                onDuplicate={onDuplicateSection}
+                onDelete={onDeleteSection}
+              />
+            ))}
 
-          <button
-            type="button"
-            onClick={() => onAddSection('section')}
-            className="flex min-h-[260px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#c7cad2] text-[#b5b9c3] transition hover:border-[#b4c5ff] hover:text-[#8d90a0]"
-          >
-            <PlusIcon size={52} />
-            <span className="mt-5 text-2xl font-bold">
-              {sections.length === 0 ? 'Bắt đầu thiết kế' : 'Thêm Section mới'}
-            </span>
-            <span className="mt-2 text-sm">Nhấn để thêm một Section vào Landing Page</span>
-          </button>
-        </div>
-      </div>
+            <button
+              type="button"
+              onClick={() => onAddSection('section')}
+              className="flex min-h-[260px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#c7cad2] text-[#b5b9c3] transition hover:border-[#b4c5ff] hover:text-[#8d90a0]"
+            >
+              <PlusIcon size={52} />
+              <span className="mt-5 text-2xl font-bold">
+                {sections.length === 0 ? 'Bắt đầu thiết kế' : 'Thêm Section mới'}
+              </span>
+              <span className="mt-2 text-sm">
+                Nhấn để thêm một Section vào Landing Page
+              </span>
+            </button>
+          </div>
+        ) : (
+          <ReadOnlyPreview
+            key={activePreset.id}
+            preset={activePreset}
+            sections={sections}
+          />
+        )}
+      </PreviewFrame>
     </main>
   )
 }

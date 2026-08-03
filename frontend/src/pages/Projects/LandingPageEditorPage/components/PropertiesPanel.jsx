@@ -1,5 +1,8 @@
-export default function PropertiesPanel({ section, onChange }) {
-  const update = (field, value) => onChange({ ...section, [field]: value })
+export default function PropertiesPanel({ section, readOnly = false, onChange }) {
+  const update = (field, value) => {
+    if (!section || readOnly) return
+    onChange({ ...section, [field]: value })
+  }
 
   return (
     <aside className="w-[280px] shrink-0 overflow-y-auto border-l border-white/5 bg-[#201f21]">
@@ -8,6 +11,7 @@ export default function PropertiesPanel({ section, onChange }) {
           <button
             key={tab}
             type="button"
+            disabled={readOnly}
             className={`flex-1 py-4 font-mono text-xs ${
               index === 0
                 ? 'border-b-2 border-[#b4c5ff] text-[#b4c5ff]'
@@ -18,6 +22,12 @@ export default function PropertiesPanel({ section, onChange }) {
           </button>
         ))}
       </div>
+
+      {readOnly && (
+        <div className="mx-5 mt-5 rounded-lg border border-[#eec200]/30 bg-[#eec200]/10 p-3 text-xs leading-5 text-[#ffe083]">
+          Chế độ chỉ đọc. Chuyển về Desktop để thay đổi thuộc tính.
+        </div>
+      )}
 
       {!section ? (
         <div className="p-6 text-center">
@@ -44,6 +54,7 @@ export default function PropertiesPanel({ section, onChange }) {
                 Tiêu đề
                 <input
                   value={section.title}
+                  disabled={readOnly}
                   onChange={(event) => update('title', event.target.value)}
                   className="mt-2 w-full rounded border border-white/5 bg-[#2a2a2c] p-3 text-sm normal-case text-white outline-none focus:border-[#b4c5ff]"
                 />
@@ -55,6 +66,7 @@ export default function PropertiesPanel({ section, onChange }) {
                 Văn bản
                 <textarea
                   value={section.text}
+                  disabled={readOnly}
                   onChange={(event) => update('text', event.target.value)}
                   rows={4}
                   className="mt-2 w-full resize-none rounded border border-white/5 bg-[#2a2a2c] p-3 text-sm normal-case text-white outline-none focus:border-[#b4c5ff]"
@@ -67,6 +79,7 @@ export default function PropertiesPanel({ section, onChange }) {
                 Nội dung nút
                 <input
                   value={section.buttonText}
+                  disabled={readOnly}
                   onChange={(event) => update('buttonText', event.target.value)}
                   className="mt-2 w-full rounded border border-white/5 bg-[#2a2a2c] p-3 text-sm normal-case text-white outline-none focus:border-[#b4c5ff]"
                 />
@@ -85,6 +98,7 @@ export default function PropertiesPanel({ section, onChange }) {
                 <button
                   key={option.value}
                   type="button"
+                  disabled={readOnly}
                   onClick={() => update('align', option.value)}
                   className={`py-3 ${
                     section.align === option.value
@@ -106,6 +120,7 @@ export default function PropertiesPanel({ section, onChange }) {
                 <input
                   type="color"
                   value={section.backgroundColor}
+                  disabled={readOnly}
                   onChange={(event) => update('backgroundColor', event.target.value)}
                   className="h-9 w-9 cursor-pointer rounded border-0 bg-transparent"
                 />
@@ -118,6 +133,7 @@ export default function PropertiesPanel({ section, onChange }) {
                 <input
                   type="color"
                   value={section.textColor}
+                  disabled={readOnly}
                   onChange={(event) => update('textColor', event.target.value)}
                   className="h-9 w-9 cursor-pointer rounded border-0 bg-transparent"
                 />
