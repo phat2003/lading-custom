@@ -45,6 +45,15 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [selectedId, setSelectedId] = useState(null)
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
   const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
+  // Giao diện builder: 'dark' | 'light' (nhớ lựa chọn giữa các lần mở).
+  const [theme, setTheme] = useState(() => localStorage.getItem('builderTheme') || 'dark')
+
+  const toggleTheme = () =>
+    setTheme((t) => {
+      const next = t === 'dark' ? 'light' : 'dark'
+      localStorage.setItem('builderTheme', next)
+      return next
+    })
 
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
@@ -237,7 +246,10 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const selected = elements.find((el) => el.id === selectedId) || null
 
   return (
-    <div className="flex h-screen flex-col bg-[#202024] text-gray-200">
+    <div
+      data-mode={theme}
+      className="builder-theme flex h-screen flex-col bg-[var(--bd-app)] text-[var(--bd-text)]"
+    >
       <BuilderTopbar
         device={device}
         onDeviceChange={setDevice}
@@ -247,6 +259,8 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         canRedo={future.length > 0}
         mode={mode}
         onSave={() => setSaveOpen(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       <div className="flex flex-1 overflow-hidden">
         <BuilderRail activePanel={activePanel} onToggle={togglePanel} />
@@ -275,7 +289,8 @@ const TemplateBuilder = ({ mode = 'template' }) => {
           onDuplicate={duplicateElement}
           onDelete={deleteElement}
         />
-        {selected && <PropertiesPanel element={selected} onUpdate={updateElement} onDelete={deleteElement} />}
+        {/* Cột thuộc tính cố định: luôn hiển thị để bố cục không bị nhảy khi chọn/bỏ chọn */}
+        <PropertiesPanel element={selected} onUpdate={updateElement} onDelete={deleteElement} />
       </div>
 
       {isSection && (

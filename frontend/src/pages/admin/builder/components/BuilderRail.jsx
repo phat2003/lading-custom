@@ -6,24 +6,32 @@ const ITEMS = [
 ]
 
 const BuilderRail = ({ activePanel, onToggle }) => (
-  <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-[#161618] py-3">
-    {ITEMS.map(({ key, icon: IconComp, label }) => {
+  <nav className="flex w-[72px] shrink-0 flex-col items-center gap-2 border-r border-[var(--bd-border)] bg-[var(--bd-topbar)] py-4 backdrop-blur-xl">
+    {ITEMS.map(({ key, icon: IconComp, label }, i) => {
       const active = activePanel === key
       return (
         <button
           key={key}
           onClick={() => onToggle(key)}
-          className={`relative flex w-full flex-col items-center gap-1 py-2.5 text-[10px] transition-colors ${
-            active ? 'text-yellow-400' : 'text-gray-400 hover:text-gray-200'
+          style={{ animationDelay: `${i * 60}ms` }}
+          className={`group relative flex w-full animate-fade-in-up flex-col items-center gap-1.5 py-1 text-[10px] font-medium transition-colors duration-200 ${
+            active ? 'text-[var(--bd-accent)]' : 'text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
           }`}
         >
-          {active && <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-yellow-400" />}
+          {/* Thanh chỉ báo gradient ở mép trái khi đang mở */}
           <span
-            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-              active ? 'bg-yellow-400/15' : 'hover:bg-white/5'
+            className={`absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-violet-400 to-cyan-400 transition-all duration-300 ${
+              active ? 'h-8 opacity-100' : 'h-0 opacity-0'
+            }`}
+          />
+          <span
+            className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-300 ${
+              active
+                ? 'bg-gradient-to-br from-violet-500/25 to-cyan-400/15 shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] ring-1 ring-inset ring-violet-400/30'
+                : 'bg-[var(--bd-fill)] group-hover:-translate-y-0.5 group-hover:bg-[var(--bd-fill-hover)] group-hover:shadow-lg'
             }`}
           >
-            <IconComp size={18} />
+            <IconComp size={19} />
           </span>
           {label}
         </button>
