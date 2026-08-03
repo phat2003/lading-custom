@@ -19,6 +19,25 @@ func (r *LandingPageRepository) Create(page *models.LandingPage) error {
 	return r.db.Create(page).Error
 }
 
+// CreateWithSections tạo trang kèm TOÀN BỘ section con trong 1 transaction.
+// Dùng khi clone từ template: nếu copy nửa chừng rồi lỗi thì rollback sạch,
+// tránh để lại trang mất khối mà API vẫn báo tạo thành công.
+// LandingPageID của từng section được gán bên trong tx, sau khi trang có ID.
+func (r *LandingPageRepository) CreateWithSections(page *models.LandingPage, sections []models.PageSection) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(page).Error; err != nil {
+			return err
+		}
+		for i := range sections {
+			sections[i].LandingPageID = page.LandingPageID
+			if err := tx.Create(&sections[i]).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // FindByProjectID: Lấy tất cả các trang thuộc về 1 dự án
 func (r *LandingPageRepository) FindByProjectID(projectID uuid.UUID) ([]models.LandingPage, error) {
 	var pages []models.LandingPage

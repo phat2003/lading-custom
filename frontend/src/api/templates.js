@@ -7,10 +7,12 @@ import api from './client'
 //   PUT    /api/v1/admin/templates/:id
 //   DELETE /api/v1/admin/templates/:id
 //
-// Trang Templates hiện chạy mock; khi backend sẵn sàng, thay các handler
-// trong Templates.jsx bằng các hàm dưới đây (giống cách authApi đang dùng).
+// list() nhận bộ lọc + phân trang phía server:
+//   { page, limit, search, category, status, tier }
+// category/status/tier bỏ trống hoặc 'all' = không lọc.
+// Response: { success, message, data: [...], meta: { page, limit, total, total_pages } }
 export const templatesApi = {
-  list: () => api.get('/admin/templates'),
+  list: (params, config) => api.get('/admin/templates', { params, ...config }),
   get: (id) => api.get(`/admin/templates/${id}`),
   create: (payload) => api.post('/admin/templates', payload),
   update: (id, payload) => api.put(`/admin/templates/${id}`, payload),

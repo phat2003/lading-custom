@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
+	"github.com/nhienthai/lading-custom/backend/internal/repository"
 	"github.com/nhienthai/lading-custom/backend/internal/service"
 	"github.com/nhienthai/lading-custom/backend/pkg/response"
 )
@@ -16,6 +19,21 @@ type TemplateActionHandler struct {
 
 func NewTemplateActionHandler(actionService *service.TemplateActionService) *TemplateActionHandler {
 	return &TemplateActionHandler{actionService: actionService}
+}
+
+// failFromError map lỗi từ service sang đúng HTTP status:
+//   - 404: trang/mẫu không tồn tại
+//   - 403: tài nguyên tồn tại nhưng thuộc user khác
+//   - 500: lỗi thật (DB, clone section...)
+func (h *TemplateActionHandler) failFromError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		response.Fail(c, http.StatusNotFound, "không tìm thấy trang hoặc mẫu giao diện")
+	case errors.Is(err, repository.ErrForbidden):
+		response.Fail(c, http.StatusForbidden, "bạn không có quyền thao tác trên tài nguyên này")
+	default:
+		response.Fail(c, http.StatusInternalServerError, "thao tác với template thất bại: "+err.Error())
+	}
 }
 
 type saveAsTemplateReq struct {
@@ -40,7 +58,7 @@ func (h *TemplateActionHandler) SaveAsTemplate(c *gin.Context) {
 	// Mặc định lưu thành mẫu cá nhân (user)
 	template, err := h.actionService.SavePageAsTemplate(userID, pageID, req.Name)
 	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, err.Error())
+		h.failFromError(c, err)
 		return
 	}
 
@@ -69,7 +87,7 @@ func (h *TemplateActionHandler) CreateFromTemplate(c *gin.Context) {
 
 	page, err := h.actionService.CreatePageFromTemplate(userID, projectID, templateID, req.Name)
 	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, err.Error())
+		h.failFromError(c, err)
 		return
 	}
 
