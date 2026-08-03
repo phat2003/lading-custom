@@ -6,7 +6,9 @@ import EditorCanvas from './components/EditorCanvas'
 import EditorTopbar from './components/EditorTopbar'
 import ElementsPanel from './components/ElementsPanel'
 import PreviewDialog from './components/PreviewDialog'
+import PublishModal from './components/PublishModal'
 import PropertiesPanel from './components/PropertiesPanel'
+import { usePublishFlow } from './hooks/usePublishFlow'
 import { useRealtimePreview } from './hooks/useRealtimePreview'
 import { getDevicePreset } from './preview/devicePresets'
 import { createLegacyStarterSection, createSection } from './sectionPresets'
@@ -48,6 +50,13 @@ export default function LandingPageEditorPage({
   const [, setSaveStatus] = useState('saved')
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
   const isEditable = getDevicePreset(viewport).editable
+  const publishActionContext = useMemo(
+    () => ({ projectId, landingPageId }),
+    [landingPageId, projectId],
+  )
+  const publishFlow = usePublishFlow({
+    actionContext: publishActionContext,
+  })
   const {
     previewSections,
     status: previewStatus,
@@ -229,7 +238,9 @@ export default function LandingPageEditorPage({
         onRedo={() => setNotice('Redo sẽ được triển khai ở task Editor tiếp theo.')}
         onPreview={openPreviewDialog}
         onRetryPreview={retryPreview}
-        onPublish={() => setNotice('Publish cần tích hợp API ở task riêng.')}
+        onPublish={publishFlow.open}
+        publishBusy={publishFlow.isBusy}
+        isPublished={publishFlow.isPublished}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -272,6 +283,10 @@ export default function LandingPageEditorPage({
         onRetry={retryPreview}
         onRenderError={reportPreviewRenderError}
         onClose={closePreviewDialog}
+      />
+      <PublishModal
+        landingPageName={landingPage.name}
+        flow={publishFlow}
       />
     </div>
   )

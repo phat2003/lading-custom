@@ -36,6 +36,8 @@ export default function EditorTopbar({
   onPreview,
   onRetryPreview,
   onPublish,
+  publishBusy,
+  isPublished,
 }) {
   const statusMeta = PREVIEW_STATUS_META[previewStatus] || PREVIEW_STATUS_META.idle
 
@@ -120,9 +122,11 @@ export default function EditorTopbar({
         <button
           type="button"
           onClick={onPublish}
-          className="rounded bg-[#eec200] px-5 py-2 font-semibold text-[#231b00] shadow-[0_0_20px_rgba(238,194,0,0.2)] transition hover:bg-[#ffe083]"
+          disabled={publishBusy}
+          className="rounded bg-[#eec200] px-5 py-2 font-semibold text-[#231b00] shadow-[0_0_20px_rgba(238,194,0,0.2)] transition hover:bg-[#ffe083] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={isPublished ? 'Mở quản lý xuất bản Landing Page' : 'Xuất bản Landing Page'}
         >
-          Xuất bản
+          {isPublished ? 'Xuất bản lại' : 'Xuất bản'}
         </button>
       </div>
     </header>
