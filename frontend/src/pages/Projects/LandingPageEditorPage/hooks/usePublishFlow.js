@@ -46,6 +46,19 @@ const normalizeUserMessage = (error, fallback) => {
   return message ? message.slice(0, 300) : fallback
 }
 
+const runLocalCallback = (callback, publication) => {
+  if (typeof callback !== 'function') return
+
+  try {
+    const callbackResult = callback(publication)
+    if (callbackResult && typeof callbackResult.catch === 'function') {
+      callbackResult.catch(() => {})
+    }
+  } catch {
+    // Callback local không được thay đổi kết quả operation đã được server xác nhận.
+  }
+}
+
 export const usePublishFlow = ({
   actionContext,
   publishAction,
@@ -104,7 +117,13 @@ export const usePublishFlow = ({
   }, [])
 
   useEffect(() => {
-    if (flowRef.current.state !== 'closed') return
+    if (
+      flowRef.current.state !== 'closed' ||
+      operationInFlightRef.current
+    ) {
+      return
+    }
+
     const nextPublication = normalizeServerPublication(serverPublication)
     const currentPublication = publicationRef.current
     if (
@@ -115,7 +134,7 @@ export const usePublishFlow = ({
       return
     }
     updatePublication(nextPublication)
-  }, [serverPublication, updatePublication])
+  }, [flow.state, serverPublication, updatePublication])
 
   const open = useCallback(() => {
     if (operationInFlightRef.current) return
@@ -124,8 +143,7 @@ export const usePublishFlow = ({
     operationIdRef.current += 1
     const isPublished =
       publicationRef.current.serverConfirmed &&
-      publicationRef.current.status === 'published' &&
-      Boolean(publicationRef.current.publicUrl)
+      publicationRef.current.status === 'published'
 
     setFlow({
       state: isPublished ? 'success' : 'confirm',
@@ -166,6 +184,7 @@ export const usePublishFlow = ({
     operationInFlightRef.current = true
     const operationId = ++operationIdRef.current
     const sessionId = sessionIdRef.current
+    let nextPublication = null
     setFlow({
       state: 'publishing',
       error: null,
@@ -189,19 +208,11 @@ export const usePublishFlow = ({
         return
       }
 
-      const nextPublication = {
+      nextPublication = {
         status: 'published',
         publicUrl,
         serverConfirmed: true,
       }
-      updatePublication(nextPublication)
-      setFlow({
-        state: 'success',
-        error: null,
-        lastOperation: 'publish',
-        successOrigin: 'operation',
-      })
-      boundaryRef.current.onPublished?.(nextPublication)
     } catch (error) {
       if (
         !mountedRef.current ||
@@ -222,6 +233,24 @@ export const usePublishFlow = ({
         operationInFlightRef.current = false
       }
     }
+
+    if (!nextPublication) return
+    if (
+      !mountedRef.current ||
+      operationId !== operationIdRef.current ||
+      sessionId !== sessionIdRef.current
+    ) {
+      return
+    }
+
+    updatePublication(nextPublication)
+    setFlow({
+      state: 'success',
+      error: null,
+      lastOperation: 'publish',
+      successOrigin: 'operation',
+    })
+    runLocalCallback(boundaryRef.current.onPublished, nextPublication)
   }, [updatePublication])
 
   const runUnpublish = useCallback(async () => {
@@ -241,6 +270,7 @@ export const usePublishFlow = ({
     operationInFlightRef.current = true
     const operationId = ++operationIdRef.current
     const sessionId = sessionIdRef.current
+    let nextPublication = null
     setFlow({
       state: 'unpublishing',
       error: null,
@@ -262,19 +292,11 @@ export const usePublishFlow = ({
         return
       }
 
-      const nextPublication = {
+      nextPublication = {
         ...publicationRef.current,
         status: 'draft',
         serverConfirmed: true,
       }
-      updatePublication(nextPublication)
-      setFlow({
-        state: 'unpublish-success',
-        error: null,
-        lastOperation: 'unpublish',
-        successOrigin: 'operation',
-      })
-      boundaryRef.current.onUnpublished?.(nextPublication)
     } catch (error) {
       if (
         !mountedRef.current ||
@@ -295,6 +317,24 @@ export const usePublishFlow = ({
         operationInFlightRef.current = false
       }
     }
+
+    if (!nextPublication) return
+    if (
+      !mountedRef.current ||
+      operationId !== operationIdRef.current ||
+      sessionId !== sessionIdRef.current
+    ) {
+      return
+    }
+
+    updatePublication(nextPublication)
+    setFlow({
+      state: 'unpublish-success',
+      error: null,
+      lastOperation: 'unpublish',
+      successOrigin: 'operation',
+    })
+    runLocalCallback(boundaryRef.current.onUnpublished, nextPublication)
   }, [updatePublication])
 
   const retry = useCallback(() => {
@@ -355,16 +395,18 @@ export const usePublishFlow = ({
 
   const isPublished =
     publication.serverConfirmed &&
-    publication.status === 'published' &&
-    Boolean(publication.publicUrl)
+    publication.status === 'published'
+  const hasPublicUrl = Boolean(publication.publicUrl)
   const isRepublish =
-    publication.serverConfirmed && Boolean(publication.publicUrl)
+    publication.serverConfirmed &&
+    (publication.status === 'published' || hasPublicUrl)
 
   return {
     ...flow,
     isOpen: flow.state !== 'closed',
     isBusy: BUSY_STATES.has(flow.state),
     isPublished,
+    hasPublicUrl,
     isRepublish,
     publicUrl: publication.publicUrl,
     open,

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { authApi } from '../api/auth'
+import { AUTH_SESSION_CLEARED_EVENT } from '../api/client'
 
 const AuthContext = createContext(null)
 
@@ -15,6 +16,16 @@ export function AuthProvider({ children }) {
       setUser(JSON.parse(saved))
     }
     setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    const handleSessionCleared = () => setUser(null)
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared)
+    return () =>
+      window.removeEventListener(
+        AUTH_SESSION_CLEARED_EVENT,
+        handleSessionCleared,
+      )
   }, [])
 
   const login = async (email, password) => {

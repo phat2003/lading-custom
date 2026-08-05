@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   AlertTriangleIcon,
   CheckIcon,
@@ -38,10 +38,25 @@ const PublishModal = ({ landingPageName, flow }) => {
   const closeButtonRef = useRef(null)
   const primaryActionRef = useRef(null)
   const copyTimerRef = useRef(null)
+  const copySessionIdRef = useRef(0)
+  const mountedRef = useRef(true)
   const canCloseRef = useRef(true)
   const [copyStatus, setCopyStatus] = useState('idle')
   const canClose = !flow.isBusy
   canCloseRef.current = canClose
+
+  useEffect(() => {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+      copySessionIdRef.current += 1
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current)
+        copyTimerRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!flow.isOpen) return undefined
@@ -93,26 +108,19 @@ const PublishModal = ({ landingPageName, flow }) => {
     }
   }, [flow.close, flow.isOpen])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    copySessionIdRef.current += 1
     setCopyStatus('idle')
     if (copyTimerRef.current !== null) {
       window.clearTimeout(copyTimerRef.current)
       copyTimerRef.current = null
     }
-  }, [flow.state])
-
-  useEffect(
-    () => () => {
-      if (copyTimerRef.current !== null) {
-        window.clearTimeout(copyTimerRef.current)
-      }
-    },
-    [],
-  )
+  }, [flow.isOpen, flow.state])
 
   if (!flow.isOpen) return null
 
   const handleCopy = async () => {
+    const copySessionId = copySessionIdRef.current
     const publicUrl = normalizePublicUrl(flow.publicUrl)
     if (!publicUrl) {
       flow.reportLinkError()
@@ -125,22 +133,55 @@ const PublishModal = ({ landingPageName, flow }) => {
     }
 
     try {
+      if (
+        !mountedRef.current ||
+        copySessionId !== copySessionIdRef.current
+      ) {
+        return
+      }
+
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(publicUrl)
       } else if (!copyWithFallback(publicUrl)) {
         throw new Error('Copy unavailable')
       }
 
+      if (
+        !mountedRef.current ||
+        copySessionId !== copySessionIdRef.current
+      ) {
+        return
+      }
+
       setCopyStatus('copied')
       copyTimerRef.current = window.setTimeout(() => {
-        setCopyStatus('idle')
         copyTimerRef.current = null
+        if (
+          !mountedRef.current ||
+          copySessionId !== copySessionIdRef.current
+        ) {
+          return
+        }
+        setCopyStatus('idle')
       }, 1800)
     } catch {
+      if (
+        !mountedRef.current ||
+        copySessionId !== copySessionIdRef.current
+      ) {
+        return
+      }
+
       setCopyStatus('error')
       copyTimerRef.current = window.setTimeout(() => {
-        setCopyStatus('idle')
         copyTimerRef.current = null
+        if (
+          !mountedRef.current ||
+          copySessionId !== copySessionIdRef.current
+        ) {
+          return
+        }
+        setCopyStatus('idle')
       }, 2400)
     }
   }
@@ -242,36 +283,42 @@ const PublishModal = ({ landingPageName, flow }) => {
               trang live cho đến khi bạn xuất bản lại.
             </StateMessage>
 
-            <div className="mx-7 mb-6 rounded-xl border border-white/10 bg-[#0e0e10] p-4">
-              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#8d90a0]">
-                Đường dẫn public
-              </p>
-              <p className="mt-2 break-all font-mono text-xs text-[#b4c5ff]">
-                {flow.publicUrl}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white transition hover:border-[#b4c5ff]/50"
-                >
-                  <CopyIcon size={15} />
-                  {copyStatus === 'copied'
-                    ? 'Đã sao chép'
-                    : copyStatus === 'error'
-                      ? 'Không thể sao chép'
-                      : 'Sao chép link'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpen}
-                  className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white transition hover:border-[#b4c5ff]/50"
-                >
-                  <GlobeIcon size={15} />
-                  Mở trang live
-                </button>
+            {flow.hasPublicUrl ? (
+              <div className="mx-7 mb-6 rounded-xl border border-white/10 bg-[#0e0e10] p-4">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#8d90a0]">
+                  Đường dẫn public
+                </p>
+                <p className="mt-2 break-all font-mono text-xs text-[#b4c5ff]">
+                  {flow.publicUrl}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white transition hover:border-[#b4c5ff]/50"
+                  >
+                    <CopyIcon size={15} />
+                    {copyStatus === 'copied'
+                      ? 'Đã sao chép'
+                      : copyStatus === 'error'
+                        ? 'Không thể sao chép'
+                        : 'Sao chép link'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpen}
+                    className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white transition hover:border-[#b4c5ff]/50"
+                  >
+                    <GlobeIcon size={15} />
+                    Mở trang live
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="mx-7 mb-6 rounded-xl border border-[#eec200]/20 bg-[#eec200]/5 p-4 text-sm leading-6 text-[#ffe083]">
+                Máy chủ đã xác nhận trang đang được xuất bản, nhưng chưa cung cấp đường dẫn public đầy đủ để sao chép hoặc mở.
+              </p>
+            )}
 
             <ModalActions>
               <button

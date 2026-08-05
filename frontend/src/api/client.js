@@ -1,4 +1,16 @@
 import axios from 'axios'
+import { createApiContractError, normalizeApiError } from './apiError'
+
+export const AUTH_SESSION_CLEARED_EVENT = 'auth-session-cleared'
+const API_REQUEST_TIMEOUT_MS = 20000
+
+let redirectingToLogin = false
+
+const clearStoredAuthSession = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.dispatchEvent(new Event(AUTH_SESSION_CLEARED_EVENT))
+}
 
 // Client axios dùng chung cho toàn bộ app.
 const api = axios.create({
@@ -20,14 +32,46 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
+      clearStoredAuthSession()
       // Tránh redirect lặp nếu đang ở trang login.
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
+      const isLoginPage =
+        window.location.pathname === '/login' ||
+        window.location.pathname.startsWith('/login/')
+      if (!isLoginPage && !redirectingToLogin) {
+        redirectingToLogin = true
+        window.location.assign('/login')
       }
     }
     return Promise.reject(err)
   },
 )
+
+/**
+ * Request helper cho API mới. Trả data/meta đã được tách khỏi Axios response và
+ * ném normalized error an toàn cho UI. `config.signal` được Axios hỗ trợ trực tiếp.
+ */
+export const requestApi = async (config, errorOptions) => {
+  try {
+    const response = await api.request({
+      timeout: API_REQUEST_TIMEOUT_MS,
+      ...config,
+    })
+    const envelope = response?.data
+
+    if (!envelope || envelope.success !== true) {
+      throw createApiContractError(
+        'Phản hồi từ máy chủ không đúng định dạng mong đợi.',
+      )
+    }
+
+    return {
+      data: envelope.data,
+      message: typeof envelope.message === 'string' ? envelope.message : null,
+      meta: envelope.meta || null,
+    }
+  } catch (error) {
+    throw normalizeApiError(error, errorOptions)
+  }
+}
 
 export default api

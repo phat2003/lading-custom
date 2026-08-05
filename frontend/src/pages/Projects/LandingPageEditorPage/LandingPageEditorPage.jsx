@@ -24,13 +24,7 @@ function getInitialSections(landingPage) {
   return [createLegacyStarterSection()]
 }
 
-export default function LandingPageEditorPage({
-  projectIdOverride,
-  landingPageIdOverride,
-}) {
-  const routeParams = useParams()
-  const projectId = projectIdOverride || routeParams.projectId
-  const landingPageId = landingPageIdOverride || routeParams.landingPageId
+function LandingPageEditorSession({ projectId, landingPageId }) {
   const navigate = useNavigate()
   const {
     getProject,
@@ -289,5 +283,22 @@ export default function LandingPageEditorPage({
         flow={publishFlow}
       />
     </div>
+  )
+}
+
+export default function LandingPageEditorPage({
+  projectIdOverride,
+  landingPageIdOverride,
+}) {
+  const routeParams = useParams()
+  const projectId = projectIdOverride || routeParams.projectId
+  const landingPageId = landingPageIdOverride || routeParams.landingPageId
+
+  return (
+    <LandingPageEditorSession
+      key={`${projectId}:${landingPageId}`}
+      projectId={projectId}
+      landingPageId={landingPageId}
+    />
   )
 }

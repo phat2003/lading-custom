@@ -64,16 +64,6 @@ export default function App() {
           }
         />
 
-        {/* Dashboard người dùng — Realtime Preview workspace */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Quản lý dự án của người dùng (cần đăng nhập) */}
         <Route
           path="/projects"
