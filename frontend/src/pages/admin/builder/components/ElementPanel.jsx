@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { ClockIcon } from '../../../../components/icons'
+import { ClockIcon, LayersIcon } from '../../../../components/icons'
 import { paletteTypes, paletteBlocks } from '../mock'
 import { ICON_MAP } from '../iconMap'
 import BlockRenderer from './BlockRenderer'
 import BlockThumb from './BlockThumb'
 
-const baseTypes = [...paletteTypes, paletteBlocks]
+// "Dựng sẵn" = các mẫu cứng đi kèm builder.
+// "Section mẫu" = thư viện do admin tạo, nạp từ API (truyền vào qua prop library).
+const builtInBlocks = { ...paletteBlocks, key: 'builtin', label: 'Dựng sẵn' }
 
 const payloadOf = (v) => (v.block ? { block: v.block } : { type: v.type, content: v.content, style: v.style })
 
@@ -23,6 +25,16 @@ const dragProps = (v, onUse) => ({
 // Xem trước 1 biến thể (dùng lại BlockRenderer thật để đúng phong cách).
 // Nền luôn sáng vì phần tử được thiết kế để hiển thị trên trang trắng.
 const VariantPreview = ({ v }) => {
+  // Section mẫu từ API có ảnh bìa riêng thì ưu tiên dùng.
+  if (v.thumbnailUrl) {
+    return (
+      <img
+        src={v.thumbnailUrl}
+        alt=""
+        className="h-12 w-full rounded-md border border-[var(--bd-border)] object-cover"
+      />
+    )
+  }
   if (v.block) return <BlockThumb label={v.label} />
   return (
     <div className="pointer-events-none flex h-16 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-white to-slate-100 p-2 shadow-inner">
@@ -31,11 +43,14 @@ const VariantPreview = ({ v }) => {
   )
 }
 
-const ElementPanel = ({ recent = [], onUse }) => {
-  const types = recent.length
-    ? [{ key: 'recent', label: 'Gần đây', icon: ClockIcon, variants: recent }, ...baseTypes]
-    : baseTypes
-  const [activeKey, setActiveKey] = useState(baseTypes[0].key)
+const ElementPanel = ({ recent = [], library = [], onUse }) => {
+  const types = [
+    ...(recent.length ? [{ key: 'recent', label: 'Gần đây', icon: ClockIcon, variants: recent }] : []),
+    ...paletteTypes,
+    { key: 'library', label: 'Section mẫu', icon: LayersIcon, variants: library },
+    builtInBlocks,
+  ]
+  const [activeKey, setActiveKey] = useState(paletteTypes[0].key)
   const active = types.find((t) => t.key === activeKey) || types[0]
 
   return (
@@ -69,7 +84,13 @@ const ElementPanel = ({ recent = [], onUse }) => {
           {active.label}
         </p>
 
-        {active.key === 'icon' ? (
+        {active.variants.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-[var(--bd-border)] px-3 py-6 text-center text-xs leading-relaxed text-[var(--bd-muted)]">
+            {active.key === 'library'
+              ? 'Chưa có section mẫu nào. Admin tạo ở trang Section, lưu xong sẽ hiện tại đây.'
+              : 'Chưa có mục nào.'}
+          </p>
+        ) : active.key === 'icon' ? (
           <div className="grid grid-cols-4 gap-2">
             {active.variants.map((v, i) => {
               const IconComp = ICON_MAP[v.content]

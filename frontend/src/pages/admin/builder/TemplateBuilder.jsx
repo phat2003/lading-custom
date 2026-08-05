@@ -8,6 +8,7 @@ import BuilderCanvas from './components/BuilderCanvas'
 import PropertiesPanel from './components/PropertiesPanel'
 import SectionSaveDialog from './components/SectionSaveDialog'
 import { sectionsApi } from '../../../api/sections'
+import { toLibraryVariants } from './sectionLibrary'
 
 const newId = () =>
   crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())
@@ -43,6 +44,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [selectedId, setSelectedId] = useState(null)
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
   const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
+  const [library, setLibrary] = useState([]) // section mẫu admin đã lưu, lấy từ API
   // Giao diện builder: 'dark' | 'light' (nhớ lựa chọn giữa các lần mở).
   const [theme, setTheme] = useState(() => localStorage.getItem('builderTheme') || 'dark')
 
@@ -55,6 +57,21 @@ const TemplateBuilder = ({ mode = 'template' }) => {
 
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
+
+  // Nạp thư viện Section mẫu (do admin tạo) để kéo lại vào trang.
+  // Lỗi ở đây chỉ làm thiếu mục "Section mẫu", không chặn việc dựng trang.
+  useEffect(() => {
+    let cancelled = false
+    sectionsApi
+      .listAll()
+      .then((res) => {
+        if (!cancelled) setLibrary(toLibraryVariants(res.data.data || []))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Nạp lại section mẫu đang sửa từ API (/admin/sections/:id/edit).
   useEffect(() => {
@@ -290,7 +307,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
       />
       <div className="flex flex-1 overflow-hidden">
         <BuilderRail activePanel={activePanel} onToggle={togglePanel} />
-        {activePanel === 'add' && <ElementPanel recent={recent} onUse={useRecent} />}
+        {activePanel === 'add' && (
+          <ElementPanel recent={recent} library={library} onUse={useRecent} />
+        )}
         {activePanel === 'layers' && (
           <LayersPanel
             elements={elements}
