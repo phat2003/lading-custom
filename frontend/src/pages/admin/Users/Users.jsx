@@ -9,6 +9,7 @@ import UserDetailPanel from './components/UserDetailPanel'
 import UserFormModal from './components/UserFormModal'
 import { usersApi } from '../../../api/users'
 import { toUserUI, errMsg } from '../adapters'
+import { downloadCsv, csvFilename } from '../exportCsv'
 
 const TABS = [
   { label: 'All', value: 'All' },
@@ -18,6 +19,18 @@ const TABS = [
 
 const PAGE_SIZE = 10
 const SEARCH_DELAY = 400 // ms chờ người dùng ngừng gõ trước khi gọi API
+const EXPORT_PAGE_SIZE = 100 // trần backend cho mỗi request
+const EXPORT_MAX_PAGES = 200 // chặn vòng lặp vô hạn nếu meta trả sai
+
+const CSV_COLUMNS = [
+  { label: 'Họ tên', value: (u) => u.name },
+  { label: 'Email', value: (u) => u.email },
+  { label: 'Số điện thoại', value: (u) => (u.phone === '—' ? '' : u.phone) },
+  { label: 'Gói', value: (u) => u.plan },
+  { label: 'Trạng thái', value: (u) => u.status },
+  { label: 'Vai trò', value: (u) => u.role },
+  { label: 'Ngày tham gia', value: (u) => u.joined },
+]
 
 const Users = () => {
   const [items, setItems] = useState([])
@@ -38,6 +51,7 @@ const Users = () => {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(null) // user chờ xác nhận xoá
+  const [exporting, setExporting] = useState(false)
 
   // Debounce ô tìm kiếm để mỗi ký tự gõ không thành một request.
   useEffect(() => {
@@ -84,6 +98,39 @@ const Users = () => {
     fetchUsers(controller.signal)
     return () => controller.abort()
   }, [fetchUsers])
+
+  // Xuất CSV toàn bộ user khớp bộ lọc hiện tại (không chỉ trang đang xem).
+  // Backend chặn limit ở 100 nên phải lấy lần lượt từng trang.
+  const handleExportCsv = async () => {
+    setExporting(true)
+    setError('')
+    try {
+      const all = []
+      let current = 1
+      let totalPages = 1
+      do {
+        const res = await usersApi.list({
+          page: current,
+          limit: EXPORT_PAGE_SIZE,
+          search,
+          plan: filter === 'All' ? 'all' : filter.toLowerCase(),
+        })
+        all.push(...(res.data.data || []).map(toUserUI))
+        totalPages = res.data.meta?.total_pages || 1
+        current += 1
+      } while (current <= totalPages && current <= EXPORT_MAX_PAGES)
+
+      if (all.length === 0) {
+        setError('Không có user nào để xuất.')
+        return
+      }
+      downloadCsv(csvFilename('users'), CSV_COLUMNS, all)
+    } catch (err) {
+      setError(errMsg(err, 'Xuất CSV thất bại.'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // Bấm "View": hiện ngay dữ liệu đã có ở bảng, rồi nạp thêm
   // project_count / subscription từ API chi tiết.
@@ -177,8 +224,13 @@ const Users = () => {
         </div>
         <div className="flex items-center gap-2">
           {/* Export CSV chưa có API — giữ nguyên nút, chưa nối */}
-          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800">
-            <DownloadIcon size={16} /> Export CSV
+          <button
+            onClick={handleExportCsv}
+            disabled={exporting || loading}
+            title="Xuất toàn bộ user khớp bộ lọc hiện tại"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+          >
+            <DownloadIcon size={16} /> {exporting ? 'Đang xuất...' : 'Export CSV'}
           </button>
           <button
             onClick={() => {

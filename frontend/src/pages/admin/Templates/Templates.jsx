@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PlusIcon } from '../../../components/icons'
 import SearchInput from '../components/SearchInput'
 import FilterTabs from '../components/FilterTabs'
@@ -44,6 +45,7 @@ const toPayload = (form) => ({
 const errMsg = (err, fallback) => err?.response?.data?.error || fallback
 
 const Templates = () => {
+  const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState({ page: 1, total: 0, total_pages: 1 })
   const [loading, setLoading] = useState(true)
@@ -106,11 +108,10 @@ const Templates = () => {
     return () => controller.abort()
   }, [fetchTemplates])
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
+  // Tạo template mới = mở builder để kéo-thả dựng giao diện thật.
+  const openCreate = () => navigate('/admin/templates/new')
 
+  // Sửa = mở modal chỉnh metadata (tên, danh mục, gói, trạng thái).
   const openEdit = (t) => {
     setEditing(t)
     setFormOpen(true)

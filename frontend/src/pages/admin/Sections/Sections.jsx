@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PlusIcon } from '../../../components/icons'
 import FilterTabs from '../components/FilterTabs'
 import ConfirmDialog from '../components/ConfirmDialog'
 import SectionCard from './components/SectionCard'
-import SectionFormModal from './components/SectionFormModal'
 import { SECTION_TYPES } from './sectionTypes'
 import { sectionsApi } from '../../../api/sections'
 
@@ -24,16 +24,10 @@ const toUI = (s) => ({
   defaultContent: s.default_content,
 })
 
-// Chiều ngược lại: form UI -> payload API.
-const toPayload = (data) => ({
-  display_name: data.name,
-  section_type: data.type,
-  default_content: data.defaultContent,
-})
-
 const errMsg = (err, fallback) => err?.response?.data?.error || fallback
 
 const Sections = () => {
+  const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState({ page: 1, total: 0, total_pages: 1 })
   const [loading, setLoading] = useState(true)
@@ -42,9 +36,6 @@ const Sections = () => {
   const [filter, setFilter] = useState('All')
   const [page, setPage] = useState(1)
 
-  const [formOpen, setFormOpen] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -83,37 +74,10 @@ const Sections = () => {
     return () => controller.abort()
   }, [fetchSections])
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormError('')
-    setFormOpen(true)
-  }
-
-  const openEdit = (s) => {
-    setEditing(s)
-    setFormError('')
-    setFormOpen(true)
-  }
-
-  const handleSubmit = async (data) => {
-    setSubmitting(true)
-    setFormError('')
-    try {
-      if (editing) {
-        await sectionsApi.update(editing.id, toPayload(data))
-      } else {
-        await sectionsApi.create(toPayload(data))
-      }
-      setFormOpen(false)
-      setEditing(null)
-      await fetchSections()
-    } catch (err) {
-      // Lỗi hiện ngay trong modal để không mất JSON đang soạn.
-      setFormError(errMsg(err, editing ? 'Cập nhật thất bại.' : 'Tạo thành phần thất bại.'))
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  // Tạo/sửa section mẫu = mở builder (kéo-thả dựng nội dung thật),
+  // không dùng modal nhập JSON nữa. Builder tự gọi API lưu khi bấm "Lưu Section".
+  const openCreate = () => navigate('/admin/sections/new')
+  const openEdit = (s) => navigate(`/admin/sections/${s.id}/edit`)
 
   const handleDelete = async () => {
     setSubmitting(true)
@@ -209,17 +173,6 @@ const Sections = () => {
       </div>
 
       {/* Modals */}
-      <SectionFormModal
-        open={formOpen}
-        initial={editing}
-        submitting={submitting}
-        error={formError}
-        onClose={() => {
-          setFormOpen(false)
-          setEditing(null)
-        }}
-        onSubmit={handleSubmit}
-      />
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Xóa Thành phần"

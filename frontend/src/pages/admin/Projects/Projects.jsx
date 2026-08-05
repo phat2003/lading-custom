@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { PlusIcon } from '../../../components/icons'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ProjectTable from './components/ProjectTable'
 import { adminProjectsApi } from '../../../api/projects'
@@ -83,10 +82,6 @@ const Projects = () => {
             Giám sát các bản triển khai đang hoạt động và việc sử dụng mẫu trong studio của bạn.
           </p>
         </div>
-        {/* Chưa nối: không có endpoint admin tạo dự án hộ user khác */}
-        <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500">
-          <PlusIcon size={16} /> Tạo Dự án
-        </button>
       </div>
 
       {error && (

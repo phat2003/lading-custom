@@ -6,6 +6,7 @@ import PlanFormModal from './components/PlanFormModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { plansApi } from '../../../api/plans'
 import { errMsg } from '../adapters'
+import { downloadCsv, csvFilename } from '../exportCsv'
 
 // price là số nguyên VNĐ trong DB; card cần chuỗi hiển thị sẵn.
 const formatPrice = (price) => (price === 0 ? '0' : `${price.toLocaleString('vi-VN')} VNĐ`)
@@ -125,6 +126,20 @@ const PricingPlans = () => {
 
   const comparison = buildComparison(plans)
 
+  // Xuất bảng so sánh ra CSV. Dòng đầu là giá, các dòng sau là từng tính năng.
+  // Ô boolean quy đổi thành Có/Không cho dễ đọc trong Excel.
+  const handleExportCsv = () => {
+    const columns = [
+      { label: 'Tính năng', value: (r) => r.feature },
+      ...comparison.columns.map((planName, i) => ({
+        label: planName,
+        value: (r) => (typeof r.values[i] === 'boolean' ? (r.values[i] ? 'Có' : 'Không') : r.values[i]),
+      })),
+    ]
+    const rows = [{ feature: 'Giá', values: plans.map((p) => p.priceText) }, ...comparison.rows]
+    downloadCsv(csvFilename('bang-gia'), columns, rows)
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -182,8 +197,12 @@ const PricingPlans = () => {
               Tổng hợp từ danh sách tính năng của từng gói ở trên.
             </p>
           </div>
-          {/* Chưa nối: không có endpoint xuất CSV bảng giá */}
-          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800">
+          {/* Xuất phía client — dữ liệu đã có sẵn, không cần endpoint riêng. */}
+          <button
+            onClick={handleExportCsv}
+            disabled={loading || comparison.rows.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+          >
             <DownloadIcon size={16} /> Xuất CSV
           </button>
         </div>
