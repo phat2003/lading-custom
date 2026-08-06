@@ -13,6 +13,27 @@
   background-size: 20px 20px;
 }
 
+/* ===== Thẻ template — rê chuột thì ảnh tự cuộn để xem hết trang =====
+   Ảnh để chiều cao tự nhiên (thường cao hơn khung 10rem). Khi hover thì đẩy
+   lên đúng phần dôi ra: translateY(10rem - chiều cao ảnh).
+   min(0px, ...) chặn trường hợp ảnh THẤP hơn khung — nếu không ảnh sẽ bị đẩy
+   xuống và để hở một mảng trống. */
+.thumb-scroll {
+  transition: transform 2.6s ease-in-out;
+}
+.group:hover .thumb-scroll {
+  transform: translateY(min(0px, calc(10rem - 100%)));
+}
+
+/* Tôn trọng thiết lập giảm chuyển động của hệ điều hành */
+@media (prefers-reduced-motion: reduce) {
+  .thumb-scroll,
+  .group:hover .thumb-scroll {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* ===== Template Builder — bảng màu 2 chế độ (dark/light) =====
    Đổi data-mode ở thẻ gốc là toàn bộ builder đổi theo, không cần truyền props. */
 .builder-theme[data-mode='dark'] {

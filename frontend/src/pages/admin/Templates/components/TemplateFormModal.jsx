@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AdminModal from '../../components/AdminModal'
+import { ImageIcon } from '../../../../components/icons'
+import { mediaApi } from '../../../../api/media'
+import { errMsg } from '../../adapters'
 
 const CATEGORIES = ['SaaS', 'Agency', 'Startup', 'Webinar', 'Portfolio']
 const EMPTY = { name: '', category: 'SaaS', tier: 'Free', status: 'Draft', thumbnailUrl: '' }
@@ -11,6 +14,9 @@ const labelCls = 'mb-1 block text-xs font-medium text-slate-400'
 // Modal tạo mới / chỉnh sửa template. initial = null nghĩa là tạo mới.
 export default function TemplateFormModal({ open, initial, submitting, onClose, onSubmit }) {
   const [form, setForm] = useState(EMPTY)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileRef = useRef(null)
   const isEdit = Boolean(initial)
 
   useEffect(() => {
@@ -20,14 +26,33 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
       setForm(
         initial ? { ...EMPTY, ...initial, category: initial.category || EMPTY.category } : EMPTY,
       )
+      setUploadError('')
     }
   }, [open, initial])
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
+  // Chọn ảnh -> upload ngay -> lấy file_url backend trả về.
+  const handlePickImage = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // reset để chọn lại đúng file đó vẫn kích hoạt onChange
+    if (!file) return
+
+    setUploading(true)
+    setUploadError('')
+    try {
+      const res = await mediaApi.uploadImage(file)
+      setForm((f) => ({ ...f, thumbnailUrl: res.data.data.file_url }))
+    } catch (err) {
+      setUploadError(errMsg(err, 'Tải ảnh thất bại.'))
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const submit = (e) => {
     e.preventDefault()
-    if (!form.name.trim() || submitting) return
+    if (!form.name.trim() || submitting || uploading) return
     onSubmit(form)
   }
 
@@ -80,13 +105,56 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
         </div>
 
         <div>
-          <label className={labelCls}>Ảnh thumbnail (URL)</label>
-          <input
-            value={form.thumbnailUrl}
-            onChange={set('thumbnailUrl')}
-            className={inputCls}
-            placeholder="/uploads/thumbnail.png"
-          />
+          <label className={labelCls}>Ảnh thumbnail</label>
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-700 p-3">
+            {form.thumbnailUrl ? (
+              <img
+                src={form.thumbnailUrl}
+                alt="Thumbnail template"
+                className="h-14 w-20 shrink-0 rounded-md border border-slate-800 object-cover"
+              />
+            ) : (
+              <span className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-600">
+                <ImageIcon size={20} />
+              </span>
+            )}
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-slate-300">
+                {form.thumbnailUrl ? 'Đã có ảnh' : 'Chưa chọn ảnh'}
+              </p>
+              <p className="text-xs text-slate-500">PNG, JPG hoặc WebP · tối đa 5MB</p>
+            </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handlePickImage}
+              className="hidden"
+            />
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              >
+                {uploading ? 'Đang tải...' : form.thumbnailUrl ? 'Đổi ảnh' : 'Chọn ảnh'}
+              </button>
+              {form.thumbnailUrl && !uploading && (
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, thumbnailUrl: '' }))}
+                  className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-800 hover:text-red-400"
+                  title="Bỏ ảnh"
+                >
+                  Xóa
+                </button>
+              )}
+            </div>
+          </div>
+          {uploadError && <p className="mt-1.5 text-xs text-red-400">{uploadError}</p>}
         </div>
 
         <div className="flex justify-end gap-2 pt-2">

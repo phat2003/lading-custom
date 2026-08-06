@@ -211,7 +211,13 @@ const Templates = () => {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((t) => (
-            <TemplateCard key={t.id} template={t} onEdit={openEdit} onDelete={setDeleting} />
+            <TemplateCard
+              key={t.id}
+              template={t}
+              onEdit={openEdit}
+              onEditContent={(tpl) => navigate(`/admin/templates/${tpl.id}/edit`)}
+              onDelete={setDeleting}
+            />
           ))}
         </div>
       )}

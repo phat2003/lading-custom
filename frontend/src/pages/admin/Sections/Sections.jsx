@@ -21,6 +21,7 @@ const toUI = (s) => ({
   name: s.display_name,
   type: s.section_type,
   usedIn: s.used_in ?? 0,
+  thumbnailUrl: s.thumbnail_url || '',
   defaultContent: s.default_content,
 })
 

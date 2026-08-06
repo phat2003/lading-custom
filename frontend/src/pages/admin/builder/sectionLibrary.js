@@ -13,7 +13,9 @@ const DEFAULT_SECTION_STYLE = {
 }
 
 // elements phẳng -> { section, children }. Trả null nếu dữ liệu không dùng được.
-const toBlock = (elements) => {
+// meta mang section_type + id nguồn để khi lưu template còn biết section này
+// thuộc loại gì và bắt nguồn từ mẫu nào trong thư viện.
+const toBlock = (elements, meta = {}) => {
   if (!Array.isArray(elements) || elements.length === 0) return null
 
   const root = elements.find((el) => el.type === 'section' && !el.parentId)
@@ -29,7 +31,14 @@ const toBlock = (elements) => {
   }))
 
   if (!root && children.length === 0) return null
-  return { section: { style: { ...(root?.style || DEFAULT_SECTION_STYLE) } }, children }
+  return {
+    section: {
+      style: { ...(root?.style || DEFAULT_SECTION_STYLE) },
+      sectionType: meta.sectionType || 'custom',
+      sourceSectionTemplateId: meta.sourceSectionTemplateId || null,
+    },
+    children,
+  }
 }
 
 // Danh sách từ API -> danh sách biến thể kéo-thả cho ElementPanel.
@@ -37,7 +46,10 @@ const toBlock = (elements) => {
 export const toLibraryVariants = (items = []) =>
   items
     .map((s) => {
-      const block = toBlock(s.default_content?.elements)
+      const block = toBlock(s.default_content?.elements, {
+        sectionType: s.section_type,
+        sourceSectionTemplateId: s.section_template_id,
+      })
       if (!block) return null
       return {
         label: s.display_name,
