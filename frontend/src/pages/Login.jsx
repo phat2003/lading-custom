@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, dashboardPath } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,8 +34,10 @@ export default function Login() {
     }
   }
 
+  // Màn hình chào chỉ hiện với user thường, nhưng vẫn dùng dashboardPath
+  // để không phải sửa 2 nơi nếu sau này đổi đường dẫn.
   const handleStartWorkspace = () => {
-    navigate('/projects')
+    navigate(dashboardPath)
   }
 
   // Screen after successful login 

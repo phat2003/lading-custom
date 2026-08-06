@@ -7,6 +7,7 @@ import {
   LogOutIcon,
   SunIcon,
   MoonIcon,
+  HomeIcon,
 } from '../../../components/icons'
 import Avatar from '../../../components/common/Avatar'
 import { useAuth } from '../../../context/AuthContext'
@@ -93,6 +94,17 @@ export default function AdminTopbar() {
             <SunIcon size={17} />
           </span>
         </button>
+
+        {/* Xem trang chủ công khai — mở tab mới để không mất chỗ đang làm trong admin */}
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Xem trang chủ (mở tab mới)"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-dim)] transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-400/40 hover:text-violet-400"
+        >
+          <HomeIcon size={17} />
+        </a>
 
         <button className="relative rounded-lg p-1.5 text-[var(--bd-dim)] transition-colors hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)]" title="Thông báo">
           <BellIcon size={20} />
