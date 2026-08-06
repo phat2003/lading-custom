@@ -430,8 +430,10 @@ var previewLayoutTemplate = template.Must(template.New("preview_layout").Parse(`
 	<meta name="viewport" content="{{ .Viewport }}">
 	<title>{{ .Title }}</title>
 
-	<!-- Tailwind CSS qua CDN (không dùng file tĩnh của backend -> tránh CORS trong iframe) -->
-	<script src="https://cdn.tailwindcss.com"></script>
+	<!-- CSS utility nhúng thẳng bên dưới, KHÔNG tải Tailwind từ CDN.
+	     Preview phải khớp với trang publish từng pixel — mà trang publish đã bỏ
+	     CDN, nên hai bên dùng chung rendererUtilityCSS. Nhúng inline cũng tránh
+	     luôn chuyện CORS trong iframe, đúng lý do ban đầu chọn CDN. -->
 
 	<!-- Google Fonts: Inter -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -455,7 +457,7 @@ var previewLayoutTemplate = template.Must(template.New("preview_layout").Parse(`
 		}
 		a { color: inherit; text-decoration: none; }
 		img { max-width: 100%; }
-
+` + rendererUtilityCSS + `
 		/* Khung preview: giới hạn bề rộng đúng theo thiết bị đang chọn */
 		.preview-root {
 			width: 100%;

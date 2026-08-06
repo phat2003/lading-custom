@@ -277,7 +277,7 @@ type staticPageData struct {
 }
 
 // wrapStaticHTML ghép các mảnh section thành 1 trang HTML5 self-contained để publish:
-//   - Tailwind qua CDN + Google Fonts Inter + Material Symbols (không phụ thuộc file tĩnh của backend).
+//   - CSS utility nhúng sẵn trong layout (KHÔNG tải Tailwind từ CDN) + Google Fonts.
 //   - Meta SEO cơ bản: title, description, og:title, og:description.
 //   - Viewport responsive chuẩn; lưới features co theo màn hình (desktop 3 / tablet 2 / mobile 1 cột).
 //   - Script nhỏ xử lý accordion FAQ.
@@ -319,8 +319,11 @@ var staticLayoutTemplate = template.Must(template.New("static_layout").Parse(`<!
 	<meta property="og:title" content="{{ .Title }}">
 	{{ if .Description }}<meta property="og:description" content="{{ .Description }}">{{ end }}
 
-	<!-- Tailwind CDN (bản production của CDN script) -->
-	<script src="https://cdn.tailwindcss.com"></script>
+	<!-- KHÔNG dùng cdn.tailwindcss.com ở trang publish.
+	     Script đó là bản dev: nó tải ~300KB JS rồi biên dịch CSS ngay trong trình
+	     duyệt, và biến mọi trang khách hàng đã publish thành phụ thuộc vào một
+	     host bên ngoài — CDN chết là toàn bộ trang mất sạch style cùng lúc.
+	     Thay bằng đúng những utility mà renderer sinh ra, nhúng thẳng bên dưới. -->
 
 	<!-- Google Fonts: Inter + Material Symbols Outlined (icon cho features) -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -348,8 +351,9 @@ var staticLayoutTemplate = template.Must(template.New("static_layout").Parse(`<!
 			margin: 0 auto;
 		}
 
+` + rendererUtilityCSS + `
 		/* Lưới features/testimonials responsive: mobile 1 cột (mặc định).
-		   Dùng !important để thắng utility grid-cols-* mà Tailwind CDN chèn vào head lúc runtime. */
+		   !important để thắng grid-cols-* khai báo ngay phía trên. */
 		.preview-grid {
 			grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
 		}
