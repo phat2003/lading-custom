@@ -201,8 +201,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// Sinh HTML tĩnh để xem trước bản sẽ publish (chưa lưu snapshot).
 		authorized.POST("/landing-pages/:id/generate-static", staticHandler.GenerateStatic)
 		// Publish: sinh HTML tĩnh, lưu snapshot với slug duy nhất, đổi status sang published.
-		authorized.POST("/landing-pages/:id/publish", staticHandler.PublishPage)
-		// Unpublish: đổi status về draft -> /p/:slug trả 404. Snapshot cũ vẫn giữ trong DB.
+		// CHỈ GÓI PRO — đây là ranh giới thu tiền của sản phẩm: gói free dựng và
+		// xem trước trang thoải mái, nhưng đưa lên link công khai thì phải trả phí.
+		authorized.POST("/landing-pages/:id/publish", middleware.ProRequired(), staticHandler.PublishPage)
+		// Unpublish KHÔNG chặn theo gói: user hạ xuống free vẫn phải gỡ được trang
+		// của mình xuống. Chặn ở đây là nhốt nội dung của họ ở trạng thái công khai.
 		authorized.POST("/landing-pages/:id/unpublish", staticHandler.UnpublishPage)
 
 		// ---- Section API ----

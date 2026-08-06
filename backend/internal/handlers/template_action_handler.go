@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	"github.com/nhienthai/lading-custom/backend/internal/models"
 	"github.com/nhienthai/lading-custom/backend/internal/repository"
 	"github.com/nhienthai/lading-custom/backend/internal/service"
 	"github.com/nhienthai/lading-custom/backend/pkg/response"
@@ -29,6 +30,10 @@ func (h *TemplateActionHandler) failFromError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		response.Fail(c, http.StatusNotFound, "không tìm thấy trang hoặc mẫu giao diện")
+	// Tách khỏi nhánh 403 bên dưới: frontend cần phân biệt "không có quyền"
+	// (bế tắc) với "cần nâng cấp gói" (mời nâng cấp) để hiện đúng thông báo.
+	case errors.Is(err, service.ErrUpgradeRequired):
+		response.Fail(c, http.StatusPaymentRequired, err.Error())
 	case errors.Is(err, repository.ErrForbidden):
 		response.Fail(c, http.StatusForbidden, "bạn không có quyền thao tác trên tài nguyên này")
 	default:
@@ -71,10 +76,28 @@ type createFromTemplateReq struct {
 	Name       string `json:"name" binding:"required,min=2"`
 }
 
+// currentPlanType đọc gói dịch vụ do AuthRequired nạp từ DB vào context.
+// Không có/sai kiểu -> coi như gói free: mặc định về phía hạn chế, vì nhầm sang
+// pro nghĩa là phát không nội dung trả phí.
+func currentPlanType(c *gin.Context) models.PlanType {
+	v, ok := c.Get("plan_type")
+	if !ok {
+		return models.PlanFree
+	}
+	plan, ok := v.(models.PlanType)
+	if !ok {
+		return models.PlanFree
+	}
+	return plan
+}
+
 // POST /pages/from-template
 func (h *TemplateActionHandler) CreateFromTemplate(c *gin.Context) {
-	userIDVal, _ := c.Get("user_id")
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
 
 	var req createFromTemplateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,7 +108,7 @@ func (h *TemplateActionHandler) CreateFromTemplate(c *gin.Context) {
 	templateID, _ := uuid.Parse(req.TemplateID)
 	projectID, _ := uuid.Parse(req.ProjectID)
 
-	page, err := h.actionService.CreatePageFromTemplate(userID, projectID, templateID, req.Name)
+	page, err := h.actionService.CreatePageFromTemplate(userID, projectID, templateID, req.Name, currentPlanType(c))
 	if err != nil {
 		h.failFromError(c, err)
 		return

@@ -81,7 +81,46 @@ func (s *TemplateActionService) SavePageAsTemplate(userID, pageID uuid.UUID, tem
 }
 
 // CreatePageFromTemplate tạo một Landing Page mới từ 1 Template có sẵn
-func (s *TemplateActionService) CreatePageFromTemplate(userID, projectID, templateID uuid.UUID, pageName string) (*models.LandingPage, error) {
+// ErrUpgradeRequired: tài nguyên có thật và user được phép thấy, nhưng gói hiện
+// tại chưa đủ để dùng. Khác hẳn ErrForbidden ("không phải của bạn") — ở đây câu
+// trả lời đúng cho người dùng là "nâng cấp gói", không phải "bạn không có quyền".
+//
+// Đặt ở tầng service chứ không phải repository vì đây là luật kinh doanh, không
+// phải trạng thái dữ liệu.
+var ErrUpgradeRequired = errors.New("mẫu này chỉ dành cho gói Pro")
+
+// checkCloneAllowed quyết định user có được nhân bản template này không.
+// Tách khỏi CreatePageFromTemplate để test được luật mà không cần DB.
+//
+// Thứ tự hai nhánh là cố ý: xét QUYỀN SỞ HỮU trước, GÓI DỊCH VỤ sau. Nếu đảo
+// lại, một mẫu riêng tư premium của người khác sẽ trả về "cần nâng cấp gói" —
+// câu đó vô tình xác nhận mẫu có thật, và nâng gói xong vẫn không clone được.
+func checkCloneAllowed(tpl *models.Template, userID uuid.UUID, plan models.PlanType) error {
+	isSystem := tpl.Type == models.TemplateSystem
+	isOwner := tpl.OwnerID != nil && *tpl.OwnerID == userID
+
+	// Chỉ được clone mẫu hệ thống (dùng chung) hoặc mẫu do chính mình sở hữu.
+	if !isSystem && !isOwner {
+		return fmt.Errorf("mẫu giao diện này là riêng tư: %w", repository.ErrForbidden)
+	}
+
+	// Mẫu premium chỉ dành cho gói Pro. Chặn ở tầng service chứ không chỉ ẩn nút
+	// bên frontend — gọi thẳng API là lấy được nội dung trả phí.
+	// Mẫu của CHÍNH MÌNH không xét tier: user đã sở hữu nội dung đó rồi, hạ gói
+	// không thể tịch thu ngược.
+	if isSystem && tpl.Tier == models.TierPremium && plan != models.PlanPro {
+		return ErrUpgradeRequired
+	}
+
+	return nil
+}
+
+// CreatePageFromTemplate nhân bản 1 Template thành Landing Page trong dự án của user.
+//
+// planType là gói của user, do handler đọc từ context. Giá trị này đáng tin vì
+// AuthRequired nạp lại từ DB mỗi request — hạ gói pro->free có hiệu lực ngay,
+// không chờ token hết hạn.
+func (s *TemplateActionService) CreatePageFromTemplate(userID, projectID, templateID uuid.UUID, pageName string, planType models.PlanType) (*models.LandingPage, error) {
 	// 1. Kiểm tra dự án (Project) có thuộc về User này không
 	_, err := s.projectRepo.FindByIDAndOwnerID(projectID, userID)
 	if err != nil {
@@ -94,12 +133,8 @@ func (s *TemplateActionService) CreatePageFromTemplate(userID, projectID, templa
 		return nil, fmt.Errorf("không tìm thấy mẫu giao diện: %w", gorm.ErrRecordNotFound)
 	}
 
-	// BẢO MẬT: Chỉ được clone mẫu hệ thống (dùng chung) hoặc mẫu do chính mình sở hữu.
-	// Mẫu 'user' của người khác là riêng tư — không cho clone.
-	isSystem := template.Type == models.TemplateSystem
-	isOwner := template.OwnerID != nil && *template.OwnerID == userID
-	if !isSystem && !isOwner {
-		return nil, fmt.Errorf("mẫu giao diện này là riêng tư: %w", repository.ErrForbidden)
+	if err := checkCloneAllowed(template, userID, planType); err != nil {
+		return nil, err
 	}
 
 	// 3. Dựng trang mới + các section copy từ template
