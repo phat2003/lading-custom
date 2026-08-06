@@ -7,7 +7,7 @@ import api from './client'
 //
 // update() nhận payload từng phần: field nào không gửi thì giữ nguyên.
 export const profileApi = {
-  get: () => api.get('/profile'),
+  get: (config) => api.get('/profile', config),
   update: (payload) => api.put('/profile', payload),
   changePassword: (payload) => api.put('/profile/password', payload),
 }
