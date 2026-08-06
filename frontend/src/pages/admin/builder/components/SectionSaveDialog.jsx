@@ -7,7 +7,7 @@ const labelCls = 'block text-[10px] font-semibold uppercase tracking-widest text
 
 // Hộp thoại lưu Section mẫu: nhập tên + chọn loại rồi lưu vào thư viện.
 // Dùng trong builder (nền tối) khi chạy ở chế độ Section.
-const SectionSaveDialog = ({ open, initial, onCancel, onConfirm }) => {
+const SectionSaveDialog = ({ open, initial, saving = false, error = '', onCancel, onConfirm }) => {
   const [name, setName] = useState('')
   const [type, setType] = useState('hero')
 
@@ -66,19 +66,27 @@ const SectionSaveDialog = ({ open, initial, onCancel, onConfirm }) => {
           </select>
         </div>
 
+        {error && (
+          <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            {error}
+          </p>
+        )}
+
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-[var(--bd-border)] px-4 py-2 text-sm text-[var(--bd-dim)] transition-colors duration-200 hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)]"
+            disabled={saving}
+            className="rounded-xl border border-[var(--bd-border)] px-4 py-2 text-sm text-[var(--bd-dim)] transition-colors duration-200 hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] disabled:opacity-40"
           >
             Hủy
           </button>
           <button
             type="submit"
-            className="rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-2 text-sm font-semibold text-white shadow-[0_0_22px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_28px_-2px_rgba(139,92,246,1)] active:translate-y-0"
+            disabled={saving}
+            className="rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-2 text-sm font-semibold text-white shadow-[0_0_22px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_28px_-2px_rgba(139,92,246,1)] active:translate-y-0 disabled:pointer-events-none disabled:opacity-60"
           >
-            {initial ? 'Cập nhật' : 'Lưu Section'}
+            {saving ? 'Đang lưu…' : initial ? 'Cập nhật' : 'Lưu Section'}
           </button>
         </div>
       </form>

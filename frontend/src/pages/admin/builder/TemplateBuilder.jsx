@@ -7,10 +7,24 @@ import LayersPanel from './components/LayersPanel'
 import BuilderCanvas from './components/BuilderCanvas'
 import PropertiesPanel from './components/PropertiesPanel'
 import SectionSaveDialog from './components/SectionSaveDialog'
-import { getSectionDraft, saveSectionDraft } from './sectionStore'
+import { sectionsApi } from '../../../api/sections'
+import { toLibraryVariants } from './sectionLibrary'
 
 const newId = () =>
   crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())
+
+// Khung Section rỗng seed sẵn khi bắt đầu dựng một section mẫu mới.
+const blankSection = () => [
+  {
+    id: newId(),
+    type: 'section',
+    content: '',
+    x: 0,
+    y: 0,
+    parentId: null,
+    style: { width: 860, height: 400, bgColor: '#ffffff', borderRadius: 0, columns: 1 },
+  },
+]
 
 // mode: 'template' (dựng cả trang) | 'section' (dựng 1 section mẫu để tái sử dụng).
 const TemplateBuilder = ({ mode = 'template' }) => {
@@ -19,32 +33,18 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const { id } = useParams()
 
   const [device, setDevice] = useState('desktop')
-  const [elements, setElements] = useState(() => {
-    if (isSection) {
-      const draft = id ? getSectionDraft(id) : null
-      if (draft?.elements?.length) return draft.elements
-      // Chế độ Section: seed sẵn 1 khung Section rỗng để admin dựng nội dung bên trong.
-      return [
-        {
-          id: newId(),
-          type: 'section',
-          content: '',
-          x: 0,
-          y: 0,
-          parentId: null,
-          style: { width: 860, height: 400, bgColor: '#ffffff', borderRadius: 0, columns: 1 },
-        },
-      ]
-    }
-    return []
-  })
-  const [sectionMeta] = useState(() => (isSection && id ? getSectionDraft(id) : null))
+  // Chế độ Section: seed sẵn 1 khung Section rỗng để admin dựng nội dung bên trong.
+  const [elements, setElements] = useState(() => (isSection ? blankSection() : []))
+  const [sectionMeta, setSectionMeta] = useState(null) // { id, name, type } khi đang sửa
   const [saveOpen, setSaveOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [past, setPast] = useState([])
   const [future, setFuture] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
   const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
+  const [library, setLibrary] = useState([]) // section mẫu admin đã lưu, lấy từ API
   // Giao diện builder: 'dark' | 'light' (nhớ lựa chọn giữa các lần mở).
   const [theme, setTheme] = useState(() => localStorage.getItem('builderTheme') || 'dark')
 
@@ -58,18 +58,61 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
 
-  // Lưu Section mẫu (chế độ Section) vào thư viện rồi quay lại danh sách.
-  const handleSaveSection = ({ name, type }) => {
-    const draftId = sectionMeta?.id || id || Date.now()
-    saveSectionDraft({
-      id: draftId,
-      name,
-      type,
-      usedIn: sectionMeta?.usedIn || 0,
-      elements,
-      updatedAt: Date.now(),
-    })
-    navigate('/admin/sections')
+  // Nạp thư viện Section mẫu (do admin tạo) để kéo lại vào trang.
+  // Lỗi ở đây chỉ làm thiếu mục "Section mẫu", không chặn việc dựng trang.
+  useEffect(() => {
+    let cancelled = false
+    sectionsApi
+      .listAll()
+      .then((res) => {
+        if (!cancelled) setLibrary(toLibraryVariants(res.data.data || []))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Nạp lại section mẫu đang sửa từ API (/admin/sections/:id/edit).
+  useEffect(() => {
+    if (!isSection || !id) return
+    let cancelled = false
+    sectionsApi
+      .get(id)
+      .then((res) => {
+        if (cancelled) return
+        const s = res.data.data
+        setSectionMeta({ id: s.section_template_id, name: s.display_name, type: s.section_type })
+        // default_content lưu dạng { elements: [...] } do chính builder sinh ra.
+        const saved = s.default_content?.elements
+        if (Array.isArray(saved) && saved.length) setElements(saved)
+      })
+      .catch(() => {
+        if (!cancelled) setSaveError('Không tải được section này.')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isSection, id])
+
+  // Lưu Section mẫu vào thư viện (API thật) rồi quay lại danh sách.
+  const handleSaveSection = async ({ name, type }) => {
+    setSaving(true)
+    setSaveError('')
+    const payload = {
+      display_name: name,
+      section_type: type,
+      default_content: { elements },
+    }
+    try {
+      if (sectionMeta?.id) await sectionsApi.update(sectionMeta.id, payload)
+      else await sectionsApi.create(payload)
+      navigate('/admin/sections')
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || 'Lưu section thất bại.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   // --- Lịch sử (undo/redo) ---
@@ -264,7 +307,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
       />
       <div className="flex flex-1 overflow-hidden">
         <BuilderRail activePanel={activePanel} onToggle={togglePanel} />
-        {activePanel === 'add' && <ElementPanel recent={recent} onUse={useRecent} />}
+        {activePanel === 'add' && (
+          <ElementPanel recent={recent} library={library} onUse={useRecent} />
+        )}
         {activePanel === 'layers' && (
           <LayersPanel
             elements={elements}
@@ -297,6 +342,8 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         <SectionSaveDialog
           open={saveOpen}
           initial={sectionMeta}
+          saving={saving}
+          error={saveError}
           onCancel={() => setSaveOpen(false)}
           onConfirm={handleSaveSection}
         />

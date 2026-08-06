@@ -101,6 +101,7 @@ const Dashboard = () => {
     return () => controller.abort()
   }, [fetchAll])
 
+
   return (
     <div className="space-y-6">
       {/* Header */}

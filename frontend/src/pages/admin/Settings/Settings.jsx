@@ -28,7 +28,7 @@ const ROLE_LABEL = {
 const EMPTY_SETTINGS = {
   platform: { name: '', logo_url: null },
   ai_engine: { enabled: false, daily_limit: 0, default_model: '', concurrent_limit: 0 },
-  account: { full_name: '', email: '', role: 'admin', timezone: '', session_timeout: 'never' },
+  account: { full_name: '', email: '', role: 'admin', phone: '', timezone: '', session_timeout: 'never' },
 }
 
 const Settings = () => {
@@ -57,8 +57,17 @@ const Settings = () => {
     setLoading(true)
     setError('')
     try {
-      const res = await settingsApi.get({ signal })
-      applySettings(res.data.data)
+      // GET /admin/settings không trả số điện thoại (nhóm account chỉ có
+      // họ tên/email/role/múi giờ), nên lấy thêm từ hồ sơ cá nhân.
+      const [res, profileRes] = await Promise.all([
+        settingsApi.get({ signal }),
+        profileApi.get({ signal }),
+      ])
+      const data = res.data.data
+      applySettings({
+        ...data,
+        account: { ...data.account, phone: profileRes.data.data?.phone || '' },
+      })
     } catch (err) {
       if (err.name === 'CanceledError') return
       setError(errMsg(err, 'Không tải được cấu hình hệ thống.'))
@@ -86,6 +95,8 @@ const Settings = () => {
       // kèm nhóm account đọc từ app_user, nên phải ghi profile xong trước —
       // chạy song song thì response có thể mang múi giờ cũ và ghi đè lại form.
       await profileApi.update({
+        full_name: form.account.full_name.trim(),
+        phone: form.account.phone.trim(),
         timezone: form.account.timezone,
         session_timeout: form.account.session_timeout,
       })
@@ -98,7 +109,13 @@ const Settings = () => {
           concurrent_limit: Number(form.ai_engine.concurrent_limit) || 0,
         },
       })
-      applySettings(settingsRes.data.data)
+      // Response settings không kèm phone -> giữ lại giá trị vừa lưu,
+      // nếu không ô số điện thoại sẽ bị xoá trắng sau mỗi lần lưu.
+      const saved = settingsRes.data.data
+      applySettings({
+        ...saved,
+        account: { ...saved.account, phone: form.account.phone.trim() },
+      })
       setSavedAt(new Date())
     } catch (err) {
       setError(errMsg(err, 'Lưu cấu hình thất bại.'))
@@ -116,7 +133,12 @@ const Settings = () => {
     setError('')
     try {
       const res = await settingsApi.uploadLogo(file)
-      applySettings(res.data.data) // backend trả về settings đã có logo mới
+      // Backend trả về settings đã có logo mới, nhưng không kèm phone -> giữ lại.
+      const saved = res.data.data
+      applySettings({
+        ...saved,
+        account: { ...saved.account, phone: form.account.phone },
+      })
       setSavedAt(new Date())
     } catch (err) {
       setError(errMsg(err, 'Tải logo thất bại.'))
@@ -257,6 +279,24 @@ const Settings = () => {
                 ))}
               </select>
             </div>
+            <div>
+              <label className={labelCls}>Giới hạn luồng đồng thời</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.ai_engine.concurrent_limit}
+                  onChange={(e) =>
+                    update('ai_engine', 'concurrent_limit', Number(e.target.value))
+                  }
+                  disabled={loading}
+                  className={`${inputCls} pr-16`}
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+                  luồng
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-300/80">
             <AlertTriangleIcon size={16} className="mt-0.5 shrink-0" />
@@ -299,6 +339,26 @@ const Settings = () => {
             </button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Họ tên</label>
+              <input
+                value={form.account.full_name}
+                onChange={(e) => update('account', 'full_name', e.target.value)}
+                disabled={loading}
+                placeholder="VD: Nguyễn Văn A"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Số điện thoại</label>
+              <input
+                value={form.account.phone}
+                onChange={(e) => update('account', 'phone', e.target.value)}
+                disabled={loading}
+                placeholder="0901234567"
+                className={inputCls}
+              />
+            </div>
             <div>
               <label className={labelCls}>Múi giờ</label>
               <select

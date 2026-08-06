@@ -13,6 +13,7 @@ import {
   ZapIcon,
 } from '../../../components/icons'
 import Avatar from '../../../components/common/Avatar'
+import { useAuth } from '../../../context/AuthContext'
 
 // Menu chính của khu vực admin. Chỉ /admin (Dashboard) đã có trang,
 // các mục còn lại sẽ được dựng dần.
@@ -28,6 +29,10 @@ const menu = [
 ]
 
 export default function AdminSidebar() {
+  const { user, logout } = useAuth()
+  // Tên hiển thị lấy từ tài khoản đang đăng nhập, không hardcode.
+  const displayName = user?.full_name || user?.email || 'Admin'
+
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-800 bg-[#0b0f17]">
       {/* Logo */}
@@ -81,12 +86,17 @@ export default function AdminSidebar() {
           Help &amp; Docs
         </button>
         <div className="flex items-center gap-3 px-2">
-          <Avatar name="Jane Doe" size="sm" />
+          <Avatar name={displayName} size="sm" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">Jane Doe</p>
-            <p className="truncate text-xs text-slate-500">jane@amazingtech.io</p>
+            <p className="truncate text-sm font-medium text-white">{displayName}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email || ''}</p>
           </div>
-          <button className="text-slate-500 hover:text-slate-300" title="Đăng xuất">
+          {/* Xoá token + user; AdminRoute thấy user = null sẽ tự đẩy về /login. */}
+          <button
+            onClick={logout}
+            className="text-slate-500 transition-colors hover:text-red-400"
+            title="Đăng xuất"
+          >
             <LogOutIcon size={18} />
           </button>
         </div>
