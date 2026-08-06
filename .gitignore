@@ -35,3 +35,6 @@ yarn-error.log*
 *.pid
 # File upload từ user/admin
 backend/uploads/ 
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/

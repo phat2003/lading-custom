@@ -29,9 +29,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	// CORS — cho phép frontend gọi API.
 	// AllowCredentials không dùng vì auth qua Bearer token, không phải cookie.
-	// Production nên đổi AllowOrigins thành domain cụ thể thay vì "*".
+	// Danh sách origin đọc từ CORS_ALLOWED_ORIGINS; để trống thì mở "*" cho môi
+	// trường dev. Config.Load() đã chặn không cho production chạy với "*".
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
+		AllowOrigins: cfg.CORSAllowedOrigins,
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
 		MaxAge:       12 * time.Hour,
@@ -138,7 +139,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	api := r.Group("/api/v1")
 
 	// Auth (công khai)
-	auth := api.Group("/auth")
+	// Có rate limit vì đây là 2 endpoint duy nhất không cần token: login hở ra
+	// thì dò được mật khẩu, register hở ra thì bị spam tạo tài khoản rác.
+	// bcrypt làm chậm attacker phần nào nhưng đó không phải cơ chế chống brute force.
+	authLimiter := middleware.NewRateLimiter(10, time.Minute)
+	auth := api.Group("/auth", authLimiter.Middleware())
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
@@ -147,7 +152,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	// Các nhóm route cần đăng nhập.
 	// TODO(team): mỗi người tự thêm handler tương ứng với feature của mình.
 	authorized := api.Group("/")
-	authorized.Use(middleware.AuthRequired(cfg.JWTSecret))
+	authorized.Use(middleware.AuthRequired(cfg.JWTSecret, userRepo))
 	{
 		// ---- Profile API ----
 		authorized.GET("/profile", userHandler.GetProfile)
@@ -227,6 +232,14 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			sectionTemplates.GET("", sectionTemplateHandler.GetAll)
 		}
 
+		// ---- Template API cho user thường (trang "chọn mẫu") ----
+		// Chỉ ĐỌC. Handler tự lọc theo user đang đăng nhập: mẫu hệ thống đã
+		// publish + mẫu của chính họ. Quyền tạo/sửa/xoá nằm ở nhóm /admin.
+		templates := authorized.Group("/templates")
+		{
+			templates.GET("", templateHandler.ListForUser)
+		}
+
 		// ----Image Upload API ----
 		upload := authorized.Group("/upload")
 		{
@@ -259,13 +272,14 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	// Route admin (cần quyền admin).
 	admin := api.Group("/admin")
-	admin.Use(middleware.AuthRequired(cfg.JWTSecret), middleware.AdminRequired())
+	admin.Use(middleware.AuthRequired(cfg.JWTSecret, userRepo), middleware.AdminRequired())
 	{
 		// System template management
 		admin.POST("/templates", templateHandler.Create)
 		admin.GET("/templates", templateHandler.List)
 		admin.GET("/templates/:id", templateHandler.GetByID)
 		admin.PUT("/templates/:id", templateHandler.Update)
+		admin.PUT("/templates/:id/sections", templateHandler.ReplaceSections) // builder bấm "Xuất bản"
 		admin.DELETE("/templates/:id", templateHandler.Delete)
 		admin.POST("/templates/upload", uploadHandler.UploadTemplateFile)
 
