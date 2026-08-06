@@ -13,10 +13,10 @@ import { errMsg } from '../adapters'
 // đây là hằng số cấu hình của UI, không phải dữ liệu backend quản lý.
 import { AI_MODELS, TIMEZONES, SESSION_TIMEOUTS } from '../mock/settings'
 
-const cardCls = 'rounded-xl border border-slate-800 bg-[#111725] p-5'
-const labelCls = 'mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-500'
+const cardCls = 'rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-5'
+const labelCls = 'mb-1.5 block text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]'
 const inputCls =
-  'w-full rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 focus:border-slate-600 focus:outline-none'
+  'w-full rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] px-3 py-2 text-sm text-[var(--bd-text)] focus:border-[var(--bd-border)] focus:outline-none'
 
 const ROLE_LABEL = {
   super_admin: 'Siêu quản trị',
@@ -164,8 +164,8 @@ const Settings = () => {
   return (
     <div className="space-y-8 pb-4">
       <div>
-        <h1 className="text-xl font-bold text-white">Cài đặt hệ thống</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-xl font-bold text-[var(--bd-text)]">Cài đặt hệ thống</h1>
+        <p className="mt-1 text-sm text-[var(--bd-dim)]">
           Cấu hình các tham số toàn cục của Template Studio, ngưỡng AI và quyền quản trị.
         </p>
       </div>
@@ -193,7 +193,7 @@ const Settings = () => {
           </div>
           <div>
             <label className={labelCls}>Tài sản thương hiệu</label>
-            <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-700 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-dashed border-[var(--bd-border)] p-4">
               <div className="flex items-center gap-3">
                 {form.platform.logo_url ? (
                   <img
@@ -203,15 +203,15 @@ const Settings = () => {
                   />
                 ) : (
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-600">
-                    <ZapIcon size={20} className="text-white" />
+                    <ZapIcon size={20} className="text-[var(--bd-text)]" />
                   </span>
                 )}
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-[var(--bd-text)]">
                     {form.platform.logo_url ? 'Logo hiện tại' : 'Tải lên logo mới'}
                   </p>
                   {/* Backend chỉ nhận JPEG/PNG/WebP — SVG bị loại vì có thể chứa script */}
-                  <p className="text-xs text-slate-500">PNG, JPG hoặc WebP (tối đa 5MB)</p>
+                  <p className="text-xs text-[var(--bd-muted)]">PNG, JPG hoặc WebP (tối đa 5MB)</p>
                 </div>
               </div>
               <input
@@ -224,7 +224,7 @@ const Settings = () => {
               <button
                 onClick={() => logoInputRef.current?.click()}
                 disabled={saving || loading}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-50"
               >
                 Thay thế
               </button>
@@ -259,7 +259,7 @@ const Settings = () => {
                   disabled={loading}
                   className={`${inputCls} pr-20`}
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--bd-muted)]">
                   lời gọi API
                 </span>
               </div>
@@ -292,7 +292,7 @@ const Settings = () => {
                   disabled={loading}
                   className={`${inputCls} pr-16`}
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--bd-muted)]">
                   luồng
                 </span>
               </div>
@@ -315,12 +315,12 @@ const Settings = () => {
         description="Hồ sơ quản trị và bảo mật cá nhân."
       >
         <div className={`${cardCls} space-y-5`}>
-          <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center justify-between rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] p-4">
             <div className="flex items-center gap-3">
               <Avatar name={form.account.full_name || form.account.email} size="lg" />
               <div>
-                <p className="font-semibold text-white">{form.account.full_name}</p>
-                <p className="text-xs text-slate-500">{form.account.email}</p>
+                <p className="font-semibold text-[var(--bd-text)]">{form.account.full_name}</p>
+                <p className="text-xs text-[var(--bd-muted)]">{form.account.email}</p>
                 <div className="mt-1.5 flex gap-2">
                   <Badge color="purple">
                     {ROLE_LABEL[form.account.role] || form.account.role}
@@ -333,7 +333,7 @@ const Settings = () => {
                 setPasswordError('')
                 setPasswordOpen(true)
               }}
-              className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]"
             >
               Đổi mật khẩu
             </button>
@@ -394,11 +394,11 @@ const Settings = () => {
 
         <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
           <h3 className="font-semibold text-red-400">Vùng nguy hiểm</h3>
-          <p className="mt-0.5 text-sm text-slate-400">Các hành động không thể hoàn tác.</p>
+          <p className="mt-0.5 text-sm text-[var(--bd-dim)]">Các hành động không thể hoàn tác.</p>
           <div className="mt-4 flex items-center justify-between rounded-lg border border-red-500/20 p-4">
             <div>
-              <p className="text-sm font-medium text-white">Lưu trữ dữ liệu nền tảng</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-medium text-[var(--bd-text)]">Lưu trữ dữ liệu nền tảng</p>
+              <p className="text-xs text-[var(--bd-muted)]">
                 Xuất tất cả mẫu và người dùng sau đó xóa thực thể hiện tại.
               </p>
             </div>
@@ -413,8 +413,8 @@ const Settings = () => {
         </div>
       </SettingsSection>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
-        <p className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--bd-border)] pt-4">
+        <p className="flex items-center gap-2 text-sm text-[var(--bd-muted)]">
           {loading ? (
             <>
               <span className="h-2 w-2 rounded-full bg-slate-600" /> Đang tải cấu hình...
@@ -438,14 +438,14 @@ const Settings = () => {
           <button
             onClick={() => setForm(original)}
             disabled={!dirty || saving}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-lg border border-[var(--bd-border)] px-4 py-2 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             onClick={handleSave}
             disabled={saving || loading || !dirty}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)] disabled:opacity-50"
           >
             <SaveIcon size={16} /> {saving ? 'Đang lưu...' : 'Lưu tất cả thay đổi'}
           </button>

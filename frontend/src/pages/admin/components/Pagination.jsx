@@ -3,7 +3,7 @@ export default function Pagination({ page = 1, totalPages = 1, onChange }) {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
   const arrowClass =
-    'flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 text-slate-400 hover:bg-slate-800 disabled:opacity-40'
+    'flex h-8 w-8 items-center justify-center rounded-md border border-[var(--bd-border)] text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-40'
 
   return (
     <div className="flex items-center gap-1">
@@ -22,8 +22,8 @@ export default function Pagination({ page = 1, totalPages = 1, onChange }) {
           onClick={() => onChange?.(p)}
           className={`h-8 w-8 rounded-md text-sm ${
             p === page
-              ? 'bg-blue-600 text-white'
-              : 'border border-slate-800 text-slate-400 hover:bg-slate-800'
+              ? 'bg-blue-600 text-[var(--bd-text)]'
+              : 'border border-[var(--bd-border)] text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]'
           }`}
         >
           {p}

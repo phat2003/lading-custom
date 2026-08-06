@@ -6,10 +6,10 @@ const STATUS_COLOR = { Published: 'green', Draft: 'amber' }
 // Thẻ project trong "Workspace Management".
 export default function ProjectCard({ project }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#111725]">
+    <div className="overflow-hidden rounded-xl border border-[var(--bd-border)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/5 bg-[var(--bd-panel-solid)]">
       {/* Thumbnail placeholder */}
-      <div className="relative flex h-32 items-center justify-center border-b border-slate-800 bg-slate-900/50">
-        <MenuIcon size={28} className="text-slate-700" />
+      <div className="relative flex h-32 items-center justify-center border-b border-[var(--bd-border)] bg-[var(--bd-fill)]">
+        <MenuIcon size={28} className="text-[var(--bd-muted)]" />
         <span className="absolute right-3 top-3">
           <Badge color={STATUS_COLOR[project.status] || 'gray'}>{project.status}</Badge>
         </span>
@@ -17,15 +17,15 @@ export default function ProjectCard({ project }) {
 
       {/* Body */}
       <div className="p-4">
-        <p className="font-semibold text-white">{project.name}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-500">{project.domain}</p>
-        <p className="mt-1 text-xs text-slate-600">{project.updated}</p>
+        <p className="font-semibold text-[var(--bd-text)]">{project.name}</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--bd-muted)]">{project.domain}</p>
+        <p className="mt-1 text-xs text-[var(--bd-muted)]">{project.updated}</p>
 
         <div className="mt-3 flex items-center gap-2">
-          <button className="inline-flex items-center gap-1 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800">
+          <button className="inline-flex items-center gap-1 rounded-md border border-[var(--bd-border)] px-2.5 py-1 text-xs text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]">
             <EyeIcon size={14} /> View
           </button>
-          <button className="inline-flex items-center gap-1 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800">
+          <button className="inline-flex items-center gap-1 rounded-md border border-[var(--bd-border)] px-2.5 py-1 text-xs text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]">
             <PencilIcon size={14} /> Edit
           </button>
           <button className="inline-flex items-center gap-1 rounded-md border border-red-500/40 px-2 py-1 text-xs text-red-400 hover:bg-red-500/10">

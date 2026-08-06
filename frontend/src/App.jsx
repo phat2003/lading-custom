@@ -89,6 +89,7 @@ export default function App() {
 
         {/* Builder toàn màn hình — admin dựng template/section mẫu (AdminRoute) */}
         <Route path="/admin/templates/new" element={<AdminRoute><TemplateBuilder /></AdminRoute>} />
+        <Route path="/admin/templates/:id/edit" element={<AdminRoute><TemplateBuilder /></AdminRoute>} />
         {/* Cùng builder, chế độ Section: admin dựng section mẫu để tái sử dụng */}
         <Route path="/admin/sections/new" element={<AdminRoute><TemplateBuilder mode="section" /></AdminRoute>} />
         <Route path="/admin/sections/:id/edit" element={<AdminRoute><TemplateBuilder mode="section" /></AdminRoute>} />

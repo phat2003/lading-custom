@@ -78,6 +78,7 @@ export { default as CodeIcon } from './CodeIcon'
 export { default as ActivityIcon } from './ActivityIcon'
 export { default as SunIcon } from './SunIcon'
 export { default as MoonIcon } from './MoonIcon'
+export { default as HomeIcon } from './HomeIcon'
 
 // Base wrapper (tạo icon mới: <Icon>...path...</Icon>)
 export { default as Icon } from './Icon'

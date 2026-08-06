@@ -17,7 +17,7 @@ const AI_LOG_LIMIT = 4
 // Cấu hình 4 thẻ số liệu. key khớp đúng khối trong GET /admin/stats.
 // note = dòng mô tả tĩnh, dùng khi chỉ số đó không có delta theo kỳ.
 const CARDS = [
-  { key: 'total_users', label: 'Total Users', valueClass: 'text-white' },
+  { key: 'total_users', label: 'Total Users', valueClass: 'text-[var(--bd-text)]' },
   { key: 'total_projects', label: 'Projects', valueClass: 'text-blue-400' },
   {
     key: 'total_sections',
@@ -107,15 +107,15 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">
             Overview
           </p>
-          <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-[var(--bd-text)]">Admin Dashboard</h1>
         </div>
         <button
           onClick={() => fetchAll()}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-50"
         >
           <RefreshCwIcon size={16} /> {loading ? 'Đang tải...' : 'Refresh'}
         </button>

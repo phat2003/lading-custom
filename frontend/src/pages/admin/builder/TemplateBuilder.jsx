@@ -7,8 +7,12 @@ import LayersPanel from './components/LayersPanel'
 import BuilderCanvas from './components/BuilderCanvas'
 import PropertiesPanel from './components/PropertiesPanel'
 import SectionSaveDialog from './components/SectionSaveDialog'
+import TemplateSaveDialog from './components/TemplateSaveDialog'
 import { sectionsApi } from '../../../api/sections'
+import { templatesApi } from '../../../api/templates'
 import { toLibraryVariants } from './sectionLibrary'
+import { useTheme } from '../../../context/ThemeContext'
+import { elementsToSections, sectionsToElements } from './templateContent'
 
 const newId = () =>
   crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())
@@ -39,21 +43,17 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [saveOpen, setSaveOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  // Chế độ Template: metadata của template đang sửa + ý định lưu (nháp hay xuất bản).
+  const [templateMeta, setTemplateMeta] = useState(null)
+  const [publishIntent, setPublishIntent] = useState(false)
   const [past, setPast] = useState([])
   const [future, setFuture] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
   const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
   const [library, setLibrary] = useState([]) // section mẫu admin đã lưu, lấy từ API
-  // Giao diện builder: 'dark' | 'light' (nhớ lựa chọn giữa các lần mở).
-  const [theme, setTheme] = useState(() => localStorage.getItem('builderTheme') || 'dark')
-
-  const toggleTheme = () =>
-    setTheme((t) => {
-      const next = t === 'dark' ? 'light' : 'dark'
-      localStorage.setItem('builderTheme', next)
-      return next
-    })
+  // Giao diện dùng chung với khu admin (ThemeContext), không giữ state riêng.
+  const { theme, toggleTheme } = useTheme()
 
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
@@ -73,6 +73,64 @@ const TemplateBuilder = ({ mode = 'template' }) => {
     }
   }, [])
 
+  // Nạp template đang sửa từ API (/admin/templates/:id/edit).
+  useEffect(() => {
+    if (isSection || !id) return
+    let cancelled = false
+    templatesApi
+      .get(id)
+      .then((res) => {
+        if (cancelled) return
+        const t = res.data.data
+        setTemplateMeta({ id: t.template_id, name: t.name, category: t.category, tier: t.tier })
+        const loaded = sectionsToElements(t.sections || [])
+        if (loaded.length) setElements(loaded)
+      })
+      .catch(() => {
+        if (!cancelled) setSaveError('Không tải được template này.')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isSection, id])
+
+  // Lưu template: tạo mới (nếu chưa có) rồi ghi đè toàn bộ nội dung.
+  const handleSaveTemplate = async ({ name, category, tier }) => {
+    const sections = elementsToSections(elements)
+    if (sections.length === 0) {
+      setSaveError('Trang đang trống — hãy thêm ít nhất một phần tử trước khi lưu.')
+      return
+    }
+
+    setSaving(true)
+    setSaveError('')
+    const meta = {
+      name,
+      category,
+      tier,
+      status: publishIntent ? 'published' : 'draft',
+    }
+    try {
+      // Chưa có template thì tạo metadata trước để lấy id, sau đó mới ghi nội dung.
+      let templateId = templateMeta?.id
+      if (templateId) await templatesApi.update(templateId, meta)
+      else templateId = (await templatesApi.create(meta)).data.data.template_id
+
+      await templatesApi.replaceSections(templateId, sections)
+      navigate('/admin/templates')
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || 'Lưu template thất bại.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openTemplateSave = (publish) => {
+    setPublishIntent(publish)
+    setSaveError('')
+    setSaveOpen(true)
+  }
+
   // Nạp lại section mẫu đang sửa từ API (/admin/sections/:id/edit).
   useEffect(() => {
     if (!isSection || !id) return
@@ -82,7 +140,12 @@ const TemplateBuilder = ({ mode = 'template' }) => {
       .then((res) => {
         if (cancelled) return
         const s = res.data.data
-        setSectionMeta({ id: s.section_template_id, name: s.display_name, type: s.section_type })
+        setSectionMeta({
+          id: s.section_template_id,
+          name: s.display_name,
+          type: s.section_type,
+          thumbnailUrl: s.thumbnail_url || '',
+        })
         // default_content lưu dạng { elements: [...] } do chính builder sinh ra.
         const saved = s.default_content?.elements
         if (Array.isArray(saved) && saved.length) setElements(saved)
@@ -96,13 +159,14 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   }, [isSection, id])
 
   // Lưu Section mẫu vào thư viện (API thật) rồi quay lại danh sách.
-  const handleSaveSection = async ({ name, type }) => {
+  const handleSaveSection = async ({ name, type, thumbnailUrl }) => {
     setSaving(true)
     setSaveError('')
     const payload = {
       display_name: name,
       section_type: type,
       default_content: { elements },
+      thumbnail_url: thumbnailUrl || '',
     }
     try {
       if (sectionMeta?.id) await sectionsApi.update(sectionMeta.id, payload)
@@ -151,7 +215,18 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const addBlock = (blockDef, x, y) => {
     pushHistory()
     const sid = newId()
-    const section = { id: sid, type: 'section', content: '', x, y, parentId: null, style: { ...blockDef.section.style } }
+    // Giữ sectionType + nguồn gốc để khi lưu template còn biết section này loại gì.
+    const section = {
+      id: sid,
+      type: 'section',
+      content: '',
+      x,
+      y,
+      parentId: null,
+      sectionType: blockDef.section.sectionType || 'custom',
+      sourceSectionTemplateId: blockDef.section.sourceSectionTemplateId || null,
+      style: { ...blockDef.section.style },
+    }
     const children = blockDef.children.map((c) => ({
       id: newId(),
       type: c.type,
@@ -291,7 +366,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   return (
     <div
       data-mode={theme}
-      className="builder-theme flex h-screen flex-col bg-[var(--bd-app)] text-[var(--bd-text)]"
+      className="app-theme flex h-screen flex-col bg-[var(--bd-app)] text-[var(--bd-text)]"
     >
       <BuilderTopbar
         device={device}
@@ -302,6 +377,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         canRedo={future.length > 0}
         mode={mode}
         onSave={() => setSaveOpen(true)}
+        onSaveDraft={() => openTemplateSave(false)}
+        onPublish={() => openTemplateSave(true)}
+        saving={saving}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
@@ -337,6 +415,18 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         {/* Cột thuộc tính cố định: luôn hiển thị để bố cục không bị nhảy khi chọn/bỏ chọn */}
         <PropertiesPanel element={selected} onUpdate={updateElement} onDelete={deleteElement} />
       </div>
+
+      {!isSection && (
+        <TemplateSaveDialog
+          open={saveOpen}
+          initial={templateMeta}
+          publish={publishIntent}
+          saving={saving}
+          error={saveError}
+          onCancel={() => setSaveOpen(false)}
+          onConfirm={handleSaveTemplate}
+        />
+      )}
 
       {isSection && (
         <SectionSaveDialog

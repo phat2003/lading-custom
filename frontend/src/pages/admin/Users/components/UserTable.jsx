@@ -8,10 +8,10 @@ const STATUS_COLOR = { Active: 'green', Inactive: 'red' }
 // Bảng danh sách User của trang quản lý User.
 export default function UserTable({ users = [], onView, selectedId }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#111725]">
+    <div className="overflow-x-auto rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr className="text-left text-xs uppercase tracking-wide text-[var(--bd-muted)]">
             <th className="px-5 py-3 font-medium">Avt</th>
             <th className="px-5 py-3 font-medium">Name</th>
             <th className="px-5 py-3 font-medium">Email</th>
@@ -25,22 +25,22 @@ export default function UserTable({ users = [], onView, selectedId }) {
           {users.map((u) => (
             <tr
               key={u.id}
-              className={`border-t border-slate-800/60 hover:bg-slate-800/20 ${
-                selectedId === u.id ? 'bg-slate-800/40' : ''
+              className={`border-t border-[var(--bd-border)] hover:bg-[var(--bd-fill-hover)] ${
+                selectedId === u.id ? 'bg-[var(--bd-fill-hover)]' : ''
               }`}
             >
               <td className="px-5 py-3">
                 <Avatar name={u.name} size="sm" />
               </td>
               <td className="px-5 py-3">
-                <div className="font-medium text-white">{u.name}</div>
-                <div className="text-xs text-slate-500">Joined {u.joined}</div>
+                <div className="font-medium text-[var(--bd-text)]">{u.name}</div>
+                <div className="text-xs text-[var(--bd-muted)]">Joined {u.joined}</div>
               </td>
-              <td className="px-5 py-3 text-slate-400">{u.email}</td>
+              <td className="px-5 py-3 text-[var(--bd-dim)]">{u.email}</td>
               <td className="px-5 py-3">
                 <Badge color={PLAN_COLOR[u.plan] || 'gray'}>{u.plan}</Badge>
               </td>
-              <td className="px-5 py-3 font-mono text-slate-400">{u.phone}</td>
+              <td className="px-5 py-3 font-mono text-[var(--bd-dim)]">{u.phone}</td>
               <td className="px-5 py-3">
                 <Badge color={STATUS_COLOR[u.status] || 'gray'}>{u.status}</Badge>
               </td>
@@ -58,7 +58,7 @@ export default function UserTable({ users = [], onView, selectedId }) {
       </table>
 
       {users.length === 0 && (
-        <p className="px-5 py-6 text-center text-sm text-slate-500">
+        <p className="px-5 py-6 text-center text-sm text-[var(--bd-muted)]">
           Không tìm thấy user nào.
         </p>
       )}

@@ -5,9 +5,9 @@ import ProjectCard from './ProjectCard'
 // Admin chỉ THEO DÕI, không tạo dự án hộ người dùng nên không có nút tạo mới.
 export default function WorkspaceManagement({ projects = [] }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#111725] p-5">
+    <div className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-5">
       <div className="mb-4 flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-white">Workspace Management</h2>
+        <h2 className="text-sm font-semibold text-[var(--bd-text)]">Workspace Management</h2>
         <Badge color="green">{projects.length} projects</Badge>
       </div>
 

@@ -14,7 +14,7 @@ const inputCls =
 const colorCls =
   'h-9 w-full cursor-pointer rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] transition-colors hover:border-violet-400/40'
 const fileCls =
-  'block w-full text-xs text-[var(--bd-muted)] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-violet-500 file:to-cyan-400 file:px-3 file:py-1.5 file:font-medium file:text-white hover:file:opacity-90'
+  'block w-full text-xs text-[var(--bd-muted)] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-violet-500 file:to-cyan-400 file:px-3 file:py-1.5 file:font-medium file:text-[var(--bd-text)] hover:file:opacity-90'
 
 const fmtBtn = (active) =>
   `flex h-8 w-8 items-center justify-center rounded-lg border text-sm transition-all duration-200 ${

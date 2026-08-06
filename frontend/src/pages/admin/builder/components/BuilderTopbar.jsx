@@ -29,6 +29,9 @@ const BuilderTopbar = ({
   canRedo,
   mode = 'template',
   onSave,
+  onSaveDraft,
+  onPublish,
+  saving = false,
   theme = 'dark',
   onToggleTheme,
 }) => {
@@ -38,7 +41,7 @@ const BuilderTopbar = ({
 
   const deviceBtn = (on) =>
     `relative z-10 flex items-center justify-center rounded-lg px-3.5 py-1.5 transition-colors duration-300 ${
-      on ? 'text-white' : 'text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
+      on ? 'text-[var(--bd-text)]' : 'text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
     }`
 
   return (
@@ -128,9 +131,13 @@ const BuilderTopbar = ({
           </button>
         ) : (
           <>
-            <button className={ghostBtn}>Xem trước</button>
-            <button className={ghostBtn}>Lưu bản nháp</button>
-            <button className={primaryBtn}>Xuất bản</button>
+            {/* Xem trước cần API render HTML — chưa nối, tạm ẩn để không có nút chết. */}
+            <button onClick={onSaveDraft} disabled={saving} className={`${ghostBtn} disabled:opacity-40`}>
+              Lưu bản nháp
+            </button>
+            <button onClick={onPublish} disabled={saving} className={`${primaryBtn} disabled:pointer-events-none disabled:opacity-60`}>
+              {saving ? 'Đang lưu…' : 'Xuất bản'}
+            </button>
           </>
         )}
       </div>

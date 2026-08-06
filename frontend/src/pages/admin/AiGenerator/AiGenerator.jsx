@@ -117,8 +117,8 @@ const AiGenerator = () => {
     <div className="space-y-8">
       <div>
         <Badge color="purple">Truy cập Beta</Badge>
-        <h1 className="mt-2 text-3xl font-bold text-white">Không gian thiết kế AI</h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-400">
+        <h1 className="mt-2 text-3xl font-bold text-[var(--bd-text)]">Không gian thiết kế AI</h1>
+        <p className="mt-1 max-w-2xl text-sm text-[var(--bd-dim)]">
           Biến ý tưởng thành các mẫu thiết kế hoàn chỉnh trong giây lát. Tận dụng sức mạnh
           của AI cho dự án tiếp theo của bạn.
         </p>
@@ -146,13 +146,13 @@ const AiGenerator = () => {
       )}
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-800 bg-[#111725] p-5 lg:col-span-2">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-5 lg:col-span-2">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">
             Loại template
           </p>
           <TemplateTypeSelector value={type} onChange={setType} />
 
-          <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-slate-500">
+          <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">
             Gợi ý thiết kế
           </p>
           <div className="relative">
@@ -161,26 +161,26 @@ const AiGenerator = () => {
               onChange={(e) => setPrompt(e.target.value)}
               rows={5}
               placeholder="Mô tả ý tưởng của bạn (ví dụ: 'Một trang landing page SaaS hiện đại cho ứng dụng Fintech với hiệu ứng glassmorphism tối và các điểm nhấn neon rực rỡ...')"
-              className="w-full resize-none rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-200 placeholder-slate-500 focus:border-slate-600 focus:outline-none"
+              className="w-full resize-none rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] p-3 text-sm text-[var(--bd-text)] placeholder:text-[var(--bd-muted)] focus:border-[var(--bd-border)] focus:outline-none"
             />
-            <span className="pointer-events-none absolute bottom-2 right-3 text-xs text-slate-600">
+            <span className="pointer-events-none absolute bottom-2 right-3 text-xs text-[var(--bd-muted)]">
               {style ? `Phong cách: ${style}` : 'Hỗ trợ Markdown & Styles'}
             </span>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-4 text-sm text-slate-400">
+            <div className="flex items-center gap-4 text-sm text-[var(--bd-dim)]">
               {/* Chưa nối: không có endpoint upload ảnh tham chiếu cho AI */}
-              <button className="inline-flex items-center gap-1 hover:text-slate-200">
+              <button className="inline-flex items-center gap-1 hover:text-[var(--bd-text)]">
                 <ImageIcon size={16} /> Thêm tham chiếu
               </button>
-              <button className="hover:text-slate-200">Chọn bảng màu</button>
+              <button className="hover:text-[var(--bd-text)]">Chọn bảng màu</button>
             </div>
             <button
               onClick={handleGenerate}
               disabled={generating || loading || !prompt.trim() || outOfCredits}
               title={outOfCredits ? 'Bạn đã dùng hết hạn mức AI' : undefined}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)] disabled:opacity-50"
             >
               {generating ? 'Đang tạo...' : 'Tạo với AI'} <ZapIcon size={16} />
             </button>
@@ -194,11 +194,11 @@ const AiGenerator = () => {
       </div>
 
       {loading ? (
-        <div className="h-40 animate-pulse rounded-xl border border-slate-800 bg-[#111725]" />
+        <div className="h-40 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]" />
       ) : history.length === 0 ? (
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-white">Lịch sử khởi tạo</h2>
-          <p className="rounded-xl border border-slate-800 bg-[#111725] px-5 py-10 text-center text-sm text-slate-500">
+          <h2 className="mb-4 text-lg font-semibold text-[var(--bd-text)]">Lịch sử khởi tạo</h2>
+          <p className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-5 py-10 text-center text-sm text-[var(--bd-muted)]">
             Chưa có lượt tạo nào.
           </p>
         </div>

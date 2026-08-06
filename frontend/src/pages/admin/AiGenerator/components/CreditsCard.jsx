@@ -3,12 +3,12 @@ export default function CreditsCard({ used = 0, total = 1, resetAt }) {
   const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0
   const resetLabel = resetAt ? new Date(resetAt).toLocaleDateString('vi-VN') : null
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#111725] p-4">
-      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-4">
+      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">
         Tín dụng còn lại
       </p>
-      <p className="text-sm text-slate-400">
-        <span className="text-lg font-bold text-white">{used}</span> / {total.toLocaleString()} Tokens
+      <p className="text-sm text-[var(--bd-dim)]">
+        <span className="text-lg font-bold text-[var(--bd-text)]">{used}</span> / {total.toLocaleString()} Tokens
       </p>
       <div className="mt-2 h-2 w-full rounded-full bg-slate-800">
         <div className="h-2 rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
@@ -17,7 +17,7 @@ export default function CreditsCard({ used = 0, total = 1, resetAt }) {
         Nâng cấp gói
       </button>
       {/* Hạn mức reset theo mốc reset_at của từng user, không phải ngày 1 hằng tháng */}
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-[var(--bd-muted)]">
         {resetLabel ? `Hạn mức làm mới vào ${resetLabel}.` : 'Đang tải hạn mức...'}
       </p>
     </div>

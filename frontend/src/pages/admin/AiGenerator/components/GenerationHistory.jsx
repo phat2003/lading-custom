@@ -20,13 +20,13 @@ function HistoryItem({ item }) {
     .join(' · ')
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-slate-800 bg-[#111725] px-4 py-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400">
+    <div className="flex items-center gap-4 rounded-lg border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-4 py-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-[var(--bd-dim)]">
         <status.Icon size={18} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-slate-200">"{item.prompt}"</p>
-        <p className="mt-1 text-xs text-slate-500">{meta}</p>
+        <p className="truncate text-sm text-[var(--bd-text)]">"{item.prompt}"</p>
+        <p className="mt-1 text-xs text-[var(--bd-muted)]">{meta}</p>
       </div>
       <Badge color={status.color}>{status.label}</Badge>
     </div>
@@ -37,12 +37,12 @@ export default function GenerationHistory({ history = [] }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Lịch sử khởi tạo</h2>
-        <div className="flex items-center gap-1 text-slate-400">
-          <button className="rounded-md p-1.5 hover:bg-slate-800">
+        <h2 className="text-lg font-semibold text-[var(--bd-text)]">Lịch sử khởi tạo</h2>
+        <div className="flex items-center gap-1 text-[var(--bd-dim)]">
+          <button className="rounded-md p-1.5 hover:bg-[var(--bd-fill-hover)]">
             <FilterIcon size={16} />
           </button>
-          <button className="rounded-md p-1.5 hover:bg-slate-800">
+          <button className="rounded-md p-1.5 hover:bg-[var(--bd-fill-hover)]">
             <DownloadIcon size={16} />
           </button>
         </div>
@@ -51,7 +51,7 @@ export default function GenerationHistory({ history = [] }) {
       <div className="space-y-5">
         {history.map((group) => (
           <div key={group.day}>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-600">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">
               {group.day}
             </p>
             <div className="space-y-2">

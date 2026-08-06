@@ -21,6 +21,7 @@ const toUI = (s) => ({
   name: s.display_name,
   type: s.section_type,
   usedIn: s.used_in ?? 0,
+  thumbnailUrl: s.thumbnail_url || '',
   defaultContent: s.default_content,
 })
 
@@ -104,12 +105,12 @@ const Sections = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Cấu trúc</p>
-          <h1 className="text-2xl font-bold text-white">Thư viện Thành phần</h1>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">Cấu trúc</p>
+          <h1 className="text-2xl font-bold text-[var(--bd-text)]">Thư viện Thành phần</h1>
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-3.5 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)]"
         >
           <PlusIcon size={16} /> Tạo Thành phần Mới
         </button>
@@ -130,12 +131,12 @@ const Sections = () => {
           {Array.from({ length: 3 }, (_, i) => (
             <div
               key={i}
-              className="h-60 animate-pulse rounded-xl border border-slate-800 bg-[#111725]"
+              className="h-60 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
             />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <p className="rounded-xl border border-slate-800 bg-[#111725] px-5 py-10 text-center text-sm text-slate-500">
+        <p className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-5 py-10 text-center text-sm text-[var(--bd-muted)]">
           Không có thành phần nào.
         </p>
       ) : (
@@ -148,26 +149,26 @@ const Sections = () => {
 
       {/* Phân trang */}
       <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-        <div className="flex items-center gap-3 rounded-full border border-slate-800 bg-[#111725] px-4 py-2">
+        <div className="flex items-center gap-3 rounded-full border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-4 py-2">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="text-slate-400 hover:text-white disabled:opacity-40"
+            className="text-[var(--bd-dim)] hover:text-[var(--bd-text)] disabled:opacity-40"
           >
             ‹
           </button>
-          <span className="text-sm text-slate-300">
+          <span className="text-sm text-[var(--bd-dim)]">
             Trang {page}/{meta.total_pages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(meta.total_pages, p + 1))}
             disabled={page >= meta.total_pages}
-            className="text-slate-400 hover:text-white disabled:opacity-40"
+            className="text-[var(--bd-dim)] hover:text-[var(--bd-text)] disabled:opacity-40"
           >
             ›
           </button>
         </div>
-        <span className="text-xs uppercase tracking-wide text-slate-500">
+        <span className="text-xs uppercase tracking-wide text-[var(--bd-muted)]">
           Đang hiển thị {items.length} trên {meta.total} thành phần
         </span>
       </div>

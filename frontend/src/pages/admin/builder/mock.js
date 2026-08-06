@@ -139,7 +139,7 @@ export const paletteBlocks = {
     {
       label: 'Hero',
       block: {
-        section: { style: { width: 820, height: 360, bgColor: '#f8fafc', borderRadius: 0 } },
+        section: { sectionType: 'hero', style: { width: 820, height: 360, bgColor: '#f8fafc', borderRadius: 0 } },
         children: [
           { type: 'heading', content: 'Tiêu đề nổi bật của bạn', x: 210, y: 90, style: { width: 400, fontSize: 40, fontFamily: 'Inter', fontWeight: 800, color: '#0f172a', textAlign: 'center' } },
           { type: 'paragraph', content: 'Mô tả ngắn thu hút khách hàng ngay từ cái nhìn đầu tiên.', x: 210, y: 170, style: { width: 400, fontSize: 16, fontFamily: 'Inter', color: '#475569', textAlign: 'center' } },
@@ -150,7 +150,7 @@ export const paletteBlocks = {
     {
       label: 'Đầu trang',
       block: {
-        section: { style: { width: 820, height: 72, bgColor: '#ffffff' } },
+        section: { sectionType: 'header', style: { width: 820, height: 72, bgColor: '#ffffff' } },
         children: [
           { type: 'label', content: 'LOGO', x: 40, y: 24, style: { width: 90, fontSize: 20, fontFamily: 'Inter', fontWeight: 800, color: '#111827' } },
           { type: 'menu', content: 'Trang chủ\nGiới thiệu\nDịch vụ\nLiên hệ', x: 320, y: 26, style: { width: 360, fontSize: 14, fontFamily: 'Inter', color: '#374151' } },
@@ -161,7 +161,7 @@ export const paletteBlocks = {
     {
       label: 'Giới thiệu',
       block: {
-        section: { style: { width: 820, height: 300, bgColor: '#ffffff' } },
+        section: { sectionType: 'about', style: { width: 820, height: 300, bgColor: '#ffffff' } },
         children: [
           { type: 'image', content: '', x: 60, y: 60, style: { width: 300, height: 180, borderRadius: 12 } },
           { type: 'heading', content: 'Về chúng tôi', x: 420, y: 70, style: { width: 340, fontSize: 26, fontFamily: 'Inter', fontWeight: 700, color: '#0f172a' } },
@@ -172,7 +172,7 @@ export const paletteBlocks = {
     {
       label: 'Tính năng',
       block: {
-        section: { style: { width: 820, height: 320, bgColor: '#ffffff' } },
+        section: { sectionType: 'features', style: { width: 820, height: 320, bgColor: '#ffffff' } },
         children: [
           { type: 'heading', content: 'Tính năng nổi bật', x: 300, y: 30, style: { width: 220, fontSize: 26, fontFamily: 'Inter', fontWeight: 700, color: '#0f172a', textAlign: 'center' } },
           { type: 'iconbox', content: 'Nhanh chóng|Tốc độ xử lý vượt trội.', x: 60, y: 110, style: { width: 200, fontSize: 16, fontFamily: 'Inter', color: '#111827', textAlign: 'center' } },
@@ -184,7 +184,7 @@ export const paletteBlocks = {
     {
       label: 'Bảng giá',
       block: {
-        section: { style: { width: 820, height: 380, bgColor: '#f8fafc' } },
+        section: { sectionType: 'pricing', style: { width: 820, height: 380, bgColor: '#f8fafc' } },
         children: [
           { type: 'heading', content: 'Bảng giá', x: 350, y: 28, style: { width: 120, fontSize: 28, fontFamily: 'Inter', fontWeight: 700, color: '#0f172a', textAlign: 'center' } },
           { type: 'card', content: 'Cơ bản|0đ / tháng', x: 60, y: 100, style: { width: 220, height: 230, bgColor: '#ffffff', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: 18, fontFamily: 'Inter', color: '#111827', textAlign: 'center' } },
@@ -196,7 +196,7 @@ export const paletteBlocks = {
     {
       label: 'Đánh giá',
       block: {
-        section: { style: { width: 820, height: 280, bgColor: '#ffffff' } },
+        section: { sectionType: 'testimonial', style: { width: 820, height: 280, bgColor: '#ffffff' } },
         children: [
           { type: 'heading', content: 'Khách hàng nói gì', x: 290, y: 28, style: { width: 240, fontSize: 26, fontFamily: 'Inter', fontWeight: 700, color: '#0f172a', textAlign: 'center' } },
           { type: 'card', content: '"Sản phẩm rất tuyệt vời!"|— Nguyễn Văn A', x: 80, y: 100, style: { width: 300, height: 140, bgColor: '#f8fafc', borderRadius: 12, fontSize: 16, fontFamily: 'Inter', color: '#111827' } },
@@ -207,7 +207,7 @@ export const paletteBlocks = {
     {
       label: 'FAQ',
       block: {
-        section: { style: { width: 820, height: 300, bgColor: '#f8fafc' } },
+        section: { sectionType: 'faq', style: { width: 820, height: 300, bgColor: '#f8fafc' } },
         children: [
           { type: 'heading', content: 'Câu hỏi thường gặp', x: 280, y: 28, style: { width: 260, fontSize: 26, fontFamily: 'Inter', fontWeight: 700, color: '#0f172a', textAlign: 'center' } },
           { type: 'list', content: 'Làm sao để đăng ký tài khoản?\nChính sách hoàn tiền như thế nào?\nHỗ trợ kỹ thuật ra sao?\nCó dùng thử miễn phí không?', x: 120, y: 100, style: { width: 580, fontSize: 16, fontFamily: 'Inter', color: '#374151' } },
@@ -217,7 +217,7 @@ export const paletteBlocks = {
     {
       label: 'Đội ngũ',
       block: {
-        section: { style: { width: 820, height: 300, bgColor: '#ffffff' } },
+        section: { sectionType: 'team', style: { width: 820, height: 300, bgColor: '#ffffff' } },
         children: [
           { type: 'heading', content: 'Đội ngũ của chúng tôi', x: 280, y: 28, style: { width: 260, fontSize: 26, fontFamily: 'Inter', fontWeight: 700, color: '#0f172a', textAlign: 'center' } },
           { type: 'card', content: 'Nguyễn A|CEO', x: 100, y: 100, style: { width: 180, height: 150, bgColor: '#f8fafc', borderRadius: 12, fontSize: 16, fontFamily: 'Inter', color: '#111827', textAlign: 'center' } },
@@ -229,7 +229,7 @@ export const paletteBlocks = {
     {
       label: 'Thống kê',
       block: {
-        section: { style: { width: 820, height: 180, bgColor: '#0f172a' } },
+        section: { sectionType: 'stats', style: { width: 820, height: 180, bgColor: '#0f172a' } },
         children: [
           { type: 'heading', content: '1,200+', x: 120, y: 50, style: { width: 160, fontSize: 34, fontFamily: 'Inter', fontWeight: 800, color: '#ffffff', textAlign: 'center' } },
           { type: 'label', content: 'Khách hàng', x: 120, y: 112, style: { width: 160, fontSize: 14, fontFamily: 'Inter', color: '#94a3b8', textAlign: 'center' } },
@@ -243,7 +243,7 @@ export const paletteBlocks = {
     {
       label: 'CTA',
       block: {
-        section: { style: { width: 820, height: 200, bgColor: '#2563eb', borderRadius: 12 } },
+        section: { sectionType: 'cta', style: { width: 820, height: 200, bgColor: '#2563eb', borderRadius: 12 } },
         children: [
           { type: 'heading', content: 'Sẵn sàng bắt đầu?', x: 260, y: 55, style: { width: 300, fontSize: 28, fontFamily: 'Inter', fontWeight: 700, color: '#ffffff', textAlign: 'center' } },
           { type: 'button', content: 'Đăng ký miễn phí', x: 320, y: 115, style: { width: 180, height: 44, fontSize: 15, fontFamily: 'Inter', fontWeight: 600, color: '#2563eb', bgColor: '#ffffff', borderRadius: 8 } },
@@ -253,7 +253,7 @@ export const paletteBlocks = {
     {
       label: 'Chân trang',
       block: {
-        section: { style: { width: 820, height: 160, bgColor: '#0f172a' } },
+        section: { sectionType: 'footer', style: { width: 820, height: 160, bgColor: '#0f172a' } },
         children: [
           { type: 'label', content: 'Giới thiệu    ·    Điều khoản    ·    Liên hệ', x: 270, y: 50, style: { width: 280, fontSize: 14, fontFamily: 'Inter', color: '#e2e8f0', textAlign: 'center' } },
           { type: 'label', content: '© 2026 Amazing Tech. All rights reserved.', x: 260, y: 100, style: { width: 300, fontSize: 13, fontFamily: 'Inter', color: '#94a3b8', textAlign: 'center' } },
