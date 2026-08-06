@@ -23,11 +23,11 @@ export default function TemplateTypeSelector({ value, onChange }) {
             onClick={() => onChange?.(v)}
             className={`flex flex-col items-center gap-2 rounded-lg border p-4 text-sm ${
               active
-                ? 'border-blue-500 bg-blue-500/10 text-white'
-                : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700'
+                ? 'border-blue-500 bg-blue-500/10 text-[var(--bd-text)]'
+                : 'border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-dim)] hover:border-[var(--bd-border)]'
             }`}
           >
-            <IconComp size={20} className={active ? 'text-blue-400' : 'text-slate-500'} />
+            <IconComp size={20} className={active ? 'text-blue-400' : 'text-[var(--bd-muted)]'} />
             {label}
           </button>
         )

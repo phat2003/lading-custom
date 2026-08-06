@@ -41,7 +41,7 @@ const BuilderTopbar = ({
 
   const deviceBtn = (on) =>
     `relative z-10 flex items-center justify-center rounded-lg px-3.5 py-1.5 transition-colors duration-300 ${
-      on ? 'text-white' : 'text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
+      on ? 'text-[var(--bd-text)]' : 'text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
     }`
 
   return (

@@ -77,8 +77,8 @@ const Projects = () => {
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dự án</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-[var(--bd-text)]">Dự án</h1>
+          <p className="mt-1 text-sm text-[var(--bd-dim)]">
             Giám sát các bản triển khai đang hoạt động và việc sử dụng mẫu trong studio của bạn.
           </p>
         </div>
@@ -91,30 +91,30 @@ const Projects = () => {
       )}
 
       {loading ? (
-        <div className="h-64 animate-pulse rounded-xl border border-slate-800 bg-[#111725]" />
+        <div className="h-64 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]" />
       ) : (
         <ProjectTable projects={items} onView={() => {}} onDelete={setDeleting} />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-[var(--bd-muted)]">
           Đang hiển thị {items.length} trong số {meta.total} dự án
         </p>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+            className="rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-40"
           >
             Trước
           </button>
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-[var(--bd-dim)]">
             {page}/{meta.total_pages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(meta.total_pages, p + 1))}
             disabled={page >= meta.total_pages || loading}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+            className="rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-40"
           >
             Tiếp
           </button>

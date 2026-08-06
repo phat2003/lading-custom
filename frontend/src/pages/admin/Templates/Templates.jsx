@@ -163,12 +163,12 @@ const Templates = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Library</p>
-          <h1 className="text-2xl font-bold text-white">Templates</h1>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">Library</p>
+          <h1 className="text-2xl font-bold text-[var(--bd-text)]">Templates</h1>
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-3.5 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)]"
         >
           <PlusIcon size={16} /> Create Template
         </button>
@@ -184,7 +184,7 @@ const Templates = () => {
             placeholder="Search templates..."
             className="w-56"
           />
-          <span className="text-sm text-slate-400">{meta.total} Templates</span>
+          <span className="text-sm text-[var(--bd-dim)]">{meta.total} Templates</span>
         </div>
       </div>
 
@@ -200,12 +200,12 @@ const Templates = () => {
           {Array.from({ length: 3 }, (_, i) => (
             <div
               key={i}
-              className="h-64 animate-pulse rounded-xl border border-slate-800 bg-[#111725]"
+              className="h-64 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
             />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <p className="rounded-xl border border-slate-800 bg-[#111725] px-5 py-10 text-center text-sm text-slate-500">
+        <p className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-5 py-10 text-center text-sm text-[var(--bd-muted)]">
           Không có template nào.
         </p>
       ) : (

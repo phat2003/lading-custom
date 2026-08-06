@@ -9,10 +9,10 @@ const STATUS = {
 
 export default function ProjectTable({ projects = [], onView, onDelete }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#111725]">
+    <div className="overflow-x-auto rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr className="text-left text-xs uppercase tracking-wide text-[var(--bd-muted)]">
             <th className="px-5 py-3 font-medium">Tên dự án</th>
             <th className="px-5 py-3 font-medium">Người sở hữu</th>
             <th className="px-5 py-3 font-medium">Template sử dụng</th>
@@ -25,21 +25,21 @@ export default function ProjectTable({ projects = [], onView, onDelete }) {
           {projects.map((p) => {
             const status = STATUS[p.status] || { label: p.status, color: 'gray' }
             return (
-              <tr key={p.id} className="border-t border-slate-800/60 hover:bg-slate-800/20">
+              <tr key={p.id} className="border-t border-[var(--bd-border)] hover:bg-[var(--bd-fill-hover)]">
                 <td className="px-5 py-3">
-                  <div className="font-medium text-white">{p.name}</div>
-                  <div className="font-mono text-xs text-slate-500">ID: {p.id}</div>
+                  <div className="font-medium text-[var(--bd-text)]">{p.name}</div>
+                  <div className="font-mono text-xs text-[var(--bd-muted)]">ID: {p.id}</div>
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-2">
                     <Avatar name={p.owner} size="sm" />
-                    <span className="text-slate-300">{p.owner}</span>
+                    <span className="text-[var(--bd-dim)]">{p.owner}</span>
                   </div>
                 </td>
                 <td className="px-5 py-3">
                   <Badge color="gray">{p.template}</Badge>
                 </td>
-                <td className="px-5 py-3 text-slate-400">{p.email}</td>
+                <td className="px-5 py-3 text-[var(--bd-dim)]">{p.email}</td>
                 <td className="px-5 py-3">
                   <Badge color={status.color}>{status.label}</Badge>
                 </td>
@@ -58,7 +58,7 @@ export default function ProjectTable({ projects = [], onView, onDelete }) {
       </table>
 
       {projects.length === 0 && (
-        <p className="px-5 py-6 text-center text-sm text-slate-500">Không có dự án nào.</p>
+        <p className="px-5 py-6 text-center text-sm text-[var(--bd-muted)]">Không có dự án nào.</p>
       )}
     </div>
   )

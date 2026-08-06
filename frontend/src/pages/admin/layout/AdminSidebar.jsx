@@ -15,8 +15,6 @@ import {
 import Avatar from '../../../components/common/Avatar'
 import { useAuth } from '../../../context/AuthContext'
 
-// Menu chính của khu vực admin. Chỉ /admin (Dashboard) đã có trang,
-// các mục còn lại sẽ được dựng dần.
 const menu = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboardIcon, end: true },
   { to: '/admin/users', label: 'User', icon: UserIcon },
@@ -34,43 +32,47 @@ export default function AdminSidebar() {
   const displayName = user?.full_name || user?.email || 'Admin'
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-800 bg-[#0b0f17]">
+    <aside className="relative z-10 flex h-screen w-64 shrink-0 flex-col border-r border-[var(--bd-border)] bg-[var(--bd-topbar)] backdrop-blur-xl">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
-          <ZapIcon size={18} className="text-white" />
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 shadow-[0_0_20px_-4px_rgba(139,92,246,.8)]">
+          <ZapIcon size={18} className="text-[var(--bd-text)]" />
         </div>
         <div>
-          <p className="text-sm font-bold text-white">Amazing Tech</p>
-          <p className="text-xs text-slate-500">Template Studio</p>
+          <p className="text-sm font-bold text-[var(--bd-text)]">Amazing Tech</p>
+          <p className="text-xs text-[var(--bd-muted)]">Template Studio</p>
         </div>
       </div>
 
       {/* Menu */}
       <div className="px-3 pb-2 pt-2">
-        <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wide text-slate-600">
+        <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--bd-muted)]">
           Main Menu
         </p>
         <nav className="flex flex-col gap-1">
-          {menu.map(({ to, label, icon: IconComp, end }) => (
+          {menu.map(({ to, label, icon: IconComp, end }, i) => (
             <NavLink
               key={to}
               to={to}
               end={end}
+              style={{ animationDelay: `${i * 30}ms` }}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                `group relative flex animate-fade-in-up items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-slate-800 font-medium text-white'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    ? 'bg-gradient-to-r from-violet-500/20 to-cyan-400/10 font-medium text-[var(--bd-accent)] ring-1 ring-inset ring-violet-400/25'
+                    : 'text-[var(--bd-dim)] hover:translate-x-0.5 hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <IconComp
-                    size={18}
-                    className={isActive ? 'text-blue-400' : 'text-slate-500'}
+                  {/* Thanh chỉ báo gradient ở mép trái khi đang ở trang này */}
+                  <span
+                    className={`absolute -left-3 top-1/2 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-violet-400 to-cyan-400 transition-all duration-300 ${
+                      isActive ? 'h-6 opacity-100' : 'h-0 opacity-0'
+                    }`}
                   />
+                  <IconComp size={18} className={isActive ? '' : 'opacity-70'} />
                   {label}
                 </>
               )}
@@ -79,22 +81,22 @@ export default function AdminSidebar() {
         </nav>
       </div>
 
-      {/* Bottom: help + user */}
-      <div className="mt-auto border-t border-slate-800 px-3 py-4">
-        <button className="mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200">
-          <HelpCircleIcon size={18} className="text-slate-500" />
+      {/* Đáy: trợ giúp + tài khoản */}
+      <div className="mt-auto border-t border-[var(--bd-border)] px-3 py-4">
+        <button className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--bd-dim)] transition-all duration-200 hover:translate-x-0.5 hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)]">
+          <HelpCircleIcon size={18} className="opacity-70" />
           Help &amp; Docs
         </button>
-        <div className="flex items-center gap-3 px-2">
+        <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">
           <Avatar name={displayName} size="sm" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">{displayName}</p>
-            <p className="truncate text-xs text-slate-500">{user?.email || ''}</p>
+            <p className="truncate text-sm font-medium text-[var(--bd-text)]">{displayName}</p>
+            <p className="truncate text-xs text-[var(--bd-muted)]">{user?.email || ''}</p>
           </div>
           {/* Xoá token + user; AdminRoute thấy user = null sẽ tự đẩy về /login. */}
           <button
             onClick={logout}
-            className="text-slate-500 transition-colors hover:text-red-400"
+            className="rounded-lg p-1.5 text-[var(--bd-muted)] transition-colors hover:bg-red-500/10 hover:text-red-400"
             title="Đăng xuất"
           >
             <LogOutIcon size={18} />

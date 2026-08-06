@@ -15,8 +15,8 @@ const EMPTY = {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 focus:border-slate-500 focus:outline-none'
-const labelCls = 'mb-1 block text-xs font-medium text-slate-400'
+  'w-full rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] px-3 py-2 text-sm text-[var(--bd-text)] focus:border-violet-400/60 focus:outline-none'
+const labelCls = 'mb-1 block text-xs font-medium text-[var(--bd-dim)]'
 
 // Modal tạo mới / chỉnh sửa gói dịch vụ. initial = null nghĩa là tạo mới.
 const PlanFormModal = ({ open, initial, submitting, error, onClose, onSubmit, onDelete }) => {
@@ -143,12 +143,12 @@ const PlanFormModal = ({ open, initial, submitting, error, onClose, onSubmit, on
             />
           </div>
           <div className="flex items-end">
-            <label className="flex items-center gap-2 text-sm text-slate-300">
+            <label className="flex items-center gap-2 text-sm text-[var(--bd-dim)]">
               <input
                 type="checkbox"
                 checked={form.highlighted}
                 onChange={(e) => setForm((f) => ({ ...f, highlighted: e.target.checked }))}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-900"
+                className="h-4 w-4 rounded border-[var(--bd-border)] bg-slate-900"
               />
               Gói nổi bật
             </label>
@@ -177,7 +177,7 @@ const PlanFormModal = ({ open, initial, submitting, error, onClose, onSubmit, on
                   className={`shrink-0 rounded-md border p-1.5 ${
                     f.included
                       ? 'border-green-500/40 text-green-400'
-                      : 'border-slate-700 text-slate-600'
+                      : 'border-[var(--bd-border)] text-[var(--bd-muted)]'
                   }`}
                 >
                   {f.included ? <CheckIcon size={14} /> : <XIcon size={14} />}
@@ -223,14 +223,14 @@ const PlanFormModal = ({ open, initial, submitting, error, onClose, onSubmit, on
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-[var(--bd-border)] px-3 py-2 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+              className="rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)] disabled:opacity-60"
             >
               {submitting ? 'Đang lưu...' : isEdit ? 'Lưu' : 'Tạo gói'}
             </button>

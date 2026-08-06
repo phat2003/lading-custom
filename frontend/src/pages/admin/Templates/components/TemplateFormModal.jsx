@@ -8,8 +8,8 @@ const CATEGORIES = ['SaaS', 'Agency', 'Startup', 'Webinar', 'Portfolio']
 const EMPTY = { name: '', category: 'SaaS', tier: 'Free', status: 'Draft', thumbnailUrl: '' }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 focus:border-slate-500 focus:outline-none'
-const labelCls = 'mb-1 block text-xs font-medium text-slate-400'
+  'w-full rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] px-3 py-2 text-sm text-[var(--bd-text)] focus:border-violet-400/60 focus:outline-none'
+const labelCls = 'mb-1 block text-xs font-medium text-[var(--bd-dim)]'
 
 // Modal tạo mới / chỉnh sửa template. initial = null nghĩa là tạo mới.
 export default function TemplateFormModal({ open, initial, submitting, onClose, onSubmit }) {
@@ -84,7 +84,7 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
           <div>
             {/* Số sections do backend đếm từ template_section, không sửa tay được */}
             <label className={labelCls}>Số sections</label>
-            <p className="rounded-lg border border-slate-800 bg-slate-900/30 px-3 py-2 text-sm text-slate-500">
+            <p className="rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] px-3 py-2 text-sm text-[var(--bd-muted)]">
               {isEdit ? `${initial.sections ?? 0} sections` : 'Thêm sau khi tạo'}
             </p>
           </div>
@@ -106,24 +106,24 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
 
         <div>
           <label className={labelCls}>Ảnh thumbnail</label>
-          <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-700 p-3">
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-[var(--bd-border)] p-3">
             {form.thumbnailUrl ? (
               <img
                 src={form.thumbnailUrl}
                 alt="Thumbnail template"
-                className="h-14 w-20 shrink-0 rounded-md border border-slate-800 object-cover"
+                className="h-14 w-20 shrink-0 rounded-md border border-[var(--bd-border)] object-cover"
               />
             ) : (
-              <span className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-600">
+              <span className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-muted)]">
                 <ImageIcon size={20} />
               </span>
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-[var(--bd-dim)]">
                 {form.thumbnailUrl ? 'Đã có ảnh' : 'Chưa chọn ảnh'}
               </p>
-              <p className="text-xs text-slate-500">PNG, JPG hoặc WebP · tối đa 5MB</p>
+              <p className="text-xs text-[var(--bd-muted)]">PNG, JPG hoặc WebP · tối đa 5MB</p>
             </div>
 
             <input
@@ -138,7 +138,7 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-xs text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-50"
               >
                 {uploading ? 'Đang tải...' : form.thumbnailUrl ? 'Đổi ảnh' : 'Chọn ảnh'}
               </button>
@@ -146,7 +146,7 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
                 <button
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, thumbnailUrl: '' }))}
-                  className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-800 hover:text-red-400"
+                  className="rounded-lg border border-[var(--bd-border)] px-2 py-1.5 text-xs text-[var(--bd-muted)] hover:bg-[var(--bd-fill-hover)] hover:text-red-400"
                   title="Bỏ ảnh"
                 >
                   Xóa
@@ -161,14 +161,14 @@ export default function TemplateFormModal({ open, initial, submitting, onClose, 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+            className="rounded-lg border border-[var(--bd-border)] px-3 py-2 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)] disabled:opacity-60"
           >
             {submitting ? 'Đang lưu...' : isEdit ? 'Lưu' : 'Tạo'}
           </button>

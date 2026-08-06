@@ -6,7 +6,9 @@ const COLORS = {
   amber: 'bg-amber-500/15 text-amber-400',
   red: 'bg-red-500/15 text-red-400',
   teal: 'bg-teal-500/15 text-teal-400',
-  gray: 'bg-slate-600/30 text-slate-300',
+  // Theo theme để đọc được ở cả chế độ sáng lẫn tối
+  gray: 'bg-[var(--bd-fill-hover)] text-[var(--bd-dim)]',
+  violet: 'bg-violet-500/15 text-violet-400',
 }
 
 export default function Badge({ color = 'gray', children, className = '' }) {

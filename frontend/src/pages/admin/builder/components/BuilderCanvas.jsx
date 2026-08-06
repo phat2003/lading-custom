@@ -149,7 +149,7 @@ const BuilderCanvas = ({
                   <p className="text-lg font-semibold text-slate-700">
                     {isOver ? 'Thả vào đây!' : 'Kéo phần tử vào đây'}
                   </p>
-                  <p className="mt-1.5 text-sm text-slate-400">
+                  <p className="mt-1.5 text-sm text-[var(--bd-dim)]">
                     Chọn phần tử ở panel trái và thả vào trang. Thả vào một Section để lồng vào trong.
                   </p>
                 </div>

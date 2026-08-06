@@ -4,8 +4,8 @@ import AdminModal from '../../components/AdminModal'
 const EMPTY = { current_password: '', new_password: '', confirm_password: '' }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 focus:border-slate-500 focus:outline-none'
-const labelCls = 'mb-1 block text-xs font-medium text-slate-400'
+  'w-full rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] px-3 py-2 text-sm text-[var(--bd-text)] focus:border-violet-400/60 focus:outline-none'
+const labelCls = 'mb-1 block text-xs font-medium text-[var(--bd-dim)]'
 
 // Đổi mật khẩu của chính admin đang đăng nhập.
 // Backend bắt buộc nhập đúng mật khẩu hiện tại nên form phải có 3 ô.
@@ -85,14 +85,14 @@ const ChangePasswordModal = ({ open, submitting, error, onClose, onSubmit }) => 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+            className="rounded-lg border border-[var(--bd-border)] px-3 py-2 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)] disabled:opacity-60"
           >
             {submitting ? 'Đang đổi...' : 'Đổi mật khẩu'}
           </button>

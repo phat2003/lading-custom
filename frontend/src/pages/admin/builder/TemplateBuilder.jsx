@@ -11,6 +11,7 @@ import TemplateSaveDialog from './components/TemplateSaveDialog'
 import { sectionsApi } from '../../../api/sections'
 import { templatesApi } from '../../../api/templates'
 import { toLibraryVariants } from './sectionLibrary'
+import { useTheme } from '../../../context/ThemeContext'
 import { elementsToSections, sectionsToElements } from './templateContent'
 
 const newId = () =>
@@ -51,15 +52,8 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
   const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
   const [library, setLibrary] = useState([]) // section mẫu admin đã lưu, lấy từ API
-  // Giao diện builder: 'dark' | 'light' (nhớ lựa chọn giữa các lần mở).
-  const [theme, setTheme] = useState(() => localStorage.getItem('builderTheme') || 'dark')
-
-  const toggleTheme = () =>
-    setTheme((t) => {
-      const next = t === 'dark' ? 'light' : 'dark'
-      localStorage.setItem('builderTheme', next)
-      return next
-    })
+  // Giao diện dùng chung với khu admin (ThemeContext), không giữ state riêng.
+  const { theme, toggleTheme } = useTheme()
 
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
@@ -372,7 +366,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   return (
     <div
       data-mode={theme}
-      className="builder-theme flex h-screen flex-col bg-[var(--bd-app)] text-[var(--bd-text)]"
+      className="app-theme flex h-screen flex-col bg-[var(--bd-app)] text-[var(--bd-text)]"
     >
       <BuilderTopbar
         device={device}

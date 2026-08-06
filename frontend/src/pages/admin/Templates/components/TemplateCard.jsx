@@ -14,9 +14,9 @@ const TIER_COLOR = { Premium: 'purple', Free: 'gray' }
 // Thẻ template trong thư viện admin.
 export default function TemplateCard({ template, onEdit, onEditContent, onDelete }) {
   return (
-    <div className="group overflow-hidden rounded-xl border border-slate-800 bg-[#111725] transition-all duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-xl hover:shadow-blue-500/5">
+    <div className="group overflow-hidden rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--bd-border)] hover:shadow-xl hover:shadow-blue-500/5">
       {/* Thumbnail — rê chuột vào thẻ thì ảnh tự cuộn xuống xem hết trang */}
-      <div className="relative flex h-40 items-center justify-center overflow-hidden border-b border-slate-800 bg-slate-900/40">
+      <div className="relative flex h-40 items-center justify-center overflow-hidden border-b border-[var(--bd-border)] bg-[var(--bd-fill)]">
         <div className="absolute left-3 top-3 z-10">
           <Badge color={CATEGORY_COLOR[template.category] || 'gray'}>
             {/* Template cũ (trước migration 003) chưa có danh mục */}
@@ -34,12 +34,13 @@ export default function TemplateCard({ template, onEdit, onEditContent, onDelete
           />
         ) : (
           <div className="w-2/3 space-y-2 opacity-40">
-            <div className="h-2 rounded bg-slate-600" />
-            <div className="h-2 w-4/5 rounded bg-slate-700" />
-            <div className="h-2 w-3/5 rounded bg-slate-700" />
+            <div className="h-2 rounded bg-[var(--bd-fill-hover)]" />
+            <div className="h-2 w-4/5 rounded bg-[var(--bd-fill-hover)]" />
+            <div className="h-2 w-3/5 rounded bg-[var(--bd-fill-hover)]" />
           </div>
         )}
-        <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-md bg-slate-950/70 px-1.5 py-0.5 text-xs text-slate-300 backdrop-blur-sm">
+        {/* Nền + chữ đều theo theme để đọc được trên ảnh sáng lẫn ảnh tối */}
+        <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-md bg-[var(--bd-chip)] px-2 py-1 text-xs font-medium text-[var(--bd-text)] ring-1 ring-[var(--bd-border)] backdrop-blur-sm">
           <LayersIcon size={12} /> {template.sections} sections
         </div>
       </div>
@@ -47,7 +48,7 @@ export default function TemplateCard({ template, onEdit, onEditContent, onDelete
       {/* Body */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-white">{template.name}</h3>
+          <h3 className="font-semibold text-[var(--bd-text)]">{template.name}</h3>
           <Badge color={STATUS_COLOR[template.status] || 'gray'}>{template.status}</Badge>
         </div>
         <div className="mt-2">
@@ -57,7 +58,7 @@ export default function TemplateCard({ template, onEdit, onEditContent, onDelete
         {/* Mở builder để dựng lại nội dung (khác với Edit chỉ sửa tên/danh mục/gói). */}
         <button
           onClick={() => onEditContent?.(template)}
-          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-500"
+          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-gradient-to-r from-violet-500 to-cyan-400 px-2.5 py-1.5 text-xs font-medium text-white shadow-[0_0_16px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5"
         >
           <LayoutTemplateIcon size={14} /> Sửa nội dung
         </button>
@@ -65,7 +66,7 @@ export default function TemplateCard({ template, onEdit, onEditContent, onDelete
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={() => onEdit?.(template)}
-            className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+            className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--bd-border)] px-2.5 py-1.5 text-xs text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]"
           >
             <PencilIcon size={14} /> Edit
           </button>

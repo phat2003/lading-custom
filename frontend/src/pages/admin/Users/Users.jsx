@@ -217,10 +217,10 @@ const Users = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--bd-muted)]">
             Management
           </p>
-          <h1 className="text-2xl font-bold text-white">Users</h1>
+          <h1 className="text-2xl font-bold text-[var(--bd-text)]">Users</h1>
         </div>
         <div className="flex items-center gap-2">
           {/* Export CSV chưa có API — giữ nguyên nút, chưa nối */}
@@ -228,7 +228,7 @@ const Users = () => {
             onClick={handleExportCsv}
             disabled={exporting || loading}
             title="Xuất toàn bộ user khớp bộ lọc hiện tại"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--bd-border)] px-3 py-1.5 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)] disabled:opacity-40"
           >
             <DownloadIcon size={16} /> {exporting ? 'Đang xuất...' : 'Export CSV'}
           </button>
@@ -237,7 +237,7 @@ const Users = () => {
               setFormError('')
               setFormOpen(true)
             }}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-3.5 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)]"
           >
             <UserIcon size={16} /> Add User
           </button>
@@ -256,9 +256,9 @@ const Users = () => {
           <FilterTabs tabs={TABS} active={filter} onChange={setFilter} />
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-[var(--bd-dim)]">
             All Users:{' '}
-            <span className="font-semibold text-white">{meta.total} RECORDS</span>
+            <span className="font-semibold text-[var(--bd-text)]">{meta.total} RECORDS</span>
           </span>
           <Pagination page={page} totalPages={meta.total_pages} onChange={setPage} />
         </div>
@@ -274,14 +274,14 @@ const Users = () => {
       <div className="flex gap-5">
         <div className="min-w-0 flex-1 space-y-5">
           {loading ? (
-            <div className="h-72 animate-pulse rounded-xl border border-slate-800 bg-[#111725]" />
+            <div className="h-72 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]" />
           ) : (
             <UserTable users={items} onView={openDetail} selectedId={selected?.id} />
           )}
 
           {/* Footer */}
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-[var(--bd-muted)]">
               Showing {items.length} of {meta.total} records
             </p>
             <Pagination page={page} totalPages={meta.total_pages} onChange={setPage} />

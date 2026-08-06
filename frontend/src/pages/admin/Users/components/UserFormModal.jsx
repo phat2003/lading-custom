@@ -15,13 +15,13 @@ const EMPTY = {
 const NO_ERRORS = { full_name: '', email: '', password: '', phone: '' }
 
 const baseInputCls =
-  'w-full rounded-lg border bg-slate-900/60 px-3 py-2 text-sm text-slate-200 focus:outline-none'
-const labelCls = 'mb-1 block text-xs font-medium text-slate-400'
+  'w-full rounded-lg border bg-[var(--bd-fill)] px-3 py-2 text-sm text-[var(--bd-text)] focus:outline-none'
+const labelCls = 'mb-1 block text-xs font-medium text-[var(--bd-dim)]'
 
 // Viền đỏ khi ô đó có lỗi để mắt bắt được ngay.
 const inputCls = (hasError) =>
   `${baseInputCls} ${
-    hasError ? 'border-red-500/60 focus:border-red-500' : 'border-slate-700 focus:border-slate-500'
+    hasError ? 'border-red-500/60 focus:border-red-500' : 'border-[var(--bd-border)] focus:border-violet-400/60'
   }`
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -163,14 +163,14 @@ const UserFormModal = ({ open, submitting, error, onClose, onSubmit }) => {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+            className="rounded-lg border border-[var(--bd-border)] px-3 py-2 text-sm text-[var(--bd-dim)] hover:bg-[var(--bd-fill-hover)]"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_26px_-2px_rgba(139,92,246,1)] disabled:opacity-60"
           >
             {submitting ? 'Đang tạo...' : 'Tạo user'}
           </button>

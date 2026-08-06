@@ -2,7 +2,7 @@
 // tabs: [{ label, value }] hoặc mảng string.
 export default function FilterTabs({ tabs = [], active, onChange }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/40 p-1">
+    <div className="inline-flex items-center gap-1 rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] p-1">
       {tabs.map((t) => {
         const value = typeof t === 'string' ? t : t.value
         const label = typeof t === 'string' ? t : t.label
@@ -13,7 +13,7 @@ export default function FilterTabs({ tabs = [], active, onChange }) {
             type="button"
             onClick={() => onChange?.(value)}
             className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-              isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              isActive ? 'bg-blue-600 text-[var(--bd-text)]' : 'text-[var(--bd-dim)] hover:text-[var(--bd-text)]'
             }`}
           >
             {label}
