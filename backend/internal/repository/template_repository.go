@@ -43,7 +43,40 @@ func (r *TemplateRepository) CreateWithSections(t *models.Template, sections []m
 	})
 }
 
-// TemplateFilter là điều kiện lọc + phân trang cho danh sách template ở trang admin.
+// ReplaceSections thay TOÀN BỘ section của template bằng danh sách mới, trong 1
+// transaction. Dùng cho luồng admin mở builder rồi bấm "Xuất bản": builder gửi
+// lên trạng thái cuối cùng của trang, không gửi từng thao tác sửa.
+// Xoá trước rồi chèn lại — nếu chèn lỗi giữa chừng thì rollback, template giữ
+// nguyên nội dung cũ thay vì mất sạch section.
+func (r *TemplateRepository) ReplaceSections(templateID uuid.UUID, sections []models.TemplateSection) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Kiểm tra template tồn tại ngay trong tx, để PUT vào ID không có thật
+		// trả 404 thay vì âm thầm "thành công" mà không ghi gì.
+		var count int64
+		if err := tx.Model(&models.Template{}).
+			Where("template_id = ?", templateID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return ErrNotFound
+		}
+
+		if err := tx.Where("template_id = ?", templateID).
+			Delete(&models.TemplateSection{}).Error; err != nil {
+			return err
+		}
+
+		for i := range sections {
+			sections[i].TemplateID = templateID
+			if err := tx.Create(&sections[i]).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// TemplateFilter là điều kiện lọc + phân trang cho danh sách template.
 // Chuỗi rỗng hoặc "all" nghĩa là KHÔNG lọc theo trường đó.
 type TemplateFilter struct {
 	Search   string // tìm theo tên template
@@ -52,6 +85,11 @@ type TemplateFilter struct {
 	Tier     string
 	Page     int // bắt đầu từ 1
 	Limit    int
+
+	// VisibleToUserID bật bộ lọc "những mẫu user này được phép thấy":
+	// mẫu hệ thống ĐÃ publish, hoặc mẫu do chính user sở hữu.
+	// Nil = không giới hạn (dùng cho trang admin).
+	VisibleToUserID *uuid.UUID
 }
 
 // FindPaged trả về một trang template kèm TỔNG số bản ghi khớp bộ lọc.
@@ -71,6 +109,16 @@ func (r *TemplateRepository) FindPaged(f TemplateFilter) ([]models.Template, int
 	}
 	if f.Tier != "" && f.Tier != "all" {
 		query = query.Where("tier = ?", f.Tier)
+	}
+
+	// Bọc trong 1 nhóm điều kiện: phải là "AND (system+published OR của mình)".
+	// Nếu nối phẳng bằng Or(), mệnh đề OR sẽ phá vỡ mọi bộ lọc phía trên và
+	// làm lộ mẫu riêng tư của người khác.
+	if f.VisibleToUserID != nil {
+		query = query.Where(
+			r.db.Where("type = ? AND status = ?", models.TemplateSystem, models.TemplateStatusPublished).
+				Or("owner_id = ?", *f.VisibleToUserID),
+		)
 	}
 
 	// Đếm trước khi phân trang để meta.total là tổng toàn bộ, không phải số dòng trang này.

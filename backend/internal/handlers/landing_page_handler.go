@@ -1,14 +1,32 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/nhienthai/lading-custom/backend/internal/repository"
 	"github.com/nhienthai/lading-custom/backend/internal/service"
 	"github.com/nhienthai/lading-custom/backend/pkg/response"
 )
+
+// failPageError map lỗi của LandingPageService ra HTTP status.
+// Trước đây mỗi handler tự chọn status theo cảm tính nên cùng một lỗi
+// "không tìm thấy" chỗ thì trả 403, chỗ trả 404, chỗ trả 400.
+func failPageError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, repository.ErrNotFound):
+		response.Fail(c, http.StatusNotFound, err.Error())
+	case errors.Is(err, repository.ErrForbidden):
+		response.Fail(c, http.StatusForbidden, err.Error())
+	default:
+		// Lỗi không phân loại được là lỗi hệ thống: không bê err.Error() ra
+		// ngoài để tránh lộ chi tiết nội bộ (câu lệnh SQL, tên bảng...).
+		response.Fail(c, http.StatusInternalServerError, "đã có lỗi xảy ra, vui lòng thử lại")
+	}
+}
 
 type LandingPageHandler struct {
 	pageService *service.LandingPageService
@@ -32,8 +50,11 @@ type updatePageRequest struct {
 
 // POST /pages
 func (h *LandingPageHandler) Create(c *gin.Context) {
-	userIDVal, _ := c.Get("user_id")
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
 
 	var req createPageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,7 +66,7 @@ func (h *LandingPageHandler) Create(c *gin.Context) {
 
 	page, err := h.pageService.CreatePage(userID, projectID, req.Name)
 	if err != nil {
-		response.Fail(c, http.StatusForbidden, err.Error())
+		failPageError(c, err)
 		return
 	}
 
@@ -54,8 +75,11 @@ func (h *LandingPageHandler) Create(c *gin.Context) {
 
 // GET /pages?project_id=...
 func (h *LandingPageHandler) GetAll(c *gin.Context) {
-	userIDVal, _ := c.Get("user_id")
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
 
 	projectIDStr := c.Query("project_id")
 	projectID, err := uuid.Parse(projectIDStr)
@@ -66,7 +90,7 @@ func (h *LandingPageHandler) GetAll(c *gin.Context) {
 
 	pages, err := h.pageService.GetPagesByProject(userID, projectID)
 	if err != nil {
-		response.Fail(c, http.StatusForbidden, err.Error())
+		failPageError(c, err)
 		return
 	}
 
@@ -75,8 +99,11 @@ func (h *LandingPageHandler) GetAll(c *gin.Context) {
 
 // GET /pages/:id
 func (h *LandingPageHandler) GetByID(c *gin.Context) {
-	userIDVal, _ := c.Get("user_id")
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
 
 	pageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -86,7 +113,7 @@ func (h *LandingPageHandler) GetByID(c *gin.Context) {
 
 	page, err := h.pageService.GetPageByID(userID, pageID)
 	if err != nil {
-		response.Fail(c, http.StatusNotFound, err.Error())
+		failPageError(c, err)
 		return
 	}
 
@@ -95,8 +122,11 @@ func (h *LandingPageHandler) GetByID(c *gin.Context) {
 
 // PUT /pages/:id
 func (h *LandingPageHandler) Update(c *gin.Context) {
-	userIDVal, _ := c.Get("user_id")
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
 
 	pageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -112,7 +142,7 @@ func (h *LandingPageHandler) Update(c *gin.Context) {
 
 	page, err := h.pageService.UpdatePage(userID, pageID, req.Name, req.Status)
 	if err != nil {
-		response.Fail(c, http.StatusBadRequest, err.Error())
+		failPageError(c, err)
 		return
 	}
 
@@ -121,8 +151,11 @@ func (h *LandingPageHandler) Update(c *gin.Context) {
 
 // DELETE /pages/:id
 func (h *LandingPageHandler) Delete(c *gin.Context) {
-	userIDVal, _ := c.Get("user_id")
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
 
 	pageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -131,7 +164,7 @@ func (h *LandingPageHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.pageService.DeletePage(userID, pageID); err != nil {
-		response.Fail(c, http.StatusNotFound, err.Error())
+		failPageError(c, err)
 		return
 	}
 
