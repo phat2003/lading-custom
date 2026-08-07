@@ -10,6 +10,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [darkMode, setDarkMode] = useState(true) // 👈 thêm state dark/light
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -23,7 +24,6 @@ export default function Login() {
     setLoading(true)
     try {
       const u = await login(email, password)
-      // Admin/super_admin vào thẳng khu quản trị; user thường thấy màn hình chào rồi vào /projects.
       const isAdmin = u.role === 'admin' || u.role === 'super_admin'
       if (isAdmin) navigate('/admin')
       else setIsSuccess(true)
@@ -34,8 +34,6 @@ export default function Login() {
     }
   }
 
-  // Màn hình chào chỉ hiện với user thường, nhưng vẫn dùng dashboardPath
-  // để không phải sửa 2 nơi nếu sau này đổi đường dẫn.
   const handleStartWorkspace = () => {
     navigate(dashboardPath)
   }
@@ -43,8 +41,18 @@ export default function Login() {
   // Screen after successful login 
   if (isSuccess) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#030712] relative overflow-hidden font-sans">
-        {/* Plexus background decoration (SVG) */}
+      <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans 
+        ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
+        
+        {/* Nút toggle dark/light */}
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
+        >
+          {darkMode ? 'Light Mode' : 'Dark Mode'}
+        </button>
+
+        {/* Plexus background decoration */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
           <svg className="w-full h-full text-blue-500" viewBox="0 0 800 600" fill="none">
             <path d="M100 150L250 100M250 100L450 180M450 180L600 80M600 80L700 250M250 100L300 350M450 180L300 350M300 350L150 480M300 350L500 480M500 480L700 250M600 80L500 480" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
@@ -61,9 +69,9 @@ export default function Login() {
         </div>
 
         {/* Success Card */}
-        <div className="relative z-10 flex flex-col items-center w-full max-w-md p-10 mx-4 space-y-8 text-center border shadow-2xl border-slate-900 bg-slate-950/70 backdrop-blur-md rounded-3xl">
+        <div className={`relative z-10 flex flex-col items-center w-full max-w-md p-10 mx-4 space-y-8 text-center border rounded-3xl shadow-2xl 
+          ${darkMode ? 'border-slate-900 bg-slate-950/70 backdrop-blur-md' : 'border-gray-300 bg-white'}`}>
           
-          {/* Glowing Checkmark Circle */}
           <div className="relative flex items-center justify-center h-20 w-20 rounded-full border border-blue-500/40 bg-blue-950/30 text-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.3)] animate-pulse">
             <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -71,8 +79,8 @@ export default function Login() {
           </div>
 
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold tracking-wide text-white">Thành công!</h1>
-            <p className="max-w-xs mx-auto text-sm leading-relaxed text-slate-400">
+            <h1 className="text-3xl font-bold tracking-wide">Thành công!</h1>
+            <p className={`max-w-xs mx-auto text-sm leading-relaxed ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
               Chào mừng bạn quay trở lại. Không gian làm việc của bạn đã sẵn sàng.
             </p>
           </div>
@@ -93,15 +101,27 @@ export default function Login() {
 
   // Main Login Interface
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#030712] relative overflow-hidden font-sans px-4">
+    <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans px-4 
+      ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
+      
+      {/* Nút toggle dark/light */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
+      >
+        {darkMode ? 'Light Mode' : 'Dark Mode'}
+      </button>
+
       {/* Background glow decorator */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md p-10 border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center">
+      <div className={`relative z-10 w-full max-w-md p-10 rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center 
+        ${darkMode ? 'border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md' : 'border border-gray-300 bg-white'}`}>
         
         {/* Logo container */}
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)] mb-6">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-6 
+          ${darkMode ? 'bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'bg-gray-200 border border-gray-300 shadow'}`}>
           <svg className="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
           </svg>
@@ -109,8 +129,10 @@ export default function Login() {
 
         {/* Card Header */}
         <div className="mb-8 space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-wide text-white">Welcome Back</h1>
-          <p className="text-sm text-slate-400">Log in to your command center.</p>
+          <h1 className="text-3xl font-bold tracking-wide">Welcome Back</h1>
+          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+            Log in to your command center.
+          </p>
         </div>
 
         {/* Error display */}
@@ -119,13 +141,12 @@ export default function Login() {
             {error}
           </div>
         )}
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           
           {/* Email field */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
+            <label className="text-[10px] font-bold uppercase tracking-widest block">
               Email Address
             </label>
             <div className="relative">
@@ -140,7 +161,8 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="creator@example.com"
                 required
-                className="w-full bg-white text-slate-900 placeholder-slate-400 pl-11 pr-4 py-3.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm"
+                className={`w-full pl-11 pr-4 py-3.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm 
+                  ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-slate-900 placeholder-slate-400 border-slate-200'}`}
               />
             </div>
           </div>
@@ -148,7 +170,7 @@ export default function Login() {
           {/* Password field */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
+              <label className="text-[10px] font-bold uppercase tracking-widest block">
                 Password
               </label>
               <Link to="#" className="text-xs font-medium text-blue-500 hover:text-blue-400">
@@ -168,7 +190,8 @@ export default function Login() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full bg-white text-slate-900 placeholder-slate-400 pl-11 pr-4 py-3.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm"
+                className={`w-full pl-11 pr-4 py-3.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm 
+                  ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-slate-900 placeholder-slate-400 border-slate-200'}`}
               />
             </div>
           </div>
@@ -177,7 +200,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#080d21] border border-blue-900/60 shadow-[0_0_20px_rgba(37,99,235,0.2)] hover:border-blue-700/80 hover:bg-slate-950 text-white font-bold py-4 px-4 rounded-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 cursor-pointer text-sm"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-4 rounded-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 cursor-pointer text-sm"
           >
             <span>{loading ? 'Đang xử lý...' : 'Đăng nhập'}</span>
             {!loading && (
@@ -193,7 +216,8 @@ export default function Login() {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-800" />
           </div>
-          <span className="relative bg-[#080c1f] px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+          <span className={`relative px-3 text-[10px] font-bold uppercase tracking-widest 
+            ${darkMode ? 'bg-[#080c1f] text-slate-500' : 'bg-gray-100 text-gray-600'}`}>
             OR
           </span>
         </div>
@@ -201,7 +225,8 @@ export default function Login() {
         {/* Google sign in button */}
         <button
           type="button"
-          className="w-full bg-[#181d2f]/80 hover:bg-[#1f253d] border border-slate-800 text-white font-medium py-3.5 px-4 rounded-lg flex items-center justify-center gap-2.5 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer text-sm"
+          className={`w-full font-medium py-3.5 px-4 rounded-lg flex items-center justify-center gap-2.5 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer text-sm 
+            ${darkMode ? 'bg-[#181d2f]/80 hover:bg-[#1f253d] border border-slate-800 text-white' : 'bg-gray-200 hover:bg-gray-300 border border-gray-400 text-black'}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.001 10.462h-7.001v3.077h4.038c-0.173 0.962-0.712 1.769-1.5 2.308v1.923h2.423c1.423-1.308 2.231-3.231 2.231-5.5 0-0.615-0.038-1.231-0.192-1.808z" fill="#4285F4" />
