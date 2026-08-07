@@ -10,7 +10,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [darkMode, setDarkMode] = useState(true) // 👈 thêm state dark/light
+  const [darkMode, setDarkMode] = useState(true)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
