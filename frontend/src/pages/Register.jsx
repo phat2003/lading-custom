@@ -9,27 +9,18 @@ export default function Register() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({ full_name: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const [darkMode, setDarkMode] = useState(true) // 👈 thêm state dark/light
 
   const validateForm = () => {
     const nextErrors = { full_name: '', email: '', password: '' }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const passwordRegex = /^(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/
 
-    if (!form.full_name.trim()) {
-      nextErrors.full_name = 'Họ và tên không được để trống'
-    }
-
-    if (!form.email.trim()) {
-      nextErrors.email = 'Email không được để trống'
-    } else if (!emailRegex.test(form.email)) {
-      nextErrors.email = 'Email không hợp lệ'
-    }
-
-    if (!form.password.trim()) {
-      nextErrors.password = 'Mật khẩu không được để trống'
-    } else if (!passwordRegex.test(form.password)) {
-      nextErrors.password = 'Mật khẩu phải từ 6 ký tự, có số và ký tự đặc biệt'
-    }
+    if (!form.full_name.trim()) nextErrors.full_name = 'Họ và tên không được để trống'
+    if (!form.email.trim()) nextErrors.email = 'Email không được để trống'
+    else if (!emailRegex.test(form.email)) nextErrors.email = 'Email không hợp lệ'
+    if (!form.password.trim()) nextErrors.password = 'Mật khẩu không được để trống'
+    else if (!passwordRegex.test(form.password)) nextErrors.password = 'Mật khẩu phải từ 6 ký tự, có số và ký tự đặc biệt'
 
     setFieldErrors(nextErrors)
     return !nextErrors.full_name && !nextErrors.email && !nextErrors.password
@@ -38,11 +29,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-
-    if (!validateForm()) {
-      return
-    }
-
+    if (!validateForm()) return
     setLoading(true)
     try {
       await register(form)
@@ -55,19 +42,34 @@ export default function Register() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#030712] relative overflow-hidden font-sans px-4">
+    <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans px-4 
+      ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
+      
+      {/* Nút toggle dark/light */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
+      >
+        {darkMode ? 'Light Mode' : 'Dark Mode'}
+      </button>
+
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-md p-10 border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)] mb-6">
+      <div className={`relative z-10 w-full max-w-md p-10 rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center 
+        ${darkMode ? 'border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md' : 'border border-gray-300 bg-white'}`}>
+        
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-6 
+          ${darkMode ? 'bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'bg-gray-200 border border-gray-300 shadow'}`}>
           <svg className="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
           </svg>
         </div>
 
         <div className="mb-8 space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-wide text-white">Myproject</h1>
-          <p className="text-sm text-slate-400">Bắt đầu xây dựng trải nghiệm tuyệt vời.</p>
+          <h1 className="text-3xl font-bold tracking-wide">Myproject</h1>
+          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+            Bắt đầu xây dựng trải nghiệm tuyệt vời.
+          </p>
         </div>
 
         {error && (
@@ -77,10 +79,9 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit} noValidate className="w-full space-y-5">
+          {/* Input họ tên */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
-              Họ và tên
-            </label>
+            <label className="text-[10px] font-bold uppercase tracking-widest block">Họ và tên</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -92,23 +93,19 @@ export default function Register() {
                 value={form.full_name}
                 onChange={(e) => {
                   setForm({ ...form, full_name: e.target.value })
-                  if (fieldErrors.full_name) {
-                    setFieldErrors((prev) => ({ ...prev, full_name: '' }))
-                  }
+                  if (fieldErrors.full_name) setFieldErrors((prev) => ({ ...prev, full_name: '' }))
                 }}
                 placeholder="Nhập họ và tên"
-                className={`w-full bg-[#13192b] text-white placeholder-slate-500 pl-11 pr-4 py-3.5 rounded-lg border transition-all font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 ${fieldErrors.full_name ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-transparent'}`}
+                className={`w-full pl-11 pr-4 py-3.5 rounded-lg border transition-all font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 
+                  ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-black placeholder-gray-400 border-gray-300'}`}
               />
-              {fieldErrors.full_name && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.full_name}</p>
-              )}
+              {fieldErrors.full_name && <p className="mt-1 text-xs text-red-400">{fieldErrors.full_name}</p>}
             </div>
           </div>
 
+          {/* Input email */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
-              Email
-            </label>
+            <label className="text-[10px] font-bold uppercase tracking-widest block">Email</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -120,27 +117,23 @@ export default function Register() {
                 value={form.email}
                 onChange={(e) => {
                   setForm({ ...form, email: e.target.value })
-                  if (fieldErrors.email) {
-                    setFieldErrors((prev) => ({ ...prev, email: '' }))
-                  }
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: '' }))
                 }}
                 placeholder="name@company.com"
-                className={`w-full bg-[#13192b] text-white placeholder-slate-500 pl-11 pr-4 py-3.5 rounded-lg border transition-all font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 ${fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-transparent'}`}
+                className={`w-full pl-11 pr-4 py-3.5 rounded-lg border transition-all font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 
+                  ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-black placeholder-gray-400 border-gray-300'}`}
               />
-              {fieldErrors.email && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>
-              )}
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
             </div>
           </div>
 
+          {/* Input password */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
-              Mật khẩu
-            </label>
+            <label className="text-[10px] font-bold uppercase tracking-widest block">Mật khẩu</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </span>
               <input
@@ -153,7 +146,8 @@ export default function Register() {
                   }
                 }}
                 placeholder="Tạo mật khẩu"
-                className={`w-full bg-[#13192b] text-white placeholder-slate-500 pl-11 pr-4 py-3.5 rounded-lg border transition-all font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 ${fieldErrors.password ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-transparent'}`}
+                className={`w-full pl-11 pr-4 py-3.5 rounded-lg border transition-all font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 
+                  ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-black placeholder-gray-400 border-gray-300'}`}
               />
               {fieldErrors.password && (
                 <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>
@@ -197,3 +191,5 @@ export default function Register() {
     </div>
   )
 }
+
+
