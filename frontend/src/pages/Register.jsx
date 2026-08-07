@@ -9,7 +9,7 @@ export default function Register() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({ full_name: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
-  const [darkMode, setDarkMode] = useState(true) // 👈 thêm state dark/light
+  const [darkMode, setDarkMode] = useState(true) 
 
   const validateForm = () => {
     const nextErrors = { full_name: '', email: '', password: '' }
