@@ -31,6 +31,7 @@ const BuilderTopbar = ({
   onSave,
   onSaveDraft,
   onPublish,
+  onPreview,
   saving = false,
   theme = 'dark',
   onToggleTheme,
@@ -131,7 +132,10 @@ const BuilderTopbar = ({
           </button>
         ) : (
           <>
-            {/* Xem trước cần API render HTML — chưa nối, tạm ẩn để không có nút chết. */}
+            {/* Mở cửa sổ mới hiển thị đúng bố cục đang dựng (kể cả chưa lưu) */}
+            <button onClick={onPreview} className={ghostBtn} title="Xem trước ở cửa sổ mới">
+              Xem trước
+            </button>
             <button onClick={onSaveDraft} disabled={saving} className={`${ghostBtn} disabled:opacity-40`}>
               Lưu bản nháp
             </button>
