@@ -12,12 +12,24 @@ export default function Login() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
 
+  // Regex kiểm tra email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
+    // FE validation
     if (!email || !password) {
       setError('Vui lòng nhập đầy đủ thông tin')
+      return
+    }
+    if (!emailRegex.test(email)) {
+      setError('Email không hợp lệ')
+      return
+    }
+    if (password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự')
       return
     }
 
@@ -28,7 +40,7 @@ export default function Login() {
       if (isAdmin) navigate('/admin')
       else setIsSuccess(true)
     } catch (err) {
-      setError(err.response?.data?.error || 'Đăng nhập thất bại')
+      setError('Sai email hoặc mật khẩu')
     } finally {
       setLoading(false)
     }
@@ -44,7 +56,6 @@ export default function Login() {
       <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans 
         ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
         
-        {/* Nút toggle dark/light */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
@@ -52,7 +63,6 @@ export default function Login() {
           {darkMode ? 'Light Mode' : 'Dark Mode'}
         </button>
 
-        {/* Plexus background decoration */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
           <svg className="w-full h-full text-blue-500" viewBox="0 0 800 600" fill="none">
             <path d="M100 150L250 100M250 100L450 180M450 180L600 80M600 80L700 250M250 100L300 350M450 180L300 350M300 350L150 480M300 350L500 480M500 480L700 250M600 80L500 480" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
@@ -67,8 +77,6 @@ export default function Login() {
             <circle cx="500" cy="480" r="3" fill="currentColor" />
           </svg>
         </div>
-
-        {/* Success Card */}
         <div className={`relative z-10 flex flex-col items-center w-full max-w-md p-10 mx-4 space-y-8 text-center border rounded-3xl shadow-2xl 
           ${darkMode ? 'border-slate-900 bg-slate-950/70 backdrop-blur-md' : 'border-gray-300 bg-white'}`}>
           
@@ -104,7 +112,6 @@ export default function Login() {
     <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans px-4 
       ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
       
-      {/* Nút toggle dark/light */}
       <button
         onClick={() => setDarkMode(!darkMode)}
         className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
@@ -112,14 +119,11 @@ export default function Login() {
         {darkMode ? 'Light Mode' : 'Dark Mode'}
       </button>
 
-      {/* Background glow decorator */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Login Card */}
       <div className={`relative z-10 w-full max-w-md p-10 rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center 
         ${darkMode ? 'border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md' : 'border border-gray-300 bg-white'}`}>
         
-        {/* Logo container */}
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-6 
           ${darkMode ? 'bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'bg-gray-200 border border-gray-300 shadow'}`}>
           <svg className="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -127,7 +131,6 @@ export default function Login() {
           </svg>
         </div>
 
-        {/* Card Header */}
         <div className="mb-8 space-y-2 text-center">
           <h1 className="text-3xl font-bold tracking-wide">Welcome Back</h1>
           <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
@@ -142,8 +145,7 @@ export default function Login() {
           </div>
         )}
         {/* Form */}
-        <form onSubmit={handleSubmit} className="w-full space-y-6">
-          
+        <form onSubmit={handleSubmit} noValidate className="w-full space-y-6">
           {/* Email field */}
           <div className="space-y-2">
             <label className="text-[10px] font-bold uppercase tracking-widest block">
@@ -156,11 +158,10 @@ export default function Login() {
                 </svg>
               </span>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="creator@example.com"
-                required
                 className={`w-full pl-11 pr-4 py-3.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm 
                   ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-slate-900 placeholder-slate-400 border-slate-200'}`}
               />
@@ -188,8 +189,6 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                required
-                minLength={6}
                 className={`w-full pl-11 pr-4 py-3.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm 
                   ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-slate-900 placeholder-slate-400 border-slate-200'}`}
               />
