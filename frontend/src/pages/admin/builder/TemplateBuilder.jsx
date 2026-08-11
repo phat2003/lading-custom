@@ -13,6 +13,7 @@ import { templatesApi } from '../../../api/templates'
 import { toLibraryVariants } from './sectionLibrary'
 import { useTheme } from '../../../context/ThemeContext'
 import { elementsToSections, sectionsToElements } from './templateContent'
+import { PREVIEW_KEY } from './PreviewPage'
 
 const newId = () =>
   crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())
@@ -123,6 +124,17 @@ const TemplateBuilder = ({ mode = 'template' }) => {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Xem trước: đẩy nội dung đang dựng (kể cả chưa lưu) sang cửa sổ mới.
+  // Không gọi API — preview luôn phản ánh đúng những gì đang có trên canvas.
+  const openPreview = () => {
+    if (elements.length === 0) {
+      setSaveError('Trang đang trống — hãy thêm phần tử trước khi xem trước.')
+      return
+    }
+    localStorage.setItem(PREVIEW_KEY, JSON.stringify({ elements, device }))
+    window.open('/admin/templates/preview', '_blank', 'noopener')
   }
 
   const openTemplateSave = (publish) => {
@@ -377,6 +389,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         canRedo={future.length > 0}
         mode={mode}
         onSave={() => setSaveOpen(true)}
+        onPreview={openPreview}
         onSaveDraft={() => openTemplateSave(false)}
         onPublish={() => openTemplateSave(true)}
         saving={saving}

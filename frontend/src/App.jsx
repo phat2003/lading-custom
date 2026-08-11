@@ -14,6 +14,7 @@ import AdminPricingPlans from './pages/admin/PricingPlans/PricingPlans'
 import AdminAiGenerator from './pages/admin/AiGenerator/AiGenerator'
 import AdminSettings from './pages/admin/Settings/Settings'
 import TemplateBuilder from './pages/admin/builder/TemplateBuilder'
+import PreviewPage from './pages/admin/builder/PreviewPage'
 import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
 import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
 import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
@@ -88,6 +89,8 @@ export default function App() {
         />
 
         {/* Builder toàn màn hình — admin dựng template/section mẫu (AdminRoute) */}
+        {/* Xem trước nội dung đang dựng — builder mở ở cửa sổ mới */}
+        <Route path="/admin/templates/preview" element={<AdminRoute><PreviewPage /></AdminRoute>} />
         <Route path="/admin/templates/new" element={<AdminRoute><TemplateBuilder /></AdminRoute>} />
         <Route path="/admin/templates/:id/edit" element={<AdminRoute><TemplateBuilder /></AdminRoute>} />
         {/* Cùng builder, chế độ Section: admin dựng section mẫu để tái sử dụng */}
