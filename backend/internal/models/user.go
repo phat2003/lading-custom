@@ -13,7 +13,10 @@ type (
 	SubscriptionStatus string
 	TemplateType       string
 	TemplateSource     string
+	TemplateStatus     string
+	TemplateTier       string
 	LandingPageStatus  string
+	AIGenerationStatus string
 )
 
 const (
@@ -34,8 +37,18 @@ const (
 	SourceCreatedByAdmin       TemplateSource = "created_by_admin"
 	SourceSavedFromLandingPage TemplateSource = "saved_from_landing_page"
 
+	TemplateStatusDraft     TemplateStatus = "draft"
+	TemplateStatusPublished TemplateStatus = "published"
+
+	TierFree    TemplateTier = "free"
+	TierPremium TemplateTier = "premium"
+
 	StatusDraft     LandingPageStatus = "draft"
 	StatusPublished LandingPageStatus = "published"
+
+	AIGenerating AIGenerationStatus = "generating"
+	AIDone       AIGenerationStatus = "done"
+	AIFailed     AIGenerationStatus = "failed"
 )
 
 // User — bảng app_user. 1 user có nhiều project, là owner của user template.
@@ -46,8 +59,19 @@ type User struct {
 	FullName     string    `gorm:"column:full_name" json:"full_name"`
 	Role         UserRole  `gorm:"column:role;type:user_role;default:'user'" json:"role"`
 	PlanType     PlanType  `gorm:"column:plan_type;type:plan_type;default:'free'" json:"plan_type"`
-	CreatedAt    time.Time `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"column:updated_at" json:"updated_at"`
+
+	// Field quản trị (migration 004).
+	Phone string `gorm:"column:phone" json:"phone"`
+	// IsActive: false = admin đã khoá tài khoản.
+	// LƯU Ý: tag default khiến GORM bỏ qua giá trị false lúc INSERT (dùng default DB),
+	// nên nơi nào tạo user phải set IsActive: true tường minh. Khi UPDATE bằng Save
+	// thì mọi field đều được ghi, kể cả false -> thao tác khoá vẫn có tác dụng.
+	IsActive       bool   `gorm:"column:is_active;default:true" json:"is_active"`
+	Timezone       string `gorm:"column:timezone;default:'Asia/Ho_Chi_Minh'" json:"timezone"`
+	SessionTimeout string `gorm:"column:session_timeout;default:'never'" json:"session_timeout"`
+
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 
 	Projects []Project `gorm:"foreignKey:OwnerID" json:"projects,omitempty"`
 }
@@ -67,4 +91,3 @@ type Subscription struct {
 }
 
 func (Subscription) TableName() string { return "subscription" }
-
