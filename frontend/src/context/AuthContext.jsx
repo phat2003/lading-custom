@@ -37,15 +37,8 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
-  // Nơi "về nhà" sau khi đăng nhập / bấm "Vào Dashboard".
-  // Định nghĩa một chỗ duy nhất để các trang không tự đoán mỗi nơi một kiểu.
-  const dashboardPath = isAdmin ? '/admin' : '/projects'
-
   return (
-    <AuthContext.Provider
-      value={{ user, loading, login, register, logout, isAdmin, dashboardPath }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

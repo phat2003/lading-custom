@@ -1,25 +1,37 @@
-import Navbar from '../components/layout/Navbar'
-import Hero from '../components/home/Hero'
-import Features from '../components/home/Features'
-import Templates from '../components/home/Templates'
-import HowItWorks from '../components/home/HowItWorks'
-import Pricing from '../components/home/Pricing'
-import ActualProducts from '../components/home/ActualProducts'
-import Footer from '../components/layout/Footer'
+import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
+// Trang chủ sau khi đăng nhập — placeholder cho FE Dev 1.
 export default function Home() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
-      <Navbar />
+    <div className="min-h-screen p-8">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-semibold">Landing Page Builder</h1>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-600">{user?.full_name || user?.email}</span>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-red-600 hover:underline"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+
       <main>
-        <Hero />
-        <Features />
-        <Templates />
-        <HowItWorks />
-        <Pricing />
-        <ActualProducts />
+        <p className="text-gray-700">
+          Chào mừng! Đây là trang chủ. Danh sách Project sẽ hiển thị ở đây.
+        </p>
+        {/* TODO(FE Dev 1): hiển thị danh sách project, nút tạo project mới */}
       </main>
-      <Footer />
     </div>
   )
 }

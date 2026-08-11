@@ -236,10 +236,10 @@ CREATE TRIGGER trg_pagesection_updated BEFORE UPDATE ON page_section
 -- =====================================================================
 -- 12. SEED DATA mẫu (tùy chọn — để test nhanh)
 -- =====================================================================
--- Tài khoản dev: admin / Admin@123 | user / User@123
+-- Admin & user demo
 INSERT INTO app_user (email, password_hash, full_name, role, plan_type) VALUES
-  ('admin@lpbuilder.com', '$2a$10$34GfT/s.37gU0r6lYJzt7uy7eZO1ryyVx0er75XBLgj.5d3rcLnBm', 'System Admin', 'admin', 'pro'),
-  ('user@demo.com',       '$2a$10$y2FHix0JpFhytz99SrTQSO4.iIOdyHoNUZ8i/wfWmtMMVl5Y3VPQm', 'Demo User',    'user',  'free');
+  ('admin@lpbuilder.com', '$2b$10$placeholderhash', 'System Admin', 'admin', 'pro'),
+  ('user@demo.com',       '$2b$10$placeholderhash', 'Demo User',    'user', 'free');
 
 -- Section mẫu trong thư viện
 INSERT INTO section_template_library (section_type, display_name, default_content, created_by)

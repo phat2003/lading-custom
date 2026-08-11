@@ -5,12 +5,7 @@
 
 # Go
 backend/bin/
-# Bắt file .exe ở MỌI cấp thư mục.
-# Pattern cũ `backend/*.exe` chỉ khớp con trực tiếp của backend/,
-# nên đã để lọt backend/tmp/main.exe (20MB) vào git.
-*.exe
-# air (hot reload) build vào đây — xem tmp_dir trong backend/.air.toml
-backend/tmp/
+backend/*.exe
 *.test
 *.out
 vendor/
@@ -33,8 +28,3 @@ yarn-error.log*
 
 # Docker
 *.pid
-# File upload từ user/admin
-backend/uploads/ 
-
-# graft's local graph cache — regenerable, not committed (run `graft build`).
-graft/

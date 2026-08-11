@@ -74,3 +74,4 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"user":  user,
 	})
 }
+
