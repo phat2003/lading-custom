@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -16,6 +16,7 @@ import AdminSettings from './pages/admin/Settings/Settings'
 import TemplateBuilder from './pages/admin/builder/TemplateBuilder'
 import PreviewPage from './pages/admin/builder/PreviewPage'
 import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
+import ProjectDetailPage from './pages/Projects/ProjectDetailPage/ProjectDetailPage'
 import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
 import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
 import { ProjectsProvider } from './pages/Projects/context/ProjectsContext'
@@ -34,12 +35,6 @@ function AdminRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />
   const isAdmin = user.role === 'admin' || user.role === 'super_admin'
   return isAdmin ? children : <Navigate to="/" replace />
-}
-
-// Điều hướng /projects/:projectId -> tab templates mặc định.
-function ProjectEntryRedirect() {
-  const { projectId } = useParams()
-  return <Navigate to={`/projects/${projectId}/templates`} replace />
 }
 
 export default function App() {
@@ -67,7 +62,7 @@ export default function App() {
           path="/projects/:projectId"
           element={
             <ProtectedRoute>
-              <ProjectEntryRedirect />
+              <ProjectDetailPage />
             </ProtectedRoute>
           }
         />

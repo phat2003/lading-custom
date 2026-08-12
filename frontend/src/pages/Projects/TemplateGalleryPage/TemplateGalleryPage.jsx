@@ -143,7 +143,7 @@ export default function TemplateGalleryPage() {
           <div>
             <button
               type="button"
-              onClick={() => navigate('/projects')}
+              onClick={() => navigate(`/projects/${projectId}`)}
               className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8d90a0] transition hover:text-[#d3fbff]"
             >
               ← {project.name}

@@ -158,7 +158,7 @@ export default function ProjectsPage() {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onOpen={() => navigate(`/projects/${project.id}/templates`)}
+                  onOpen={() => navigate(`/projects/${project.id}`)}
                 />
               ))}
             </section>
