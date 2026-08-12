@@ -26,6 +26,9 @@ export default function LandingPageEditorPage() {
     getProject,
     getLandingPage,
     updateLandingPageSections,
+    isProjectsLoading,
+    projectsError,
+    reloadProjects,
   } = useProjects()
   const project = getProject(projectId)
   const landingPage = getLandingPage(projectId, landingPageId)
@@ -136,6 +139,37 @@ export default function LandingPageEditorPage() {
     setSelectedSectionId(nextSelectedSection?.id || null)
     setNotice('Đã xóa Section khỏi Landing Page.')
   }, [sections])
+
+  if (isProjectsLoading) {
+    return (
+      <main
+        className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white"
+        aria-busy="true"
+      >
+        <section className="max-w-lg animate-pulse rounded-2xl border border-white/10 bg-[#201f21] p-8 text-center">
+          <p className="text-sm text-[#c3c6d7]">Đang tải Project...</p>
+        </section>
+      </main>
+    )
+  }
+
+  if (projectsError) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white">
+        <section className="max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#201f21] p-8 text-center" role="alert">
+          <h1 className="text-2xl font-semibold">Không tải được Project</h1>
+          <p className="mt-3 text-sm text-[#c3c6d7]">{projectsError}</p>
+          <button
+            type="button"
+            onClick={() => reloadProjects()}
+            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+          >
+            Thử lại
+          </button>
+        </section>
+      </main>
+    )
+  }
 
   if (!project || !landingPage) {
     return (

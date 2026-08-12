@@ -9,6 +9,9 @@ export default function CreateProjectModal({
   onClose,
   onCreate,
   onUpgrade,
+  submitting,
+  serverError,
+  onErrorClear,
 }) {
   const [projectName, setProjectName] = useState('')
   const [error, setError] = useState('')
@@ -35,8 +38,12 @@ export default function CreateProjectModal({
 
   if (!open) return null
 
+  const displayError = error || serverError
+
   const handleSubmit = (event) => {
     event.preventDefault()
+    if (submitting) return
+
     const normalizedName = projectName.trim()
 
     if (normalizedName.length < MIN_NAME_LENGTH) {
@@ -66,11 +73,13 @@ export default function CreateProjectModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-project-title"
+        aria-busy={submitting}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
+          disabled={submitting}
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Đóng modal"
         >
           <XIcon size={23} />
@@ -95,23 +104,25 @@ export default function CreateProjectModal({
               type="text"
               value={projectName}
               maxLength={MAX_NAME_LENGTH + 1}
+              disabled={submitting}
               onChange={(event) => {
                 setProjectName(event.target.value)
                 if (error) setError('')
+                if (serverError) onErrorClear()
               }}
               placeholder="Ví dụ: Chiến dịch Q4, Landing Page sản phẩm mới..."
-              className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition placeholder:text-[#8d90a0] focus:ring-2 ${
-                error
+              className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition placeholder:text-[#8d90a0] focus:ring-2 disabled:cursor-wait disabled:opacity-70 ${
+                displayError
                   ? 'border-[#ffb4ab] focus:ring-red-400/20'
                   : 'border-white/10 focus:border-[#b4c5ff] focus:ring-[#2563eb]/20'
               }`}
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? 'project-name-error' : 'project-name-help'}
+              aria-invalid={Boolean(displayError)}
+              aria-describedby={displayError ? 'project-name-error' : 'project-name-help'}
             />
             <div className="mt-2 flex items-center justify-between gap-3">
-              {error ? (
-                <p id="project-name-error" className="text-sm text-[#ffb4ab]">
-                  {error}
+              {displayError ? (
+                <p id="project-name-error" className="text-sm text-[#ffb4ab]" role="alert">
+                  {displayError}
                 </p>
               ) : (
                 <p id="project-name-help" className="text-xs text-[#8d90a0]">
@@ -138,7 +149,8 @@ export default function CreateProjectModal({
                 <button
                   type="button"
                   onClick={onUpgrade}
-                  className="mt-4 rounded-full bg-[#eec200] px-6 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#231b00] transition hover:bg-[#ffe083]"
+                  disabled={submitting}
+                  className="mt-4 rounded-full bg-[#eec200] px-6 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#231b00] transition hover:bg-[#ffe083] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Nâng cấp ngay →
                 </button>
@@ -151,16 +163,18 @@ export default function CreateProjectModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
+            disabled={submitting}
+            className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-blue-500 hover:shadow-[0_0_28px_rgba(37,99,235,0.5)] active:scale-[0.98]"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-blue-500 hover:shadow-[0_0_28px_rgba(37,99,235,0.5)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
           >
             <PlusIcon size={18} />
-            Tạo dự án
+            {submitting ? 'Đang tạo...' : 'Tạo dự án'}
           </button>
         </div>
       </form>

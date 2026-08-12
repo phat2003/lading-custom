@@ -17,7 +17,13 @@ export default function TemplateGalleryPage() {
   const { user } = useAuth()
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { getProject, createLandingPage } = useProjects()
+  const {
+    getProject,
+    createLandingPage,
+    isProjectsLoading,
+    projectsError,
+    reloadProjects,
+  } = useProjects()
   const project = getProject(projectId)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategory, setActiveCategory] = useState('Tất cả')
@@ -61,6 +67,39 @@ export default function TemplateGalleryPage() {
   const showMessage = (message) => {
     setNotice(message)
     setIsMobileMenuOpen(false)
+  }
+
+  if (isProjectsLoading) {
+    return (
+      <main
+        className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]"
+        aria-busy="true"
+      >
+        <section className="w-full max-w-lg animate-pulse rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
+          <p className="text-sm text-[#c3c6d7]">Đang tải Project...</p>
+        </section>
+      </main>
+    )
+  }
+
+  if (projectsError) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
+        <section className="w-full max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center" role="alert">
+          <h1 className="text-2xl font-semibold text-white">
+            Không tải được Project
+          </h1>
+          <p className="mt-3 text-sm text-[#c3c6d7]">{projectsError}</p>
+          <button
+            type="button"
+            onClick={() => reloadProjects()}
+            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+          >
+            Thử lại
+          </button>
+        </section>
+      </main>
+    )
   }
 
   if (!project) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { useProjects } from '../context/ProjectsContext'
@@ -12,15 +12,32 @@ import StatusNotice from '../components/StatusNotice'
 
 export default function ProjectsPage() {
   const { user } = useAuth()
-  const { projects, createProject } = useProjects()
+  const {
+    projects,
+    projectsError,
+    isProjectsLoading,
+    reloadProjects,
+    createProject,
+  } = useProjects()
   const location = useLocation()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
+  const [createError, setCreateError] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const createRequestInFlightRef = useRef(false)
 
-  const closeCreateModal = useCallback(() => setIsCreateModalOpen(false), [])
+  const openCreateModal = useCallback(() => {
+    setCreateError('')
+    setIsCreateModalOpen(true)
+  }, [])
+  const closeCreateModal = useCallback(() => {
+    if (createRequestInFlightRef.current) return
+    setCreateError('')
+    setIsCreateModalOpen(false)
+  }, [])
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), [])
 
   const filteredProjects = useMemo(() => {
@@ -42,15 +59,31 @@ export default function ProjectsPage() {
   useEffect(() => {
     if (!location.state?.openCreateProject) return
 
-    setIsCreateModalOpen(true)
+    openCreateModal()
     navigate(location.pathname, { replace: true, state: null })
-  }, [location.pathname, location.state, navigate])
+  }, [location.pathname, location.state, navigate, openCreateModal])
 
-  const handleCreateProject = (name) => {
-    createProject(name)
-    setSearchTerm('')
-    setIsCreateModalOpen(false)
-    setNotice(`Đã tạo Project “${name}” trên giao diện thử nghiệm.`)
+  const handleCreateProject = async (name) => {
+    if (createRequestInFlightRef.current) return
+
+    createRequestInFlightRef.current = true
+    setIsCreating(true)
+    setCreateError('')
+
+    try {
+      const project = await createProject(name)
+      setSearchTerm('')
+      setIsCreateModalOpen(false)
+      setNotice(`Đã tạo Project “${project.name}” thành công.`)
+    } catch (error) {
+      setCreateError(
+        error?.response?.data?.error ||
+          'Không thể tạo Project. Vui lòng thử lại.',
+      )
+    } finally {
+      createRequestInFlightRef.current = false
+      setIsCreating(false)
+    }
   }
 
   const showComingSoon = (message) => {
@@ -65,7 +98,7 @@ export default function ProjectsPage() {
         isOpen={isMobileMenuOpen}
         onClose={closeMobileMenu}
         onCreateProject={() => {
-          setIsCreateModalOpen(true)
+          openCreateModal()
           setIsMobileMenuOpen(false)
         }}
         onShowMessage={showComingSoon}
@@ -77,15 +110,45 @@ export default function ProjectsPage() {
         <ProjectHeader
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          onCreateProject={() => setIsCreateModalOpen(true)}
+          onCreateProject={openCreateModal}
         />
 
         <div className="relative min-h-[calc(100vh-150px)] overflow-hidden px-4 py-8 sm:px-8 lg:px-10">
           <div className="pointer-events-none absolute left-1/4 top-1/3 h-72 w-72 rounded-full bg-blue-600/5 blur-[100px]" />
           <div className="pointer-events-none absolute bottom-1/4 right-1/4 h-80 w-80 rounded-full bg-cyan-400/5 blur-[120px]" />
 
-          {projects.length === 0 ? (
-            <EmptyProjectState onCreateProject={() => setIsCreateModalOpen(true)} />
+          {isProjectsLoading ? (
+            <section
+              className="relative grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+              aria-label="Đang tải danh sách Project"
+              aria-busy="true"
+            >
+              {[0, 1, 2].map((item) => (
+                <div
+                  key={item}
+                  className="h-[292px] animate-pulse rounded-xl border border-white/10 bg-[#1c1b1d]"
+                />
+              ))}
+            </section>
+          ) : projectsError ? (
+            <section
+              className="relative mx-auto mt-20 max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center"
+              role="alert"
+            >
+              <h2 className="text-xl font-semibold text-white">
+                Không tải được danh sách Project
+              </h2>
+              <p className="mt-2 text-sm text-[#c3c6d7]">{projectsError}</p>
+              <button
+                type="button"
+                onClick={() => reloadProjects()}
+                className="mt-5 rounded-lg bg-[#b4c5ff] px-4 py-2 text-sm font-semibold text-[#002a78] transition hover:bg-[#d3fbff]"
+              >
+                Thử lại
+              </button>
+            </section>
+          ) : projects.length === 0 ? (
+            <EmptyProjectState onCreateProject={openCreateModal} />
           ) : filteredProjects.length > 0 ? (
             <section
               className="relative grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
@@ -123,6 +186,9 @@ export default function ProjectsPage() {
         open={isCreateModalOpen}
         onClose={closeCreateModal}
         onCreate={handleCreateProject}
+        submitting={isCreating}
+        serverError={createError}
+        onErrorClear={() => setCreateError('')}
         onUpgrade={() =>
           showComingSoon('Luồng nâng cấp Pro chưa nằm trong task frontend hiện tại.')
         }

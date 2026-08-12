@@ -2,7 +2,7 @@ import api from './client'
 
 // CRUD project của user hiện tại (khớp route backend /api/v1/projects).
 export const projectsApi = {
-  list: () => api.get('/projects'),
+  list: (config) => api.get('/projects', config),
   get: (id) => api.get(`/projects/${id}`),
   create: (payload) => api.post('/projects', payload),
   update: (id, payload) => api.put(`/projects/${id}`, payload),

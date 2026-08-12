@@ -43,6 +43,18 @@ function ProjectPreview({ type }) {
   )
 }
 
+function formatUpdatedAt(value) {
+  if (!value) return 'Chưa rõ thời gian cập nhật'
+
+  const updatedAt = new Date(value)
+  if (Number.isNaN(updatedAt.getTime())) return 'Chưa rõ thời gian cập nhật'
+
+  return `Cập nhật ${new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(updatedAt)}`
+}
+
 export default function ProjectCard({ project, onOpen }) {
   return (
     <button
@@ -57,10 +69,6 @@ export default function ProjectCard({ project, onOpen }) {
             Mở Project
           </span>
         </div>
-        <span className="absolute right-3 top-3 flex items-center gap-2 rounded-full border border-white/10 bg-[#201f21]/85 px-3 py-1 font-mono text-[10px] uppercase text-[#c3c6d7] backdrop-blur">
-          <span className="h-2 w-2 rounded-full bg-[#eec200]" />
-          {project.status}
-        </span>
       </div>
 
       <div className="p-5">
@@ -69,7 +77,7 @@ export default function ProjectCard({ project, onOpen }) {
         </h3>
         <p className="mt-4 flex items-center gap-2 font-mono text-[11px] text-[#c3c6d7]">
           <span aria-hidden="true">▣</span>
-          Cập nhật {project.updatedAt.toLowerCase()}
+          {formatUpdatedAt(project.updatedAt)}
         </p>
       </div>
     </button>
