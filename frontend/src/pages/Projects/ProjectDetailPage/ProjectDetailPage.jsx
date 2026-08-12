@@ -10,7 +10,9 @@ import ProjectMobileHeader from '../components/ProjectMobileHeader'
 import ProjectSidebar from '../components/ProjectSidebar'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
+import DeleteLandingPageModal from './components/DeleteLandingPageModal'
 import LandingPageCard from './components/LandingPageCard'
+import RenameLandingPageModal from './components/RenameLandingPageModal'
 
 const INITIAL_PAGE_STATE = {
   projectId: null,
@@ -33,8 +35,16 @@ const ProjectDetailPage = () => {
   const [pageState, setPageState] = useState(INITIAL_PAGE_STATE)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
+  const [renameLandingPage, setRenameLandingPage] = useState(null)
+  const [deleteLandingPage, setDeleteLandingPage] = useState(null)
+  const [renameError, setRenameError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const requestIdRef = useRef(0)
   const requestControllerRef = useRef(null)
+  const renameRequestInFlightRef = useRef(false)
+  const deleteRequestInFlightRef = useRef(false)
 
   const fetchLandingPages = useCallback(
     async (signal) => {
@@ -123,6 +133,103 @@ const ProjectDetailPage = () => {
   const showMessage = (message) => {
     setNotice(message)
     setIsMobileMenuOpen(false)
+  }
+
+  const openRenameModal = (landingPage) => {
+    setRenameError('')
+    setRenameLandingPage(landingPage)
+  }
+
+  const closeRenameModal = () => {
+    if (renameRequestInFlightRef.current) return
+    setRenameError('')
+    setRenameLandingPage(null)
+  }
+
+  const handleRenameLandingPage = async (name) => {
+    if (renameRequestInFlightRef.current || !renameLandingPage) return
+
+    renameRequestInFlightRef.current = true
+    setIsRenaming(true)
+    setRenameError('')
+
+    try {
+      const response = await landingPagesApi.update(renameLandingPage.id, {
+        name,
+      })
+      const updatedLandingPage = mapLandingPageFromApi(response?.data?.data)
+
+      if (
+        !updatedLandingPage ||
+        updatedLandingPage.id !== renameLandingPage.id ||
+        updatedLandingPage.projectId !== projectId
+      ) {
+        throw new Error('Invalid landing page response')
+      }
+
+      setPageState((currentState) => ({
+        ...currentState,
+        items: currentState.items.map((landingPage) =>
+          landingPage.id === updatedLandingPage.id
+            ? updatedLandingPage
+            : landingPage,
+        ),
+      }))
+      setRenameLandingPage(null)
+      setNotice(`Đã đổi tên Landing Page thành “${updatedLandingPage.name}”.`)
+    } catch (error) {
+      setRenameError(
+        error?.response?.data?.error ||
+          'Không thể đổi tên Landing Page. Vui lòng thử lại.',
+      )
+    } finally {
+      renameRequestInFlightRef.current = false
+      setIsRenaming(false)
+    }
+  }
+
+  const openDeleteModal = (landingPage) => {
+    setDeleteError('')
+    setDeleteLandingPage(landingPage)
+  }
+
+  const closeDeleteModal = () => {
+    if (deleteRequestInFlightRef.current) return
+    setDeleteError('')
+    setDeleteLandingPage(null)
+  }
+
+  const handleDeleteLandingPage = async () => {
+    if (deleteRequestInFlightRef.current || !deleteLandingPage) return
+
+    const landingPageToDelete = deleteLandingPage
+    deleteRequestInFlightRef.current = true
+    setIsDeleting(true)
+    setDeleteError('')
+
+    try {
+      const response = await landingPagesApi.remove(landingPageToDelete.id)
+      if (response?.data?.success !== true) {
+        throw new Error('Invalid delete landing page response')
+      }
+
+      setPageState((currentState) => ({
+        ...currentState,
+        items: currentState.items.filter(
+          (landingPage) => landingPage.id !== landingPageToDelete.id,
+        ),
+      }))
+      setDeleteLandingPage(null)
+      setNotice(`Đã xóa Landing Page “${landingPageToDelete.name}”.`)
+    } catch (error) {
+      setDeleteError(
+        error?.response?.data?.error ||
+          'Không thể xóa Landing Page. Vui lòng thử lại.',
+      )
+    } finally {
+      deleteRequestInFlightRef.current = false
+      setIsDeleting(false)
+    }
   }
 
   if (isProjectsLoading) {
@@ -293,6 +400,8 @@ const ProjectDetailPage = () => {
                       `/projects/${projectId}/editor/${landingPage.id}`,
                     )
                   }
+                  onRename={() => openRenameModal(landingPage)}
+                  onDelete={() => openDeleteModal(landingPage)}
                 />
               ))}
             </div>
@@ -301,6 +410,21 @@ const ProjectDetailPage = () => {
       </main>
 
       <StatusNotice>{notice}</StatusNotice>
+      <RenameLandingPageModal
+        landingPage={renameLandingPage}
+        submitting={isRenaming}
+        serverError={renameError}
+        onClose={closeRenameModal}
+        onSubmit={handleRenameLandingPage}
+        onErrorClear={() => setRenameError('')}
+      />
+      <DeleteLandingPageModal
+        landingPage={deleteLandingPage}
+        submitting={isDeleting}
+        error={deleteError}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteLandingPage}
+      />
     </div>
   )
 }
