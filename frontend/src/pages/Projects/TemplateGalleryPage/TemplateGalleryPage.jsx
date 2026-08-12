@@ -6,16 +6,36 @@ import {
   landingPagesApi,
   mapLandingPageFromApi,
 } from '../../../api/landingPages'
-import { useProjects } from '../context/ProjectsContext'
 import {
-  TEMPLATE_CATEGORIES,
-  templates,
-} from './mock/templates'
+  mapTemplateFromApi,
+  userTemplatesApi,
+} from '../../../api/templates'
+import { useProjects } from '../context/ProjectsContext'
 import CreateLandingPageModal from './components/CreateLandingPageModal'
 import TemplateCard from './components/TemplateCard'
 import ProjectMobileHeader from '../components/ProjectMobileHeader'
 import ProjectSidebar from '../components/ProjectSidebar'
 import StatusNotice from '../components/StatusNotice'
+
+const BLANK_OPTION = {
+  id: 'blank',
+  name: 'Bắt đầu từ trang trắng',
+  description: 'Blank / Canvas',
+  type: 'blank',
+  tier: 'free',
+}
+
+const TEMPLATE_FILTERS = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'system', label: 'Mẫu hệ thống' },
+  { id: 'user', label: 'Mẫu của tôi' },
+]
+
+const INITIAL_TEMPLATE_STATE = {
+  status: 'loading',
+  items: [],
+  error: '',
+}
 
 export default function TemplateGalleryPage() {
   const { user } = useAuth()
@@ -30,13 +50,16 @@ export default function TemplateGalleryPage() {
   } = useProjects()
   const project = getProject(projectId)
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeCategory, setActiveCategory] = useState('Tất cả')
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [templateState, setTemplateState] = useState(INITIAL_TEMPLATE_STATE)
+  const [templateReloadKey, setTemplateReloadKey] = useState(0)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const [createError, setCreateError] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const createRequestInFlightRef = useRef(false)
+  const templateRequestIdRef = useRef(0)
 
   const closeCreateModal = useCallback(() => {
     if (createRequestInFlightRef.current) return
@@ -51,20 +74,72 @@ export default function TemplateGalleryPage() {
     return () => window.clearTimeout(timer)
   }, [notice])
 
+  useEffect(() => {
+    if (!projectId || isProjectsLoading || projectsError || !project) {
+      return undefined
+    }
+
+    const controller = new AbortController()
+    const requestId = templateRequestIdRef.current + 1
+    templateRequestIdRef.current = requestId
+
+    setTemplateState(INITIAL_TEMPLATE_STATE)
+
+    userTemplatesApi
+      .list(
+        { page: 1, limit: 100 },
+        { signal: controller.signal },
+      )
+      .then((response) => {
+        if (controller.signal.aborted || requestId !== templateRequestIdRef.current) {
+          return
+        }
+
+        const source = response?.data?.data
+        if (!Array.isArray(source)) {
+          throw new Error('Invalid template list response')
+        }
+
+        const items = source.map(mapTemplateFromApi)
+        if (items.some((template) => !template)) {
+          throw new Error('Invalid template item response')
+        }
+
+        setTemplateState({ status: 'success', items, error: '' })
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || requestId !== templateRequestIdRef.current) {
+          return
+        }
+
+        setTemplateState({
+          status: 'error',
+          items: [],
+          error:
+            error?.response?.data?.error ||
+            'Không thể tải Template. Vui lòng thử lại.',
+        })
+      })
+
+    return () => controller.abort()
+  }, [isProjectsLoading, project, projectId, projectsError, templateReloadKey])
+
   const filteredTemplates = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
 
-    return templates.filter((template) => {
-      const matchesCategory =
-        activeCategory === 'Tất cả' || template.category === activeCategory
+    return templateState.items.filter((template) => {
+      const matchesType =
+        activeFilter === 'all' || template.type === activeFilter
       const matchesSearch =
-        !keyword ||
-        template.name.toLowerCase().includes(keyword) ||
-        template.description.toLowerCase().includes(keyword)
+        !keyword || template.name.toLowerCase().includes(keyword)
 
-      return matchesCategory && matchesSearch
+      return matchesType && matchesSearch
     })
-  }, [activeCategory, searchTerm])
+  }, [activeFilter, searchTerm, templateState.items])
+
+  const retryTemplates = useCallback(() => {
+    setTemplateReloadKey((currentKey) => currentKey + 1)
+  }, [])
 
   const handleCreateLandingPage = async (name) => {
     if (createRequestInFlightRef.current || !selectedTemplate) return
@@ -223,26 +298,65 @@ export default function TemplateGalleryPage() {
         </header>
 
         <section className="mx-auto mt-12 max-w-[1280px]">
-          <div className="flex flex-wrap gap-3" aria-label="Danh mục Template">
-            {TEMPLATE_CATEGORIES.map((category) => (
+          <div className="flex flex-wrap gap-3" aria-label="Loại Template">
+            {TEMPLATE_FILTERS.map((filter) => (
               <button
-                key={category}
+                key={filter.id}
                 type="button"
-                onClick={() => setActiveCategory(category)}
+                onClick={() => setActiveFilter(filter.id)}
                 className={`rounded-full border px-4 py-2 font-mono text-[11px] transition ${
-                  activeCategory === category
+                  activeFilter === filter.id
                     ? 'border-[#b4c5ff]/30 bg-[#2563eb]/20 text-[#b4c5ff]'
                     : 'border-[#434655]/25 bg-[#2a2a2c] text-[#c3c6d7] hover:bg-[#353437]'
                 }`}
               >
-                {category}
+                {filter.label}
               </button>
             ))}
           </div>
 
-          {filteredTemplates.length > 0 ? (
-            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {filteredTemplates.map((template) => (
+          <div
+            className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
+            aria-label="Template Gallery"
+            aria-busy={templateState.status === 'loading'}
+          >
+            <TemplateCard
+              template={BLANK_OPTION}
+              onSelect={(nextTemplate) => {
+                setCreateError('')
+                setSelectedTemplate(nextTemplate)
+              }}
+              onLocked={() => {}}
+            />
+
+            {templateState.status === 'loading' ? (
+              [0, 1, 2].map((item) => (
+                <div
+                  key={item}
+                  className="h-[320px] animate-pulse rounded-xl border border-white/10 bg-[#1c1b1d]"
+                />
+              ))
+            ) : templateState.status === 'error' ? (
+              <div
+                className="rounded-xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-10 text-center sm:col-span-2 xl:col-span-2"
+                role="alert"
+              >
+                <h2 className="text-xl font-semibold text-white">
+                  Không tải được Template
+                </h2>
+                <p className="mt-2 text-sm text-[#c3c6d7]">
+                  {templateState.error}
+                </p>
+                <button
+                  type="button"
+                  onClick={retryTemplates}
+                  className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-2.5 font-semibold text-[#002a78]"
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : filteredTemplates.length > 0 ? (
+              filteredTemplates.map((template) => (
                 <TemplateCard
                   key={template.id}
                   template={template}
@@ -254,16 +368,24 @@ export default function TemplateGalleryPage() {
                     showMessage(`“${template.name}” yêu cầu gói Pro.`)
                   }
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 rounded-xl border border-white/10 bg-[#1c1b1d] p-10 text-center">
-              <h2 className="text-xl font-semibold text-white">Không tìm thấy mẫu</h2>
-              <p className="mt-2 text-sm text-[#c3c6d7]">
-                Thử thay đổi từ khóa hoặc chọn danh mục khác.
-              </p>
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-[#1c1b1d] p-10 text-center sm:col-span-2 xl:col-span-2">
+                <h2 className="text-xl font-semibold text-white">
+                  {activeFilter === 'user' && !searchTerm.trim()
+                    ? 'Bạn chưa có Template cá nhân'
+                    : activeFilter === 'system' && !searchTerm.trim()
+                      ? 'Chưa có System Template khả dụng'
+                      : 'Không tìm thấy mẫu'}
+                </h2>
+                <p className="mt-2 text-sm text-[#c3c6d7]">
+                  {searchTerm.trim()
+                    ? 'Thử thay đổi từ khóa hoặc chọn loại Template khác.'
+                    : 'Chọn loại Template khác hoặc bắt đầu từ trang trắng.'}
+                </p>
+              </div>
+            )}
+          </div>
         </section>
       </main>
 
