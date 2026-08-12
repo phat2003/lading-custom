@@ -43,7 +43,6 @@ export default function TemplateGalleryPage() {
   const navigate = useNavigate()
   const {
     getProject,
-    createLandingPage,
     isProjectsLoading,
     projectsError,
     reloadProjects,
@@ -144,35 +143,44 @@ export default function TemplateGalleryPage() {
   const handleCreateLandingPage = async (name) => {
     if (createRequestInFlightRef.current || !selectedTemplate) return
 
-    if (selectedTemplate.type !== 'blank') {
-      const landingPage = createLandingPage(projectId, {
-        name,
-        source: selectedTemplate,
-      })
-      navigate(`/projects/${projectId}/editor/${landingPage.id}`)
-      return
-    }
-
+    const templateToCreate = selectedTemplate
     createRequestInFlightRef.current = true
     setIsCreating(true)
     setCreateError('')
 
     try {
-      const response = await landingPagesApi.create({
-        project_id: projectId,
-        name: name.trim(),
-      })
+      const normalizedName = name.trim()
+      const response =
+        templateToCreate.type === 'blank'
+          ? await landingPagesApi.create({
+              project_id: projectId,
+              name: normalizedName,
+            })
+          : await landingPagesApi.createFromTemplate({
+              project_id: projectId,
+              template_id: templateToCreate.id,
+              name: normalizedName,
+            })
       const landingPage = mapLandingPageFromApi(response?.data?.data)
 
       if (!landingPage || landingPage.projectId !== projectId) {
         throw new Error('Invalid landing page response')
+      }
+      if (
+        templateToCreate.type !== 'blank' &&
+        landingPage.sourceTemplateId &&
+        landingPage.sourceTemplateId !== templateToCreate.id
+      ) {
+        throw new Error('Invalid source template response')
       }
 
       navigate(`/projects/${projectId}/editor/${landingPage.id}`)
     } catch (error) {
       setCreateError(
         error?.response?.data?.error ||
-          'Không thể tạo Landing Page. Vui lòng thử lại.',
+          (templateToCreate.type === 'blank'
+            ? 'Không thể tạo Landing Page. Vui lòng thử lại.'
+            : 'Không thể tạo Landing Page từ Template. Vui lòng thử lại.'),
       )
     } finally {
       createRequestInFlightRef.current = false
@@ -322,6 +330,7 @@ export default function TemplateGalleryPage() {
           >
             <TemplateCard
               template={BLANK_OPTION}
+              locked={false}
               onSelect={(nextTemplate) => {
                 setCreateError('')
                 setSelectedTemplate(nextTemplate)
@@ -360,6 +369,11 @@ export default function TemplateGalleryPage() {
                 <TemplateCard
                   key={template.id}
                   template={template}
+                  locked={
+                    template.type === 'system' &&
+                    template.tier === 'premium' &&
+                    user?.plan_type !== 'pro'
+                  }
                   onSelect={(nextTemplate) => {
                     setCreateError('')
                     setSelectedTemplate(nextTemplate)

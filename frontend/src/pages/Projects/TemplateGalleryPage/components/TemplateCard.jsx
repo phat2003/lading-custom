@@ -1,6 +1,6 @@
 import { LayoutTemplateIcon, PlusIcon } from '../../../../components/icons'
 
-export default function TemplateCard({ template, onSelect, onLocked }) {
+const TemplateCard = ({ template, locked = false, onSelect, onLocked }) => {
   const isPro = template.tier === 'premium'
   const isBlank = template.type === 'blank'
   const isUser = template.type === 'user'
@@ -58,11 +58,9 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
         </span>
 
         <div
-          className={`absolute inset-0 z-10 flex items-center justify-center bg-[#131315]/65 backdrop-blur-[2px] transition-opacity ${
-            isPro ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
-          }`}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-[#131315]/65 opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100"
         >
-          {isPro ? (
+          {locked ? (
             <div className="text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-[#eec200]/30 bg-[#353437] text-2xl text-[#eec200]">
                 ⌑
@@ -90,7 +88,7 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
 
       <button
         type="button"
-        onClick={() => (isPro ? onLocked() : onSelect(template))}
+        onClick={() => (locked ? onLocked() : onSelect(template))}
         className="flex flex-1 flex-col p-4 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#b4c5ff]"
       >
         <h3 className="text-lg font-semibold text-white transition group-hover:text-[#b4c5ff]">
@@ -111,3 +109,5 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
     </article>
   )
 }
+
+export default TemplateCard

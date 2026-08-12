@@ -27,6 +27,7 @@ export const landingPagesApi = {
     }),
   get: (id, config) => api.get(`/pages/${id}`, config),
   create: (payload) => api.post('/pages', payload),
+  createFromTemplate: (payload) => api.post('/pages/from-template', payload),
   update: (id, payload) => api.put(`/pages/${id}`, payload),
   remove: (id) => api.delete(`/pages/${id}`),
 }
