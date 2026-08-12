@@ -8,6 +8,9 @@ export default function CreateLandingPageModal({
   template,
   onClose,
   onCreate,
+  submitting,
+  serverError,
+  onErrorClear,
 }) {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
@@ -38,8 +41,12 @@ export default function CreateLandingPageModal({
 
   if (!open || !template) return null
 
+  const displayError = error || serverError
+
   const handleSubmit = (event) => {
     event.preventDefault()
+    if (submitting) return
+
     const normalizedName = name.trim()
 
     if (normalizedName.length < 3) {
@@ -69,11 +76,13 @@ export default function CreateLandingPageModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-landing-page-title"
+        aria-busy={submitting}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
+          disabled={submitting}
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Đóng modal"
         >
           <XIcon size={22} />
@@ -104,20 +113,27 @@ export default function CreateLandingPageModal({
               ref={inputRef}
               value={name}
               maxLength={MAX_NAME_LENGTH + 1}
+              disabled={submitting}
               onChange={(event) => {
                 setName(event.target.value)
                 if (error) setError('')
+                if (serverError) onErrorClear()
               }}
-              className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition focus:ring-2 ${
-                error
+              className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition focus:ring-2 disabled:cursor-wait disabled:opacity-70 ${
+                displayError
                   ? 'border-[#ffb4ab] focus:ring-red-400/20'
                   : 'border-white/10 focus:border-[#b4c5ff] focus:ring-[#2563eb]/20'
               }`}
-              aria-invalid={Boolean(error)}
+              aria-invalid={Boolean(displayError)}
+              aria-describedby={displayError ? 'landing-page-name-error' : undefined}
             />
             <div className="mt-2 flex items-center justify-between gap-3">
-              <p className={`text-xs ${error ? 'text-[#ffb4ab]' : 'text-[#8d90a0]'}`}>
-                {error || 'Từ 3 đến 150 ký tự.'}
+              <p
+                id={displayError ? 'landing-page-name-error' : undefined}
+                className={`text-xs ${displayError ? 'text-[#ffb4ab]' : 'text-[#8d90a0]'}`}
+                role={displayError ? 'alert' : undefined}
+              >
+                {displayError || 'Từ 3 đến 150 ký tự.'}
               </p>
               <span className="font-mono text-[10px] text-[#8d90a0]">
                 {name.length}/{MAX_NAME_LENGTH}
@@ -130,16 +146,18 @@ export default function CreateLandingPageModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
+            disabled={submitting}
+            className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-6 py-3 font-semibold text-white shadow-[0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-blue-500"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-6 py-3 font-semibold text-white shadow-[0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-70"
           >
             <PlusIcon size={18} />
-            Tạo và mở Editor
+            {submitting ? 'Đang tạo...' : 'Tạo và mở Editor'}
           </button>
         </div>
       </form>

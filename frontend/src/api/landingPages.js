@@ -26,4 +26,5 @@ export const landingPagesApi = {
       },
     }),
   get: (id, config) => api.get(`/pages/${id}`, config),
+  create: (payload) => api.post('/pages', payload),
 }

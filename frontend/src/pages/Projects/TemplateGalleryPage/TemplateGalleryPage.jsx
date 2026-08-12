@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { FilterIcon, SearchIcon } from '../../../components/icons'
+import {
+  landingPagesApi,
+  mapLandingPageFromApi,
+} from '../../../api/landingPages'
 import { useProjects } from '../context/ProjectsContext'
 import {
   TEMPLATE_CATEGORIES,
@@ -30,8 +34,15 @@ export default function TemplateGalleryPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
+  const [createError, setCreateError] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const createRequestInFlightRef = useRef(false)
 
-  const closeCreateModal = useCallback(() => setSelectedTemplate(null), [])
+  const closeCreateModal = useCallback(() => {
+    if (createRequestInFlightRef.current) return
+    setCreateError('')
+    setSelectedTemplate(null)
+  }, [])
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), [])
 
   useEffect(() => {
@@ -55,13 +66,43 @@ export default function TemplateGalleryPage() {
     })
   }, [activeCategory, searchTerm])
 
-  const handleCreateLandingPage = (name) => {
-    const landingPage = createLandingPage(projectId, {
-      name,
-      source: selectedTemplate,
-    })
+  const handleCreateLandingPage = async (name) => {
+    if (createRequestInFlightRef.current || !selectedTemplate) return
 
-    navigate(`/projects/${projectId}/editor/${landingPage.id}`)
+    if (selectedTemplate.type !== 'blank') {
+      const landingPage = createLandingPage(projectId, {
+        name,
+        source: selectedTemplate,
+      })
+      navigate(`/projects/${projectId}/editor/${landingPage.id}`)
+      return
+    }
+
+    createRequestInFlightRef.current = true
+    setIsCreating(true)
+    setCreateError('')
+
+    try {
+      const response = await landingPagesApi.create({
+        project_id: projectId,
+        name: name.trim(),
+      })
+      const landingPage = mapLandingPageFromApi(response?.data?.data)
+
+      if (!landingPage || landingPage.projectId !== projectId) {
+        throw new Error('Invalid landing page response')
+      }
+
+      navigate(`/projects/${projectId}/editor/${landingPage.id}`)
+    } catch (error) {
+      setCreateError(
+        error?.response?.data?.error ||
+          'Không thể tạo Landing Page. Vui lòng thử lại.',
+      )
+    } finally {
+      createRequestInFlightRef.current = false
+      setIsCreating(false)
+    }
   }
 
   const showMessage = (message) => {
@@ -205,7 +246,10 @@ export default function TemplateGalleryPage() {
                 <TemplateCard
                   key={template.id}
                   template={template}
-                  onSelect={setSelectedTemplate}
+                  onSelect={(nextTemplate) => {
+                    setCreateError('')
+                    setSelectedTemplate(nextTemplate)
+                  }}
                   onLocked={() =>
                     showMessage(`“${template.name}” yêu cầu gói Pro.`)
                   }
@@ -229,6 +273,9 @@ export default function TemplateGalleryPage() {
         template={selectedTemplate}
         onClose={closeCreateModal}
         onCreate={handleCreateLandingPage}
+        submitting={isCreating}
+        serverError={createError}
+        onErrorClear={() => setCreateError('')}
       />
     </div>
   )
