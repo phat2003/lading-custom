@@ -1,12 +1,22 @@
-export default function EditorTopbar({
+const SAVE_STATUS = {
+  saved: { label: 'Đã lưu', className: 'text-[#00eefc]' },
+  dirty: { label: 'Chưa lưu', className: 'text-[#eec200]' },
+  saving: { label: 'Đang lưu...', className: 'text-[#eec200]' },
+  error: { label: 'Lưu thất bại', className: 'text-[#ffb4ab]' },
+}
+
+const EditorTopbar = ({
   landingPageName,
   saveStatus,
   onBack,
+  onSave,
   onUndo,
   onRedo,
   onPreview,
   onPublish,
-}) {
+}) => {
+  const status = SAVE_STATUS[saveStatus] || SAVE_STATUS.saved
+
   return (
     <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-[#434655]/20 bg-[#201f21] px-5">
       <div className="flex items-center gap-6">
@@ -53,13 +63,25 @@ export default function EditorTopbar({
           Dự án: <span className="text-white">{landingPageName}</span>⌄
         </p>
         <span
-          className={`font-mono text-[9px] uppercase tracking-wider ${
-            saveStatus === 'saving' ? 'text-[#eec200]' : 'text-[#00eefc]'
-          }`}
+          className={`font-mono text-[9px] uppercase tracking-wider ${status.className}`}
         >
-          {saveStatus === 'saving' ? 'Đang lưu...' : 'Đã lưu'}
+          {status.label}
         </span>
         <div className="h-6 w-px bg-white/10" />
+        {onSave && (
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saveStatus === 'saved' || saveStatus === 'saving'}
+            className="rounded bg-[#2563eb] px-4 py-2 font-mono text-xs font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {saveStatus === 'saving'
+              ? 'Đang lưu...'
+              : saveStatus === 'error'
+                ? 'Thử lưu lại'
+                : 'Lưu'}
+          </button>
+        )}
         <button
           type="button"
           onClick={onPreview}
@@ -78,3 +100,5 @@ export default function EditorTopbar({
     </header>
   )
 }
+
+export default EditorTopbar
