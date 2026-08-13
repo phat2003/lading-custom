@@ -95,7 +95,9 @@ function loadLandingPages() {
 export function ProjectsProvider({ children }) {
   const { user, loading: authLoading } = useAuth()
   const location = useLocation()
-  const isProjectRoute = location.pathname.startsWith('/projects')
+  const shouldLoadProjects =
+    location.pathname.startsWith('/projects') ||
+    location.pathname === '/templates'
   const [projects, setProjects] = useState([])
   const [projectsStatus, setProjectsStatus] = useState('idle')
   const [projectsError, setProjectsError] = useState('')
@@ -167,7 +169,7 @@ export function ProjectsProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    if (authLoading || !isProjectRoute) return undefined
+    if (authLoading || !shouldLoadProjects) return undefined
 
     if (!user) {
       requestIdRef.current += 1
@@ -181,7 +183,7 @@ export function ProjectsProvider({ children }) {
     const controller = new AbortController()
     reloadProjects(controller.signal)
     return () => controller.abort()
-  }, [authLoading, isProjectRoute, reloadProjects, user])
+  }, [authLoading, reloadProjects, shouldLoadProjects, user])
 
   const createProject = useCallback(async (name) => {
     const response = await projectsApi.create({ name: name.trim() })
@@ -255,7 +257,7 @@ export function ProjectsProvider({ children }) {
 
   const isProjectsLoading =
     authLoading ||
-    (isProjectRoute &&
+    (shouldLoadProjects &&
       Boolean(user) &&
       (projectsStatus === 'idle' || projectsStatus === 'loading'))
 

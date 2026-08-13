@@ -12,6 +12,7 @@ import {
 } from '../../../api/templates'
 import { useProjects } from '../context/ProjectsContext'
 import CreateLandingPageModal from './components/CreateLandingPageModal'
+import SelectDestinationModal from './components/SelectDestinationModal'
 import TemplateCard from './components/TemplateCard'
 import ProjectMobileHeader from '../components/ProjectMobileHeader'
 import ProjectSidebar from '../components/ProjectSidebar'
@@ -43,17 +44,23 @@ export default function TemplateGalleryPage() {
   const isGlobalGallery = !projectId
   const navigate = useNavigate()
   const {
+    projects,
     getProject,
     isProjectsLoading,
     projectsError,
     reloadProjects,
   } = useProjects()
   const project = projectId ? getProject(projectId) : null
+  const canLoadTemplates =
+    isGlobalGallery ||
+    Boolean(projectId && !isProjectsLoading && !projectsError && project)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [templateState, setTemplateState] = useState(INITIAL_TEMPLATE_STATE)
   const [templateReloadKey, setTemplateReloadKey] = useState(0)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [creationStep, setCreationStep] = useState('idle')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const [createError, setCreateError] = useState('')
@@ -61,10 +68,12 @@ export default function TemplateGalleryPage() {
   const createRequestInFlightRef = useRef(false)
   const templateRequestIdRef = useRef(0)
 
-  const closeCreateModal = useCallback(() => {
+  const resetCreationFlow = useCallback(() => {
     if (createRequestInFlightRef.current) return
     setCreateError('')
     setSelectedTemplate(null)
+    setSelectedProject(null)
+    setCreationStep('idle')
   }, [])
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), [])
 
@@ -75,12 +84,7 @@ export default function TemplateGalleryPage() {
   }, [notice])
 
   useEffect(() => {
-    if (
-      !isGlobalGallery &&
-      (!projectId || isProjectsLoading || projectsError || !project)
-    ) {
-      return undefined
-    }
+    if (!canLoadTemplates) return undefined
 
     const controller = new AbortController()
     const requestId = templateRequestIdRef.current + 1
@@ -133,11 +137,8 @@ export default function TemplateGalleryPage() {
 
     return () => controller.abort()
   }, [
+    canLoadTemplates,
     isGlobalGallery,
-    isProjectsLoading,
-    project,
-    projectId,
-    projectsError,
     templateReloadKey,
   ])
 
@@ -162,21 +163,40 @@ export default function TemplateGalleryPage() {
 
   const handleSelectTemplate = (nextTemplate) => {
     setCreateError('')
-
-    if (isGlobalGallery) {
-      setNotice(
-        `Đã chọn “${nextTemplate.name}”. Bước chọn Project đích sẽ được bổ sung tiếp theo.`,
-      )
-      return
-    }
-
     setSelectedTemplate(nextTemplate)
+    setSelectedProject(null)
+    setCreationStep(isGlobalGallery ? 'destination' : 'naming')
+  }
+
+  const showExistingProjects = () => {
+    setSelectedProject(null)
+    setCreationStep('existing-project')
+  }
+
+  const selectDestinationProject = (nextProject) => {
+    setSelectedProject(nextProject)
+    setCreationStep('naming')
+  }
+
+  const backToDestinationChoice = () => {
+    setSelectedProject(null)
+    setCreationStep('destination')
+  }
+
+  const backToProjectSelection = () => {
+    if (createRequestInFlightRef.current) return
+    setCreateError('')
+    setSelectedProject(null)
+    setCreationStep('existing-project')
   }
 
   const handleCreateLandingPage = async (name) => {
+    const destinationProjectId = isGlobalGallery
+      ? selectedProject?.id
+      : projectId
+
     if (
-      isGlobalGallery ||
-      !projectId ||
+      !destinationProjectId ||
       createRequestInFlightRef.current ||
       !selectedTemplate
     ) {
@@ -193,17 +213,17 @@ export default function TemplateGalleryPage() {
       const response =
         templateToCreate.type === 'blank'
           ? await landingPagesApi.create({
-              project_id: projectId,
+              project_id: destinationProjectId,
               name: normalizedName,
             })
           : await landingPagesApi.createFromTemplate({
-              project_id: projectId,
+              project_id: destinationProjectId,
               template_id: templateToCreate.id,
               name: normalizedName,
             })
       const landingPage = mapLandingPageFromApi(response?.data?.data)
 
-      if (!landingPage || landingPage.projectId !== projectId) {
+      if (!landingPage || landingPage.projectId !== destinationProjectId) {
         throw new Error('Invalid landing page response')
       }
       if (
@@ -214,7 +234,9 @@ export default function TemplateGalleryPage() {
         throw new Error('Invalid source template response')
       }
 
-      navigate(`/projects/${projectId}/editor/${landingPage.id}`)
+      navigate(
+        `/projects/${destinationProjectId}/editor/${landingPage.id}`,
+      )
     } catch (error) {
       setCreateError(
         error?.response?.data?.error ||
@@ -449,10 +471,29 @@ export default function TemplateGalleryPage() {
       </main>
 
       <StatusNotice>{notice}</StatusNotice>
+      <SelectDestinationModal
+        open={
+          isGlobalGallery &&
+          (creationStep === 'destination' ||
+            creationStep === 'existing-project')
+        }
+        source={selectedTemplate}
+        step={creationStep}
+        projects={projects}
+        isLoading={isProjectsLoading}
+        error={projectsError}
+        onClose={resetCreationFlow}
+        onChooseExisting={showExistingProjects}
+        onSelectProject={selectDestinationProject}
+        onBack={backToDestinationChoice}
+        onRetry={() => reloadProjects()}
+      />
       <CreateLandingPageModal
-        open={!isGlobalGallery && Boolean(selectedTemplate)}
+        open={creationStep === 'naming' && Boolean(selectedTemplate)}
         template={selectedTemplate}
-        onClose={closeCreateModal}
+        project={isGlobalGallery ? selectedProject : project}
+        onClose={resetCreationFlow}
+        onBack={isGlobalGallery ? backToProjectSelection : undefined}
         onCreate={handleCreateLandingPage}
         submitting={isCreating}
         serverError={createError}

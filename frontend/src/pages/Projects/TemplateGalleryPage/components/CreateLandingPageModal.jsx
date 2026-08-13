@@ -3,15 +3,17 @@ import { PlusIcon, XIcon } from '../../../../components/icons'
 
 const MAX_NAME_LENGTH = 150
 
-export default function CreateLandingPageModal({
+const CreateLandingPageModal = ({
   open,
   template,
+  project,
   onClose,
+  onBack,
   onCreate,
   submitting,
   serverError,
   onErrorClear,
-}) {
+}) => {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const inputRef = useRef(null)
@@ -102,6 +104,11 @@ export default function CreateLandingPageModal({
           <p className="mt-2 text-sm text-[#c3c6d7]">
             Nguồn khởi tạo: <span className="text-white">{template.name}</span>
           </p>
+          {project && (
+            <p className="mt-1 text-sm text-[#c3c6d7]">
+              Project đích: <span className="text-white">{project.name}</span>
+            </p>
+          )}
         </div>
 
         <div className="px-7 py-6">
@@ -143,6 +150,16 @@ export default function CreateLandingPageModal({
         </div>
 
         <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-[#0e0e10]/40 px-7 py-5 sm:flex-row sm:justify-end">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={submitting}
+              className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Quay lại
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -164,3 +181,5 @@ export default function CreateLandingPageModal({
     </div>
   )
 }
+
+export default CreateLandingPageModal
