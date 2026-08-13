@@ -4,15 +4,17 @@ import { PlusIcon, UserIcon, XIcon } from '../../../../components/icons'
 const MIN_NAME_LENGTH = 3
 const MAX_NAME_LENGTH = 150
 
-export default function CreateProjectModal({
+const CreateProjectModal = ({
   open,
+  source,
   onClose,
+  onBack,
   onCreate,
   onUpgrade,
   submitting,
   serverError,
   onErrorClear,
-}) {
+}) => {
   const [projectName, setProjectName] = useState('')
   const [error, setError] = useState('')
   const inputRef = useRef(null)
@@ -92,6 +94,12 @@ export default function CreateProjectModal({
           <p className="mt-2 text-[#c3c6d7]">
             Thiết lập thông tin cơ bản cho dự án mới của bạn.
           </p>
+          {source && (
+            <p className="mt-2 text-sm text-[#c3c6d7]">
+              Nguồn Landing Page:{' '}
+              <span className="text-white">{source.name}</span>
+            </p>
+          )}
         </div>
 
         <div className="space-y-7 px-6 py-6 sm:px-8">
@@ -160,6 +168,16 @@ export default function CreateProjectModal({
         </div>
 
         <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-[#0e0e10]/35 px-6 py-5 sm:flex-row sm:justify-end sm:px-8">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={submitting}
+              className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Quay lại
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -181,3 +199,5 @@ export default function CreateProjectModal({
     </div>
   )
 }
+
+export default CreateProjectModal

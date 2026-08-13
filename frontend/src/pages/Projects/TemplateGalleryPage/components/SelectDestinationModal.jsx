@@ -9,6 +9,7 @@ const SelectDestinationModal = ({
   isLoading,
   error,
   onClose,
+  onChooseNew,
   onChooseExisting,
   onSelectProject,
   onBack,
@@ -140,14 +141,14 @@ const SelectDestinationModal = ({
           <div className="grid gap-4 px-7 py-6 sm:grid-cols-2">
             <button
               type="button"
-              disabled
-              className="rounded-xl border border-white/10 bg-[#151517] p-5 text-left opacity-60"
+              onClick={onChooseNew}
+              className="rounded-xl border border-[#00eefc]/30 bg-[#00eefc]/10 p-5 text-left transition hover:border-[#00eefc] hover:bg-[#00eefc]/15"
             >
               <span className="block text-lg font-semibold text-white">
                 Project mới
               </span>
               <span className="mt-2 block text-sm text-[#c3c6d7]">
-                Sẽ được hỗ trợ trong PJ-FE-7C.
+                Tạo Project mới rồi tiếp tục với nguồn đã chọn.
               </span>
             </button>
             <button

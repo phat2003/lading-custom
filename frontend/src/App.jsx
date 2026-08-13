@@ -78,7 +78,7 @@ export default function App() {
           path="/projects/:projectId/templates"
           element={
             <ProtectedRoute>
-              <TemplateGalleryPage />
+              <Navigate to="/templates" replace />
             </ProtectedRoute>
           }
         />

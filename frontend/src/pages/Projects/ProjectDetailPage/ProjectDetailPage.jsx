@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { PlusIcon } from '../../../components/icons'
 import {
   landingPagesApi,
   mapLandingPageFromApi,
@@ -126,9 +125,6 @@ const ProjectDetailPage = () => {
     const timer = window.setTimeout(() => setNotice(''), 3000)
     return () => window.clearTimeout(timer)
   }, [notice])
-
-  const openTemplateGallery = () =>
-    navigate(`/projects/${projectId}/templates`)
 
   const showMessage = (message) => {
     setNotice(message)
@@ -309,7 +305,7 @@ const ProjectDetailPage = () => {
       <ProjectMobileHeader onOpenMenu={() => setIsMobileMenuOpen(true)} />
 
       <main className="min-h-screen px-4 pb-16 pt-24 sm:px-8 lg:ml-[280px] lg:px-10 lg:pt-10">
-        <header className="mx-auto flex max-w-[1280px] flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <header className="mx-auto max-w-[1280px]">
           <div>
             <button
               type="button"
@@ -325,15 +321,6 @@ const ProjectDetailPage = () => {
               Quản lý và mở lại các Landing Page trong Project này.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={openTemplateGallery}
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#eec200] px-6 py-3 font-bold text-[#231b00] shadow-[0_0_25px_rgba(238,194,0,0.22)] transition hover:-translate-y-0.5 hover:bg-[#ffe083]"
-          >
-            <PlusIcon size={20} />
-            New Landing Page
-          </button>
         </header>
 
         <section className="mx-auto mt-10 max-w-[1280px]">
@@ -376,16 +363,9 @@ const ProjectDetailPage = () => {
                   Project chưa có Landing Page
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-[#c3c6d7]">
-                  Chọn một Template hiện có để bắt đầu tạo Landing Page đầu tiên.
+                  Project này chưa có Landing Page. Bạn có thể bắt đầu từ Thư
+                  viện Template toàn cục.
                 </p>
-                <button
-                  type="button"
-                  onClick={openTemplateGallery}
-                  className="mx-auto mt-7 flex items-center justify-center gap-2 rounded-xl bg-[#eec200] px-6 py-3 font-bold text-[#231b00] transition hover:bg-[#ffe083]"
-                >
-                  <PlusIcon size={19} />
-                  Tạo Landing Page đầu tiên
-                </button>
               </div>
             </div>
           ) : (
