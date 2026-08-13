@@ -59,6 +59,14 @@ export default function App() {
           }
         />
         <Route
+          path="/templates"
+          element={
+            <ProtectedRoute>
+              <TemplateGalleryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/projects/:projectId"
           element={
             <ProtectedRoute>

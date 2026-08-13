@@ -305,7 +305,6 @@ const ProjectDetailPage = () => {
           navigate('/projects', { state: { openCreateProject: true } })
         }
         onShowMessage={showMessage}
-        templatePath={`/projects/${projectId}/templates`}
       />
       <ProjectMobileHeader onOpenMenu={() => setIsMobileMenuOpen(true)} />
 

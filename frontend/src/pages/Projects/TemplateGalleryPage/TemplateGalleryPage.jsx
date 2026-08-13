@@ -40,6 +40,7 @@ const INITIAL_TEMPLATE_STATE = {
 export default function TemplateGalleryPage() {
   const { user } = useAuth()
   const { projectId } = useParams()
+  const isGlobalGallery = !projectId
   const navigate = useNavigate()
   const {
     getProject,
@@ -47,7 +48,7 @@ export default function TemplateGalleryPage() {
     projectsError,
     reloadProjects,
   } = useProjects()
-  const project = getProject(projectId)
+  const project = projectId ? getProject(projectId) : null
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [templateState, setTemplateState] = useState(INITIAL_TEMPLATE_STATE)
@@ -74,7 +75,10 @@ export default function TemplateGalleryPage() {
   }, [notice])
 
   useEffect(() => {
-    if (!projectId || isProjectsLoading || projectsError || !project) {
+    if (
+      !isGlobalGallery &&
+      (!projectId || isProjectsLoading || projectsError || !project)
+    ) {
       return undefined
     }
 
@@ -99,10 +103,17 @@ export default function TemplateGalleryPage() {
           throw new Error('Invalid template list response')
         }
 
-        const items = source.map(mapTemplateFromApi)
-        if (items.some((template) => !template)) {
+        const mappedItems = source.map(mapTemplateFromApi)
+        if (mappedItems.some((template) => !template)) {
           throw new Error('Invalid template item response')
         }
+
+        const items = isGlobalGallery
+          ? mappedItems.filter(
+              (template) =>
+                template.type === 'system' && template.status === 'published',
+            )
+          : mappedItems
 
         setTemplateState({ status: 'success', items, error: '' })
       })
@@ -121,27 +132,56 @@ export default function TemplateGalleryPage() {
       })
 
     return () => controller.abort()
-  }, [isProjectsLoading, project, projectId, projectsError, templateReloadKey])
+  }, [
+    isGlobalGallery,
+    isProjectsLoading,
+    project,
+    projectId,
+    projectsError,
+    templateReloadKey,
+  ])
 
   const filteredTemplates = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
 
     return templateState.items.filter((template) => {
       const matchesType =
-        activeFilter === 'all' || template.type === activeFilter
+        isGlobalGallery ||
+        activeFilter === 'all' ||
+        template.type === activeFilter
       const matchesSearch =
         !keyword || template.name.toLowerCase().includes(keyword)
 
       return matchesType && matchesSearch
     })
-  }, [activeFilter, searchTerm, templateState.items])
+  }, [activeFilter, isGlobalGallery, searchTerm, templateState.items])
 
   const retryTemplates = useCallback(() => {
     setTemplateReloadKey((currentKey) => currentKey + 1)
   }, [])
 
+  const handleSelectTemplate = (nextTemplate) => {
+    setCreateError('')
+
+    if (isGlobalGallery) {
+      setNotice(
+        `Đã chọn “${nextTemplate.name}”. Bước chọn Project đích sẽ được bổ sung tiếp theo.`,
+      )
+      return
+    }
+
+    setSelectedTemplate(nextTemplate)
+  }
+
   const handleCreateLandingPage = async (name) => {
-    if (createRequestInFlightRef.current || !selectedTemplate) return
+    if (
+      isGlobalGallery ||
+      !projectId ||
+      createRequestInFlightRef.current ||
+      !selectedTemplate
+    ) {
+      return
+    }
 
     const templateToCreate = selectedTemplate
     createRequestInFlightRef.current = true
@@ -193,7 +233,7 @@ export default function TemplateGalleryPage() {
     setIsMobileMenuOpen(false)
   }
 
-  if (isProjectsLoading) {
+  if (!isGlobalGallery && isProjectsLoading) {
     return (
       <main
         className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]"
@@ -206,7 +246,7 @@ export default function TemplateGalleryPage() {
     )
   }
 
-  if (projectsError) {
+  if (!isGlobalGallery && projectsError) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
         <section className="w-full max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center" role="alert">
@@ -226,7 +266,7 @@ export default function TemplateGalleryPage() {
     )
   }
 
-  if (!project) {
+  if (!isGlobalGallery && !project) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
         <section className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
@@ -258,7 +298,6 @@ export default function TemplateGalleryPage() {
           navigate('/projects', { state: { openCreateProject: true } })
         }
         onShowMessage={showMessage}
-        templatePath={`/projects/${projectId}/templates`}
       />
       <ProjectMobileHeader onOpenMenu={() => setIsMobileMenuOpen(true)} />
 
@@ -267,16 +306,20 @@ export default function TemplateGalleryPage() {
           <div>
             <button
               type="button"
-              onClick={() => navigate(`/projects/${projectId}`)}
+              onClick={() =>
+                navigate(isGlobalGallery ? '/projects' : `/projects/${projectId}`)
+              }
               className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8d90a0] transition hover:text-[#d3fbff]"
             >
-              ← {project.name}
+              ← {isGlobalGallery ? 'My Project' : project.name}
             </button>
             <h1 className="text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
-              Chọn mẫu giao diện
+              {isGlobalGallery ? 'Thư viện Template' : 'Chọn mẫu giao diện'}
             </h1>
             <p className="mt-3 text-base text-[#c3c6d7] sm:text-lg">
-              Bắt đầu nhanh chóng với các mẫu được thiết kế chuyên nghiệp.
+              {isGlobalGallery
+                ? 'Chọn Blank hoặc System Template đã xuất bản để bắt đầu.'
+                : 'Bắt đầu nhanh chóng với các mẫu được thiết kế chuyên nghiệp.'}
             </p>
           </div>
 
@@ -306,22 +349,24 @@ export default function TemplateGalleryPage() {
         </header>
 
         <section className="mx-auto mt-12 max-w-[1280px]">
-          <div className="flex flex-wrap gap-3" aria-label="Loại Template">
-            {TEMPLATE_FILTERS.map((filter) => (
-              <button
-                key={filter.id}
-                type="button"
-                onClick={() => setActiveFilter(filter.id)}
-                className={`rounded-full border px-4 py-2 font-mono text-[11px] transition ${
-                  activeFilter === filter.id
-                    ? 'border-[#b4c5ff]/30 bg-[#2563eb]/20 text-[#b4c5ff]'
-                    : 'border-[#434655]/25 bg-[#2a2a2c] text-[#c3c6d7] hover:bg-[#353437]'
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
+          {!isGlobalGallery && (
+            <div className="flex flex-wrap gap-3" aria-label="Loại Template">
+              {TEMPLATE_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`rounded-full border px-4 py-2 font-mono text-[11px] transition ${
+                    activeFilter === filter.id
+                      ? 'border-[#b4c5ff]/30 bg-[#2563eb]/20 text-[#b4c5ff]'
+                      : 'border-[#434655]/25 bg-[#2a2a2c] text-[#c3c6d7] hover:bg-[#353437]'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div
             className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
@@ -331,10 +376,7 @@ export default function TemplateGalleryPage() {
             <TemplateCard
               template={BLANK_OPTION}
               locked={false}
-              onSelect={(nextTemplate) => {
-                setCreateError('')
-                setSelectedTemplate(nextTemplate)
-              }}
+              onSelect={handleSelectTemplate}
               onLocked={() => {}}
             />
 
@@ -374,10 +416,7 @@ export default function TemplateGalleryPage() {
                     template.tier === 'premium' &&
                     user?.plan_type !== 'pro'
                   }
-                  onSelect={(nextTemplate) => {
-                    setCreateError('')
-                    setSelectedTemplate(nextTemplate)
-                  }}
+                  onSelect={handleSelectTemplate}
                   onLocked={() =>
                     showMessage(`“${template.name}” yêu cầu gói Pro.`)
                   }
@@ -386,7 +425,9 @@ export default function TemplateGalleryPage() {
             ) : (
               <div className="rounded-xl border border-white/10 bg-[#1c1b1d] p-10 text-center sm:col-span-2 xl:col-span-2">
                 <h2 className="text-xl font-semibold text-white">
-                  {activeFilter === 'user' && !searchTerm.trim()
+                  {isGlobalGallery && !searchTerm.trim()
+                    ? 'Chưa có System Template khả dụng'
+                    : activeFilter === 'user' && !searchTerm.trim()
                     ? 'Bạn chưa có Template cá nhân'
                     : activeFilter === 'system' && !searchTerm.trim()
                       ? 'Chưa có System Template khả dụng'
@@ -394,8 +435,12 @@ export default function TemplateGalleryPage() {
                 </h2>
                 <p className="mt-2 text-sm text-[#c3c6d7]">
                   {searchTerm.trim()
-                    ? 'Thử thay đổi từ khóa hoặc chọn loại Template khác.'
-                    : 'Chọn loại Template khác hoặc bắt đầu từ trang trắng.'}
+                    ? isGlobalGallery
+                      ? 'Thử thay đổi từ khóa tìm kiếm.'
+                      : 'Thử thay đổi từ khóa hoặc chọn loại Template khác.'
+                    : isGlobalGallery
+                      ? 'Bạn vẫn có thể bắt đầu từ trang trắng.'
+                      : 'Chọn loại Template khác hoặc bắt đầu từ trang trắng.'}
                 </p>
               </div>
             )}
@@ -405,7 +450,7 @@ export default function TemplateGalleryPage() {
 
       <StatusNotice>{notice}</StatusNotice>
       <CreateLandingPageModal
-        open={Boolean(selectedTemplate)}
+        open={!isGlobalGallery && Boolean(selectedTemplate)}
         template={selectedTemplate}
         onClose={closeCreateModal}
         onCreate={handleCreateLandingPage}

@@ -49,7 +49,6 @@ export default function ProjectSidebar({
   onClose,
   onCreateProject,
   onShowMessage,
-  templatePath,
 }) {
   const displayName = user?.full_name || user?.email || 'Design Pro'
 
@@ -98,23 +97,12 @@ export default function ProjectSidebar({
         <nav className="flex-1 space-y-1 px-4" aria-label="Điều hướng chính">
           <NavigationItem to="/home" icon={GlobeIcon} label="Trang chủ" onClick={onClose} />
           <NavigationItem to="/projects" icon={FolderIcon} label="Dự án" onClick={onClose} />
-          {templatePath ? (
-            <NavigationItem
-              to={templatePath}
-              icon={LayoutTemplateIcon}
-              label="Template"
-              onClick={onClose}
-            />
-          ) : (
-            <NavigationItem
-              icon={LayoutTemplateIcon}
-              label="Template"
-              disabled
-              onClick={() =>
-                onShowMessage('Hãy mở một Project để chọn Template.')
-              }
-            />
-          )}
+          <NavigationItem
+            to="/templates"
+            icon={LayoutTemplateIcon}
+            label="Template"
+            onClick={onClose}
+          />
           <NavigationItem
             icon={SettingsIcon}
             label="Cài đặt"

@@ -21,6 +21,7 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
       // Tránh redirect lặp nếu đang ở trang login.
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login'
