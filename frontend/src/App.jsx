@@ -28,6 +28,13 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
+// Chỉ áp dụng typography của khu My Project phía User, không ảnh hưởng Auth/Admin.
+const UserProjectRoute = ({ children }) => (
+  <div className="user-project-ui">
+    <ProtectedRoute>{children}</ProtectedRoute>
+  </div>
+)
+
 // Bọc khu admin: chưa login -> /login; đã login nhưng không phải admin -> trang chủ.
 function AdminRoute({ children }) {
   const { user, loading } = useAuth()
@@ -53,41 +60,41 @@ export default function App() {
         <Route
           path="/projects"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <ProjectsPage />
-            </ProtectedRoute>
+            </UserProjectRoute>
           }
         />
         <Route
           path="/templates"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <TemplateGalleryPage />
-            </ProtectedRoute>
+            </UserProjectRoute>
           }
         />
         <Route
           path="/projects/:projectId"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <ProjectDetailPage />
-            </ProtectedRoute>
+            </UserProjectRoute>
           }
         />
         <Route
           path="/projects/:projectId/templates"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <Navigate to="/templates" replace />
-            </ProtectedRoute>
+            </UserProjectRoute>
           }
         />
         <Route
           path="/projects/:projectId/editor/:landingPageId"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <LandingPageEditorPage />
-            </ProtectedRoute>
+            </UserProjectRoute>
           }
         />
 

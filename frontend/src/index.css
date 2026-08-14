@@ -1,6 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Typography chỉ dành cho application UI trong flow My Project phía User. */
+.user-project-ui {
+  font-family: 'Be Vietnam Pro', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Các utility font cũ và form control phải tiếp tục kế thừa font UI mới. */
+.user-project-ui
+  :where(button, input, textarea, select, .font-sans, .font-mono):not(
+    .landing-page-content *
+  ) {
+  font-family: inherit;
+}
+
+/* Nội dung Landing Page giữ typography riêng, tách khỏi chrome của Editor. */
+.user-project-ui .landing-page-content {
+  font-family: 'Inter', sans-serif;
+}
+
 .project-preview-grid {
     background-image:
       linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),

@@ -203,6 +203,37 @@ export function ProjectsProvider({ children }) {
     return newProject
   }, [])
 
+  const renameProject = useCallback(async (projectId, name) => {
+    const response = await projectsApi.update(projectId, { name: name.trim() })
+    const updatedProject = mapProjectFromApi(response?.data?.data)
+
+    if (!updatedProject || updatedProject.id !== projectId) {
+      throw new Error('Invalid project response')
+    }
+
+    if (createdProjectsRef.current.has(projectId)) {
+      createdProjectsRef.current.set(projectId, updatedProject)
+    }
+    setProjects((currentProjects) =>
+      currentProjects.map((project) =>
+        project.id === projectId ? updatedProject : project,
+      ),
+    )
+    return updatedProject
+  }, [])
+
+  const deleteProject = useCallback(async (projectId) => {
+    const response = await projectsApi.remove(projectId)
+    if (response?.data?.success !== true) {
+      throw new Error('Invalid delete project response')
+    }
+
+    createdProjectsRef.current.delete(projectId)
+    setProjects((currentProjects) =>
+      currentProjects.filter((project) => project.id !== projectId),
+    )
+  }, [])
+
   const getProject = useCallback(
     (projectId) => projects.find((project) => project.id === projectId),
     [projects],
@@ -268,6 +299,8 @@ export function ProjectsProvider({ children }) {
       isProjectsLoading,
       reloadProjects,
       createProject,
+      renameProject,
+      deleteProject,
       getProject,
       createLandingPage,
       getLandingPage,
@@ -279,6 +312,8 @@ export function ProjectsProvider({ children }) {
       isProjectsLoading,
       reloadProjects,
       createProject,
+      renameProject,
+      deleteProject,
       getProject,
       createLandingPage,
       getLandingPage,
