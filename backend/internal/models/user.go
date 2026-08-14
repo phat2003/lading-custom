@@ -30,9 +30,6 @@ const (
 	SubActive    SubscriptionStatus = "active"
 	SubExpired   SubscriptionStatus = "expired"
 	SubCancelled SubscriptionStatus = "cancelled"
-	// SubPending: đơn đã tạo nhưng khách chưa trả tiền (migration 008).
-	// Chưa được hưởng quyền Pro cho tới khi webhook xác nhận.
-	SubPending SubscriptionStatus = "pending"
 
 	TemplateSystem TemplateType = "system"
 	TemplateUser   TemplateType = "user"

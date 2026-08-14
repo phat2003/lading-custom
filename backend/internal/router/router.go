@@ -130,12 +130,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	uploadHandler := handlers.NewUploadHandler(assetService, cfg.PublicBaseURL)
 
-	// Payment & MoMo dependency
-	subRepo := repository.NewSubscriptionRepository(db)
-	momoService := service.NewMomoService(cfg)
-	paymentService := service.NewPaymentService(subRepo, momoService)
-	paymentHandler := handlers.NewPaymentHandler(paymentService)
-
 	// Serve file tĩnh đã upload (thumbnail, template file) qua handler an toàn:
 	// đặt header chống thực thi (nosniff, CSP) và ép tải về với file không phải ảnh,
 	// nhằm triệt tiêu Stored XSS. Xem handlers.ServeUploadedFile.
@@ -153,13 +147,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
-	}
-
-	// ---- PUBLIC API (Không cần Token) ----
-	publicAPI := api.Group("/p")
-	{
-		// Webhook cho MoMo gọi về để báo cáo kết quả thanh toán
-		publicAPI.POST("/payment/webhook", paymentHandler.MoMoWebhook)
 	}
 
 	// Các nhóm route cần đăng nhập.
@@ -261,12 +248,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		{
 			upload.POST("", assetHandler.UploadImage)
 			upload.GET("/assets", assetHandler.GetAssets)
-		}
-
-		// ---- Payment API (User) ----
-		payment := authorized.Group("/payment")
-		{
-			payment.POST("/upgrade", paymentHandler.UpgradeToPro)
 		}
 
 		// Project — BE Dev 2
