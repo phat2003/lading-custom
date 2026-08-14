@@ -30,6 +30,12 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+
+	MomoPartnerCode string
+	MomoAccessKey   string
+	MomoSecretKey   string
+	MomoReturnURL   string
+	MomoNotifyURL   string
 }
 
 // Load đọc file .env (nếu có) rồi nạp các biến môi trường vào struct Config.
@@ -57,6 +63,13 @@ func Load() *Config {
 	if err := cfg.validateProduction(); err != nil {
 		log.Fatalf("cấu hình production không hợp lệ: %v", err)
 	}
+
+	//các dòng đọc biến môi trường .env cho momo payment
+	cfg.MomoPartnerCode = os.Getenv("MOMO_PARTNER_CODE")
+	cfg.MomoAccessKey = os.Getenv("MOMO_ACCESS_KEY")
+	cfg.MomoSecretKey = os.Getenv("MOMO_SECRET_KEY")
+	cfg.MomoReturnURL = os.Getenv("MOMO_RETURN_URL")
+	cfg.MomoNotifyURL = os.Getenv("MOMO_NOTIFY_URL")
 	return cfg
 }
 
