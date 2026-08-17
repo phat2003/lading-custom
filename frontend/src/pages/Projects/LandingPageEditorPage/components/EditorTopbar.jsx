@@ -10,6 +10,7 @@ const EditorTopbar = ({
   saveStatus,
   onBack,
   onSave,
+  onSaveAsTemplate,
   onUndo,
   onRedo,
   onPreview,
@@ -80,6 +81,16 @@ const EditorTopbar = ({
               : saveStatus === 'error'
                 ? 'Thử lưu lại'
                 : 'Lưu'}
+          </button>
+        )}
+        {onSaveAsTemplate && (
+          <button
+            type="button"
+            onClick={onSaveAsTemplate}
+            disabled={saveStatus === 'saving'}
+            className="rounded border border-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:border-[#00eefc]/50 hover:text-[#d3fbff] disabled:cursor-wait disabled:opacity-45"
+          >
+            Lưu thành mẫu
           </button>
         )}
         <button

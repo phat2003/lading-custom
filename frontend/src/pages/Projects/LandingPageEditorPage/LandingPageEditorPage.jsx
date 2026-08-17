@@ -9,12 +9,14 @@ import {
   mapPageSectionFromApi,
   pageSectionsApi,
 } from '../../../api/pageSections'
+import { mapTemplateFromApi } from '../../../api/templates'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
 import EditorCanvas from './components/EditorCanvas'
 import EditorTopbar from './components/EditorTopbar'
 import ElementsPanel from './components/ElementsPanel'
 import PropertiesPanel from './components/PropertiesPanel'
+import SaveAsTemplateModal from './components/SaveAsTemplateModal'
 import { createLegacyStarterSection, createSection } from './sectionPresets'
 
 function createId() {
@@ -55,6 +57,9 @@ const LandingPageEditorPage = () => {
   const [zoom, setZoom] = useState(100)
   const [notice, setNotice] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
+  const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false)
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
+  const [saveAsTemplateError, setSaveAsTemplateError] = useState('')
   const [serverPageState, setServerPageState] = useState({
     landingPageId: null,
     status: 'idle',
@@ -64,6 +69,13 @@ const LandingPageEditorPage = () => {
   const [serverPageRequestVersion, setServerPageRequestVersion] = useState(0)
   const canonicalServerSectionsRef = useRef([])
   const saveRequestInFlightRef = useRef(false)
+  const templateRequestInFlightRef = useRef(false)
+  const saveAsTemplateAbortRef = useRef(null)
+
+  useEffect(
+    () => () => saveAsTemplateAbortRef.current?.abort(),
+    [],
+  )
 
   useEffect(() => {
     if (!notice) return undefined
@@ -314,13 +326,8 @@ const LandingPageEditorPage = () => {
   }, [landingPageId])
 
   const saveServerSections = useCallback(async () => {
-    if (
-      localLandingPage ||
-      saveRequestInFlightRef.current ||
-      saveStatus === 'saved'
-    ) {
-      return
-    }
+    if (localLandingPage || saveRequestInFlightRef.current) return false
+    if (saveStatus === 'saved') return true
 
     saveRequestInFlightRef.current = true
     setSaveStatus('saving')
@@ -411,6 +418,7 @@ const LandingPageEditorPage = () => {
       await refreshCanonicalServerSections()
       setSaveStatus('saved')
       setNotice('Đã lưu nội dung Landing Page lên server.')
+      return true
     } catch (error) {
       if (serverMutated) {
         try {
@@ -425,6 +433,7 @@ const LandingPageEditorPage = () => {
         error?.response?.data?.error ||
           'Không thể lưu nội dung Landing Page. Vui lòng thử lại.',
       )
+      return false
     } finally {
       saveRequestInFlightRef.current = false
     }
@@ -435,6 +444,79 @@ const LandingPageEditorPage = () => {
     saveStatus,
     sections,
   ])
+
+  const openSaveAsTemplate = useCallback(() => {
+    if (saveRequestInFlightRef.current || templateRequestInFlightRef.current) {
+      return
+    }
+    setSaveAsTemplateError('')
+    setIsSaveAsTemplateOpen(true)
+  }, [])
+
+  const closeSaveAsTemplate = useCallback(() => {
+    if (templateRequestInFlightRef.current) return
+    setSaveAsTemplateError('')
+    setIsSaveAsTemplateOpen(false)
+  }, [])
+
+  const handleSaveAsTemplate = useCallback(
+    async (name) => {
+      if (
+        localLandingPage ||
+        templateRequestInFlightRef.current ||
+        saveRequestInFlightRef.current
+      ) {
+        return
+      }
+
+      templateRequestInFlightRef.current = true
+      setIsSavingTemplate(true)
+      setSaveAsTemplateError('')
+
+      try {
+        if (saveStatus !== 'saved') {
+          const pageSaved = await saveServerSections()
+          if (!pageSaved) {
+            setSaveAsTemplateError(
+              'Không thể lưu Landing Page trước khi tạo mẫu. Vui lòng xử lý lỗi lưu rồi thử lại.',
+            )
+            return
+          }
+        }
+
+        const controller = new AbortController()
+        saveAsTemplateAbortRef.current = controller
+        const response = await landingPagesApi.saveAsTemplate(
+          { page_id: landingPageId, name },
+          { signal: controller.signal },
+        )
+        const template = mapTemplateFromApi(response?.data?.data)
+
+        if (!template || template.type !== 'user' || template.name !== name) {
+          throw new Error('Invalid save-as-template response')
+        }
+
+        navigate('/templates/mine')
+      } catch (error) {
+        if (error.name === 'CanceledError') return
+
+        setSaveAsTemplateError(
+          error?.response?.data?.error ||
+            'Không thể lưu Landing Page thành Template. Vui lòng thử lại.',
+        )
+      } finally {
+        saveAsTemplateAbortRef.current = null
+        templateRequestInFlightRef.current = false
+        setIsSavingTemplate(false)
+      }
+    }, [
+      landingPageId,
+      localLandingPage,
+      navigate,
+      saveServerSections,
+      saveStatus,
+    ],
+  )
 
   if (isProjectsLoading) {
     return (
@@ -565,6 +647,7 @@ const LandingPageEditorPage = () => {
           )
         }
         onSave={localLandingPage ? null : saveServerSections}
+        onSaveAsTemplate={localLandingPage ? null : openSaveAsTemplate}
         onUndo={() => setNotice('Undo sẽ được triển khai ở task Editor tiếp theo.')}
         onRedo={() => setNotice('Redo sẽ được triển khai ở task Editor tiếp theo.')}
         onPreview={() => setNotice('Preview sẽ được triển khai ở task tiếp theo.')}
@@ -590,6 +673,15 @@ const LandingPageEditorPage = () => {
       </div>
 
       <StatusNotice>{notice}</StatusNotice>
+      <SaveAsTemplateModal
+        open={isSaveAsTemplateOpen}
+        initialName={editorLandingPage.name}
+        submitting={isSavingTemplate}
+        serverError={saveAsTemplateError}
+        onClose={closeSaveAsTemplate}
+        onSubmit={handleSaveAsTemplate}
+        onErrorClear={() => setSaveAsTemplateError('')}
+      />
     </div>
   )
 }
