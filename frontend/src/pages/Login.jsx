@@ -12,14 +12,15 @@ export default function Login() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
 
-  // Regex kiểm tra email
+  // 👁️ Show/Hide password toggle
+  const [showPassword, setShowPassword] = useState(false)
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    // FE validation
     if (!email || !password) {
       setError('Vui lòng nhập đầy đủ thông tin')
       return
@@ -50,12 +51,12 @@ export default function Login() {
     navigate(dashboardPath)
   }
 
-  // Screen after successful login 
+  // SUCCESS SCREEN
   if (isSuccess) {
     return (
       <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans 
         ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
-        
+
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
@@ -77,9 +78,10 @@ export default function Login() {
             <circle cx="500" cy="480" r="3" fill="currentColor" />
           </svg>
         </div>
+
         <div className={`relative z-10 flex flex-col items-center w-full max-w-md p-10 mx-4 space-y-8 text-center border rounded-3xl shadow-2xl 
           ${darkMode ? 'border-slate-900 bg-slate-950/70 backdrop-blur-md' : 'border-gray-300 bg-white'}`}>
-          
+
           <div className="relative flex items-center justify-center h-20 w-20 rounded-full border border-blue-500/40 bg-blue-950/30 text-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.3)] animate-pulse">
             <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -102,16 +104,17 @@ export default function Login() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </button>
+
         </div>
       </div>
     )
   }
 
-  // Main Login Interface
+  // MAIN LOGIN SCREEN
   return (
     <div className={`flex items-center justify-center min-h-screen relative overflow-hidden font-sans px-4 
       ${darkMode ? 'bg-[#030712] text-white' : 'bg-gray-100 text-black'}`}>
-      
+
       <button
         onClick={() => setDarkMode(!darkMode)}
         className="absolute px-3 py-1 text-sm border rounded-md top-4 right-4"
@@ -123,20 +126,6 @@ export default function Login() {
 
       <div className={`relative z-10 w-full max-w-md p-10 rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center 
         ${darkMode ? 'border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md' : 'border border-gray-300 bg-white'}`}>
-        
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-6 
-          ${darkMode ? 'bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'bg-gray-200 border border-gray-300 shadow'}`}>
-          <svg className="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
-          </svg>
-        </div>
-
-        <div className="mb-8 space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-wide">Welcome Back</h1>
-          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
-            Log in to your command center.
-          </p>
-        </div>
 
         {/* Error display */}
         {error && (
@@ -144,8 +133,10 @@ export default function Login() {
             {error}
           </div>
         )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate className="w-full space-y-6">
+
           {/* Email field */}
           <div className="space-y-2">
             <label className="text-[10px] font-bold uppercase tracking-widest block">
@@ -157,6 +148,7 @@ export default function Login() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </span>
+
               <input
                 type="text"
                 value={email}
@@ -178,22 +170,69 @@ export default function Login() {
                 Forgot?
               </Link>
             </div>
+
             <div className="relative">
+              {/* Lock icon */}
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </span>
+
+              {/* Password input */}
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full pl-11 pr-4 py-3.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm 
+                className={`w-full pl-11 pr-12 py-3.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-sm 
                   ${darkMode ? 'bg-[#13192b] text-white placeholder-slate-500 border-slate-800' : 'bg-white text-slate-900 placeholder-slate-400 border-slate-200'}`}
               />
+
+              {/* Eye toggle */}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute -translate-y-1/2 right-4 top-1/2 text-slate-400 hover:text-slate-300"
+              >
+                {showPassword ? (
+                  // Closed eye (hide password)
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 3l18 18M10.584 10.587A3 3 0 0113.413 13.41M6.343 6.343C4.493 7.76 3 10 3 12c0 0 3.75 6 9.75 6 1.63 0 3.15-.33 4.5-.92M17.657 17.657C19.507 16.24 21 14 21 12c0 0-3.75-6-9.75-6-1.63 0-3.15.33-4.5.92"
+                    />
+                  </svg>
+                ) : (
+                  // Open eye (show password)
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.25 12c0 0 3.75-6 9.75-6s9.75 6 9.75 6-3.75 6-9.75 6-9.75-6-9.75-6z"
+                    />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
+
 
           {/* Submit button */}
           <button
@@ -239,7 +278,10 @@ export default function Login() {
         {/* Footer */}
         <p className="mt-8 text-sm font-medium text-center text-slate-500">
           Chưa có tài khoản?{' '}
-          <Link to="/register" className="font-semibold text-blue-500 transition-colors hover:text-blue-400 hover:underline">
+          <Link
+            to="/register"
+            className="font-semibold text-blue-500 transition-colors hover:text-blue-400 hover:underline"
+          >
             Đăng ký ngay
           </Link>
         </p>
