@@ -14,6 +14,10 @@ import { toLibraryVariants } from './sectionLibrary'
 import { useTheme } from '../../../context/ThemeContext'
 import { elementsToSections, sectionsToElements } from './templateContent'
 import { PREVIEW_KEY } from './PreviewPage'
+import PageSettingsPanel from './components/PageSettingsPanel'
+import PageSettingsModal from './components/PageSettingsModal'
+import { loadPageSettings, savePageSettings } from './pageSettings'
+import { viewAll, viewOf, writeLayer, buildMobileLayout, clampBox } from './deviceLayout'
 
 const newId = () =>
   crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())
@@ -53,8 +57,44 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [activePanel, setActivePanel] = useState('add') // 'add' | 'layers' | null
   const [recent, setRecent] = useState([]) // palette item vừa dùng (tối đa 6)
   const [library, setLibrary] = useState([]) // section mẫu admin đã lưu, lấy từ API
+  // Thiết lập toàn trang (font, khổ trang, SEO, mã chèn thêm...).
+  const [settings, setSettings] = useState(() => loadPageSettings(id))
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsDialog, setSettingsDialog] = useState(null) // tab đang mở trong hộp thoại
+
+  // Mỗi lần đổi là lưu ngay xuống localStorage (chưa có API cho nhóm dữ liệu này).
+  const updateSettings = (next) => {
+    setSettings(next)
+    savePageSettings(id, next)
+  }
   // Giao diện dùng chung với khu admin (ThemeContext), không giữ state riêng.
   const { theme, toggleTheme } = useTheme()
+
+  const pageWidth =
+    (device === 'mobile' ? settings.mobileWidth : settings.desktopWidth) ||
+    (device === 'mobile' ? 420 : 896)
+
+  // Bản "đã hoà" theo thiết bị đang xem — canvas, panel và preview đều dùng bản này.
+  const viewElements = viewAll(elements, device)
+
+  // Đổi sang Mobile lần đầu -> tự sinh bố cục thu nhỏ từ bản Desktop.
+  // Bản Desktop KHÔNG bị đụng tới, nên quay lại là nguyên vẹn như cũ.
+  const changeDevice = (next) => {
+    if (next === 'mobile' && elements.some((el) => !el.mobile)) {
+      const k = (settings.mobileWidth || 420) / (settings.desktopWidth || 896)
+      setElements((list) => buildMobileLayout(list, k))
+    }
+    setDevice(next)
+  }
+
+  // Khuôn giới hạn của 1 phần tử: top-level theo khổ trang,
+  // phần tử con theo lòng Section cha.
+  const boundsFor = (el) => {
+    if (!el.parentId) return { width: pageWidth, height: Infinity }
+    const parent = elements.find((p) => p.id === el.parentId)
+    const pv = parent ? viewOf(parent, device) : null
+    return { width: pv?.style?.width || pageWidth, height: pv?.style?.height || Infinity }
+  }
 
   const useRecent = (item) =>
     setRecent((list) => [item, ...list.filter((x) => x.label !== item.label)].slice(0, 6))
@@ -133,8 +173,39 @@ const TemplateBuilder = ({ mode = 'template' }) => {
       setSaveError('Trang đang trống — hãy thêm phần tử trước khi xem trước.')
       return
     }
-    localStorage.setItem(PREVIEW_KEY, JSON.stringify({ elements, device }))
+    localStorage.setItem(PREVIEW_KEY, JSON.stringify({ elements, device, settings }))
     window.open('/admin/templates/preview', '_blank', 'noopener')
+  }
+
+  // Thu gọn toàn bộ nội dung cho vừa khổ trang hiện tại (hay dùng khi chuyển
+  // Desktop -> Mobile). Thu đều theo một tỉ lệ nên bố cục giữ nguyên tương quan.
+  const fitContentToWidth = () => {
+    const roots = viewElements.filter((el) => !el.parentId)
+    const contentWidth = roots.reduce(
+      (max, el) => Math.max(max, (el.x || 0) + (el.style?.width || 0)),
+      0,
+    )
+    if (contentWidth <= pageWidth) return
+
+    const k = pageWidth / contentWidth
+    const scaleNum = (v) => (typeof v === 'number' ? Math.round(v * k) : v)
+
+    pushHistory()
+    setElements((list) =>
+      list.map((el) => {
+        const v = viewOf(el, device)
+        // Phần tử con dùng toạ độ tương đối trong Section nên cũng thu theo.
+        return writeLayer(el, device, {
+          x: scaleNum(v.x),
+          y: scaleNum(v.y),
+          style: {
+            width: scaleNum(v.style?.width),
+            height: scaleNum(v.style?.height),
+            fontSize: scaleNum(v.style?.fontSize),
+          },
+        })
+      }),
+    )
   }
 
   const openTemplateSave = (publish) => {
@@ -256,26 +327,36 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const beginGesture = () => pushHistory()
 
   const moveElement = (id, x, y) =>
-    setElements((list) => list.map((el) => (el.id === id ? { ...el, x, y } : el)))
+    setElements((list) =>
+      list.map((el) => {
+        if (el.id !== id) return el
+        const v = viewOf(el, device)
+        const safe = clampBox(
+          { x, y, width: v.style?.width, height: v.style?.height },
+          boundsFor(el),
+        )
+        return writeLayer(el, device, safe)
+      }),
+    )
 
   const resizeElement = (id, next) =>
     setElements((list) =>
-      list.map((el) =>
-        el.id === id
-          ? { ...el, x: next.x, y: next.y, style: { ...el.style, width: next.width, height: next.height } }
-          : el,
-      ),
+      list.map((el) => {
+        if (el.id !== id) return el
+        const b = boundsFor(el)
+        // Không cho kéo rộng quá khuôn chứa.
+        const width = Math.min(next.width, Math.max(20, b.width - next.x))
+        const safe = clampBox({ x: next.x, y: next.y, width, height: next.height }, b)
+        return writeLayer(el, device, {
+          ...safe,
+          style: { width, height: next.height },
+        })
+      }),
     )
 
   const updateElement = (id, patch) => {
     pushHistory()
-    setElements((list) =>
-      list.map((el) =>
-        el.id === id
-          ? { ...el, ...patch, style: patch.style ? { ...el.style, ...patch.style } : el.style }
-          : el,
-      ),
-    )
+    setElements((list) => list.map((el) => (el.id === id ? writeLayer(el, device, patch) : el)))
   }
 
   const duplicateElement = (id) => {
@@ -324,9 +405,15 @@ const TemplateBuilder = ({ mode = 'template' }) => {
     if (!selectedId) return
     pushHistory()
     setElements((list) =>
-      list.map((el) =>
-        el.id === selectedId ? { ...el, x: Math.max(0, el.x + dx), y: Math.max(0, el.y + dy) } : el,
-      ),
+      list.map((el) => {
+        if (el.id !== selectedId) return el
+        const v = viewOf(el, device)
+        const safe = clampBox(
+          { x: v.x + dx, y: v.y + dy, width: v.style?.width, height: v.style?.height },
+          boundsFor(el),
+        )
+        return writeLayer(el, device, safe)
+      }),
     )
   }
 
@@ -373,7 +460,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   }, [selectedId, elements, past, future])
 
   const togglePanel = (panel) => setActivePanel((cur) => (cur === panel ? null : panel))
-  const selected = elements.find((el) => el.id === selectedId) || null
+  const selected = viewElements.find((el) => el.id === selectedId) || null
 
   return (
     <div
@@ -382,7 +469,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
     >
       <BuilderTopbar
         device={device}
-        onDeviceChange={setDevice}
+        onDeviceChange={changeDevice}
         onUndo={undo}
         onRedo={redo}
         canUndo={past.length > 0}
@@ -390,6 +477,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         mode={mode}
         onSave={() => setSaveOpen(true)}
         onPreview={openPreview}
+        onOpenSettings={() => setSettingsOpen(true)}
         onSaveDraft={() => openTemplateSave(false)}
         onPublish={() => openTemplateSave(true)}
         saving={saving}
@@ -403,7 +491,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         )}
         {activePanel === 'layers' && (
           <LayersPanel
-            elements={elements}
+            elements={viewElements}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onToggleHidden={toggleHidden}
@@ -413,7 +501,8 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         )}
         <BuilderCanvas
           device={device}
-          elements={elements}
+          settings={settings}
+          elements={viewElements}
           selectedId={selectedId}
           onAddElement={addElement}
           onAddBlock={addBlock}
@@ -424,10 +513,27 @@ const TemplateBuilder = ({ mode = 'template' }) => {
           onUpdate={updateElement}
           onDuplicate={duplicateElement}
           onDelete={deleteElement}
+          onFitContent={fitContentToWidth}
         />
         {/* Cột thuộc tính cố định: luôn hiển thị để bố cục không bị nhảy khi chọn/bỏ chọn */}
         <PropertiesPanel element={selected} onUpdate={updateElement} onDelete={deleteElement} />
       </div>
+
+      <PageSettingsPanel
+        open={settingsOpen}
+        settings={settings}
+        onChange={updateSettings}
+        onOpenDialog={(tab) => setSettingsDialog(tab)}
+        onClose={() => setSettingsOpen(false)}
+      />
+      <PageSettingsModal
+        open={Boolean(settingsDialog) && settingsDialog !== 'dynamic'}
+        tab={settingsDialog}
+        settings={settings}
+        onChangeTab={setSettingsDialog}
+        onChange={updateSettings}
+        onClose={() => setSettingsDialog(null)}
+      />
 
       {!isSection && (
         <TemplateSaveDialog
