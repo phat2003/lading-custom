@@ -7,6 +7,7 @@ import {
   RedoIcon,
   SunIcon,
   MoonIcon,
+  SettingsIcon,
 } from '../../../../components/icons'
 
 // Nút icon dùng chung cho undo/redo.
@@ -32,6 +33,7 @@ const BuilderTopbar = ({
   onSaveDraft,
   onPublish,
   onPreview,
+  onOpenSettings,
   saving = false,
   theme = 'dark',
   onToggleTheme,
@@ -102,6 +104,17 @@ const BuilderTopbar = ({
 
       {/* Phải: đổi giao diện + hành động */}
       <div className="flex items-center gap-2 text-sm">
+        {/* Thiết lập toàn trang: font, khổ trang, SEO, mã chèn thêm... */}
+        {!isSection && (
+          <button
+            onClick={onOpenSettings}
+            title="Thiết lập toàn trang"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-dim)] transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-400/40 hover:text-violet-400"
+          >
+            <SettingsIcon size={17} />
+          </button>
+        )}
+
         <button
           onClick={onToggleTheme}
           title={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}

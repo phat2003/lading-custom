@@ -11,6 +11,7 @@ const PAGE_WIDTH = { desktop: 896, mobile: 390 }
 
 const BuilderCanvas = ({
   device,
+  settings,
   elements,
   selectedId,
   onAddElement,
@@ -22,6 +23,7 @@ const BuilderCanvas = ({
   onUpdate,
   onDuplicate,
   onDelete,
+  onFitContent,
 }) => {
   const viewportRef = useRef(null)
   const canvasRef = useRef(null)
@@ -38,7 +40,11 @@ const BuilderCanvas = ({
     return () => ro.disconnect()
   }, [])
 
-  const pageWidth = PAGE_WIDTH[device] || PAGE_WIDTH.desktop
+  // Khổ trang lấy từ "Thiết lập toàn trang"; chưa có thì dùng mặc định.
+  const pageWidth =
+    (device === 'mobile' ? settings?.mobileWidth : settings?.desktopWidth) ||
+    PAGE_WIDTH[device] ||
+    PAGE_WIDTH.desktop
   // Chỉ thu nhỏ khi thiếu chỗ, không bao giờ phóng to quá 100%.
   const scale = viewportW ? Math.min(1, viewportW / pageWidth) : 1
 
@@ -90,6 +96,14 @@ const BuilderCanvas = ({
   const topLevel = elements.filter((el) => !el.parentId)
   const zoomPct = Math.round(scale * 100)
 
+  // Bề rộng thực tế của nội dung — dùng để cảnh báo khi tràn khổ trang
+  // (thường gặp khi chuyển từ Desktop sang Mobile).
+  const contentWidth = topLevel.reduce(
+    (max, el) => Math.max(max, (el.x || 0) + (el.style?.width || 0)),
+    0,
+  )
+  const overflowing = contentWidth > pageWidth + 1
+
   return (
     <div ref={viewportRef} className="relative flex-1 overflow-auto bg-[var(--bd-app)] p-10">
       {/* Quầng sáng nền + lưới mờ tạo chiều sâu */}
@@ -124,13 +138,19 @@ const BuilderCanvas = ({
             }}
             onDrop={handleDrop}
             onPointerDown={() => onSelect(null)}
+            dir={settings?.direction || 'ltr'}
             style={{
               width: pageWidth,
               height: pageHeight,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
+              fontFamily: settings?.fontFamily,
+              backgroundColor: settings?.bgColor || '#ffffff',
+              backgroundImage: settings?.bgImage ? `url(${settings.bgImage})` : undefined,
+              backgroundSize: settings?.bgImage ? 'cover' : undefined,
+              backgroundPosition: 'center',
             }}
-            className={`relative bg-white transition-shadow duration-300 ${
+            className={`relative overflow-hidden transition-shadow duration-300 ${
               isOver
                 ? 'shadow-[0_0_0_2px_rgba(139,92,246,.9),0_30px_80px_-20px_rgba(139,92,246,.6)]'
                 : 'shadow-[var(--bd-page-shadow)]'
@@ -174,6 +194,20 @@ const BuilderCanvas = ({
             ))}
           </div>
         </div>
+
+        {overflowing && (
+          <div className="mx-auto mt-4 flex max-w-xl animate-fade-in-up flex-wrap items-center justify-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center text-xs text-amber-300">
+            <span>
+              Nội dung rộng {Math.round(contentWidth)}px, vượt khổ trang {pageWidth}px nên bị cắt bớt.
+            </span>
+            <button
+              onClick={onFitContent}
+              className="rounded-lg border border-amber-400/50 px-3 py-1.5 font-medium text-amber-200 transition-colors hover:bg-amber-500/20"
+            >
+              Thu gọn cho vừa khổ
+            </button>
+          </div>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
           <button onClick={() => setPageHeight((h) => Math.max(400, h - 400))} className={lengthBtn}>

@@ -193,7 +193,7 @@ const CanvasElement = ({
         <>
           <div
             onPointerDown={(e) => e.stopPropagation()}
-            className="absolute -top-9 right-0 flex animate-pop-in items-center gap-0.5 rounded-lg bg-[#12121B] p-1 shadow-[0_4px_16px_-4px_rgba(0,0,0,.6)] ring-1 ring-white/10"
+            className={`absolute right-0 flex animate-pop-in items-center gap-0.5 ${element.y < 40 ? 'top-1' : '-top-9'} rounded-lg bg-[#12121B] p-1 shadow-[0_4px_16px_-4px_rgba(0,0,0,.6)] ring-1 ring-white/10`}
           >
             <button onClick={() => onDuplicate(element.id)} title="Nhân bản" className="rounded-md p-1 text-slate-300 transition-colors hover:bg-violet-500/20 hover:text-violet-200">
               <CopyIcon size={14} />

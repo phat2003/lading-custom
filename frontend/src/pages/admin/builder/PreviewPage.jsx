@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import BlockRenderer from './components/BlockRenderer'
+import { MonitorIcon, SmartphoneIcon } from '../../../components/icons'
+import { viewAll } from './deviceLayout'
 
 // Khoá dùng để chuyển dữ liệu sang cửa sổ xem trước.
 // Dùng localStorage vì tab mở bằng window.open không chắc chắn kế thừa
@@ -50,16 +52,67 @@ const PreviewElement = ({ element, elements }) => {
 const PreviewPage = () => {
   const [data, setData] = useState(null)
   const [viewportW, setViewportW] = useState(() => window.innerWidth)
+  const [device, setDevice] = useState('desktop')
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(PREVIEW_KEY)
-      if (raw) setData(JSON.parse(raw))
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setData(parsed)
+        if (parsed.device) setDevice(parsed.device)
+      }
     } catch {
       setData(null)
     }
     document.title = 'Xem trước template'
   }, [])
+
+  // Áp "Thiết lập toàn trang": tiêu đề SEO, mã chèn thêm, khoá copy.
+  useEffect(() => {
+    const st = data?.settings
+    if (!st) return
+
+    if (st.seoTitle) document.title = st.seoTitle
+
+    // Chèn CSS/JS người dùng nhập ở tab "Mã JavaScript/CSS".
+    const injected = []
+    const inject = (code, target) => {
+      if (!code?.trim()) return
+      const holder = document.createElement('div')
+      holder.innerHTML = code
+      Array.from(holder.childNodes).forEach((node) => {
+        // <script> chèn qua innerHTML sẽ không chạy -> phải tạo lại thẻ.
+        if (node.tagName === 'SCRIPT') {
+          const sc = document.createElement('script')
+          sc.textContent = node.textContent
+          Array.from(node.attributes || []).forEach((a) => sc.setAttribute(a.name, a.value))
+          target.appendChild(sc)
+          injected.push(sc)
+        } else {
+          target.appendChild(node)
+          injected.push(node)
+        }
+      })
+    }
+    inject(st.headCode, document.head)
+    inject(st.bodyCode, document.body)
+
+    // Bảo vệ trang: chặn chuột phải + bôi đen.
+    const block = (e) => e.preventDefault()
+    if (st.protectCopy) {
+      document.addEventListener('contextmenu', block)
+      document.addEventListener('selectstart', block)
+      document.addEventListener('copy', block)
+    }
+
+    return () => {
+      injected.forEach((n) => n.remove())
+      document.removeEventListener('contextmenu', block)
+      document.removeEventListener('selectstart', block)
+      document.removeEventListener('copy', block)
+    }
+  }, [data])
 
   // Trang được thiết kế ở khổ cố định; phóng theo bề ngang cửa sổ để tràn viền
   // như trang thật. Đổi kích thước cửa sổ thì tỉ lệ tính lại theo.
@@ -82,8 +135,14 @@ const PreviewPage = () => {
     )
   }
 
-  const { elements, device = 'desktop' } = data
-  const width = PAGE_WIDTH[device] || PAGE_WIDTH.desktop
+  const { elements: rawElements, settings } = data
+  // Dữ liệu gửi sang còn nguyên 2 lớp; hoà theo thiết bị đang chọn trong preview.
+  const elements = viewAll(rawElements, device)
+  // Khổ trang theo "Thiết lập toàn trang", chưa có thì dùng mặc định.
+  const width =
+    (device === 'mobile' ? settings?.mobileWidth : settings?.desktopWidth) ||
+    PAGE_WIDTH[device] ||
+    PAGE_WIDTH.desktop
   const topLevel = elements.filter((el) => !el.parentId)
   // Chiều cao trang = đáy của phần tử thấp nhất, chừa thêm chút lề.
   const height = Math.max(
@@ -91,20 +150,58 @@ const PreviewPage = () => {
     ...topLevel.map((el) => (el.y || 0) + (el.style?.height || 0) + 40),
   )
 
-  // Phóng/thu để bề ngang trang khớp đúng bề ngang cửa sổ.
-  const scale = viewportW / width
+  // Desktop: phóng cho tràn viền như trang thật.
+  // Mobile: giữ đúng khổ thật (không phóng to) để nhìn giống màn hình điện thoại,
+  // chỉ thu lại nếu cửa sổ hẹp hơn khổ máy.
+  const scale = device === 'mobile' ? Math.min(1, (viewportW - 32) / width) : viewportW / width
 
   return (
     // Khung ngoài giữ đúng chiều cao SAU khi phóng, nếu không sẽ dư/thiếu vùng cuộn.
-    <div className="min-h-screen w-full overflow-x-hidden bg-white">
-      <div style={{ height: height * scale }}>
+    <div
+      className={`min-h-screen w-full overflow-x-hidden ${
+        device === 'mobile' ? 'flex justify-center bg-slate-200 py-6' : 'bg-white'
+      }`}
+    >
+      {/* Nút đổi thiết bị ngay trong cửa sổ xem trước */}
+      <div className="fixed right-4 top-4 z-50 flex items-center gap-1 rounded-xl border border-slate-300 bg-white/90 p-1 shadow-lg backdrop-blur">
+        <button
+          onClick={() => setDevice('desktop')}
+          title="Xem bản máy tính"
+          className={`rounded-lg p-2 transition-colors ${
+            device === 'desktop' ? 'bg-violet-500 text-white' : 'text-slate-500 hover:bg-slate-100'
+          }`}
+        >
+          <MonitorIcon size={16} />
+        </button>
+        <button
+          onClick={() => setDevice('mobile')}
+          title="Xem bản điện thoại"
+          className={`rounded-lg p-2 transition-colors ${
+            device === 'mobile' ? 'bg-violet-500 text-white' : 'text-slate-500 hover:bg-slate-100'
+          }`}
+        >
+          <SmartphoneIcon size={16} />
+        </button>
+      </div>
+
+      <div
+        style={{ width: device === 'mobile' ? width * scale : undefined, height: height * scale }}
+        className={device === 'mobile' ? 'overflow-hidden rounded-[28px] shadow-2xl ring-8 ring-slate-800' : ''}
+      >
         <div
-          className="relative bg-white"
+          dir={settings?.direction || 'ltr'}
+          className="relative overflow-hidden"
           style={{
             width,
             height,
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
+            fontFamily: settings?.fontFamily,
+            backgroundColor: settings?.bgColor || '#ffffff',
+            backgroundImage: settings?.bgImage ? `url(${settings.bgImage})` : undefined,
+            backgroundSize: settings?.bgImage ? 'cover' : undefined,
+            backgroundPosition: 'center',
+            userSelect: settings?.protectCopy ? 'none' : undefined,
           }}
         >
           {topLevel.map((el) => (
