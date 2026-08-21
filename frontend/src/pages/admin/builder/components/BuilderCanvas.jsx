@@ -24,10 +24,11 @@ const BuilderCanvas = ({
   onDuplicate,
   onDelete,
   onFitContent,
+  pageHeight,
+  onPageHeightChange,
 }) => {
   const viewportRef = useRef(null)
   const canvasRef = useRef(null)
-  const [pageHeight, setPageHeight] = useState(900)
   const [isOver, setIsOver] = useState(false) // đang rê phần tử qua canvas
   const [viewportW, setViewportW] = useState(0)
 
@@ -210,14 +211,14 @@ const BuilderCanvas = ({
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-          <button onClick={() => setPageHeight((h) => Math.max(400, h - 400))} className={lengthBtn}>
+          <button onClick={() => onPageHeightChange(Math.max(400, pageHeight - 400))} className={lengthBtn}>
             <MinusIcon size={16} /> Thu ngắn trang
           </button>
           <span className="rounded-lg bg-[var(--bd-fill)] px-2.5 py-1 text-xs tabular-nums text-[var(--bd-muted)]">
             {pageWidth} × {pageHeight}px
             {zoomPct < 100 && <span className="ml-1.5 text-[var(--bd-accent)]">· {zoomPct}%</span>}
           </span>
-          <button onClick={() => setPageHeight((h) => h + 400)} className={lengthBtn}>
+          <button onClick={() => onPageHeightChange(pageHeight + 400)} className={lengthBtn}>
             <PlusIcon size={16} /> Tăng chiều dài trang
           </button>
         </div>
