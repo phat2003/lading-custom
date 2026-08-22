@@ -27,8 +27,7 @@ func (r *PageSectionRepository) FindByLandingPageID(pageID uuid.UUID) ([]models.
 
 func (r *PageSectionRepository) FindByID(id uuid.UUID) (*models.PageSection, error) {
 	var section models.PageSection
-	// Lưu ý: Nếu database báo lỗi cột không tồn tại, bạn hãy sửa "page_section_id = ?" lại cho đúng với tên cột khóa chính nhé
-	err := r.db.Where("page_section_id = ?", id).First(&section).Error
+	err := r.db.Where("section_id = ?", id).First(&section).Error
 	if err != nil {
 		return nil, err
 	}
