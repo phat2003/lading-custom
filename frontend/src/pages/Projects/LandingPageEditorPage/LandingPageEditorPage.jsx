@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   landingPagesApi,
@@ -6,44 +6,70 @@ import {
   mapPublishResultFromApi,
 } from '../../../api/landingPages'
 import {
-  mapEditorSectionToContent,
-  mapPageSectionFromApi,
+  mapPageSectionRecordFromApi,
   pageSectionsApi,
 } from '../../../api/pageSections'
+import { sectionsApi } from '../../../api/sections'
 import { mapTemplateFromApi } from '../../../api/templates'
+import BuilderWorkspace from '../../../components/builder/BuilderWorkspace'
+import { toLibraryVariants } from '../../../components/builder/sectionLibrary'
+import { useBuilderController } from '../../../components/builder/useBuilderController'
 import { useAuth } from '../../../context/AuthContext'
+import { useTheme } from '../../../context/ThemeContext'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
-import EditorCanvas from './components/EditorCanvas'
 import EditorTopbar from './components/EditorTopbar'
-import ElementsPanel from './components/ElementsPanel'
-import PropertiesPanel from './components/PropertiesPanel'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
-import { createLegacyStarterSection, createSection } from './sectionPresets'
+import {
+  builderElementsToPageSections,
+  pageSectionSignature,
+  pageSectionsToBuilderElements,
+} from './landingPageBuilderAdapter'
 
 const PUBLISH_CLICK_GUARD_MS = 750
-
-function createId() {
-  return window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
+const BUILDER_SETTINGS = {
+  desktopWidth: 896,
+  mobileWidth: 390,
+  fontFamily: 'Inter',
+  bgColor: '#ffffff',
+  bgImage: '',
+  direction: 'ltr',
 }
 
-function getInitialSections(landingPage) {
-  if (!landingPage) return []
-  if (Array.isArray(landingPage.sections)) return landingPage.sections
-  if (landingPage.sourceType === 'blank') return []
-  return [createLegacyStarterSection()]
-}
+const apiErrorMessage = (error, fallback) => error?.response?.data?.error || fallback
 
-function getSectionContentSignature(section) {
-  if (!section) return ''
-  return JSON.stringify(mapEditorSectionToContent(section))
-}
+const localSectionsToRecords = (sections = []) =>
+  sections.map((section, index) => ({
+    serverId: null,
+    landingPageId: null,
+    sectionType: section.sectionType || section.type || 'custom',
+    content:
+      section.content?.elements && Array.isArray(section.content.elements)
+        ? section.content
+        : Array.isArray(section.elements)
+          ? { elements: section.elements }
+          : section,
+    orderIndex: index,
+    isVisible: section.isVisible !== false,
+  }))
+
+const EditorLoadingState = ({ children }) => (
+  <main
+    className="app-theme grid min-h-screen place-items-center bg-[var(--bd-app)] px-4 text-[var(--bd-text)]"
+    aria-busy="true"
+  >
+    <section className="max-w-lg animate-pulse rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel)] p-8 text-center">
+      <p className="text-sm text-[var(--bd-dim)]">{children}</p>
+    </section>
+  </main>
+)
 
 const LandingPageEditorPage = () => {
   const { projectId, landingPageId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const {
     getProject,
     getLandingPage,
@@ -54,15 +80,11 @@ const LandingPageEditorPage = () => {
   } = useProjects()
   const project = getProject(projectId)
   const localLandingPage = getLandingPage(projectId, landingPageId)
-  const initialSections = useRef(getInitialSections(localLandingPage))
-  const [sections, setSections] = useState(initialSections.current)
-  const [selectedSectionId, setSelectedSectionId] = useState(
-    initialSections.current[0]?.id || null,
-  )
-  const [viewport, setViewport] = useState('desktop')
-  const [zoom, setZoom] = useState(100)
+
   const [notice, setNotice] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
+  const [library, setLibrary] = useState([])
+  const [libraryStatus, setLibraryStatus] = useState('loading')
   const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
@@ -75,12 +97,25 @@ const LandingPageEditorPage = () => {
     error: '',
   })
   const [serverPageRequestVersion, setServerPageRequestVersion] = useState(0)
+
   const canonicalServerSectionsRef = useRef([])
+  const localHydratedIdRef = useRef(null)
   const saveRequestInFlightRef = useRef(false)
   const templateRequestInFlightRef = useRef(false)
   const publishRequestInFlightRef = useRef(false)
   const lastPublishAttemptAtRef = useRef(0)
   const saveAsTemplateAbortRef = useRef(null)
+
+  const markBuilderDirty = useCallback(() => {
+    setSaveStatus(localLandingPage ? 'saving' : 'dirty')
+  }, [localLandingPage])
+
+  const builder = useBuilderController({
+    initialElements: [],
+    settings: BUILDER_SETTINGS,
+    onMutate: markBuilderDirty,
+  })
+  const { replaceElements } = builder
 
   useEffect(
     () => () => saveAsTemplateAbortRef.current?.abort(),
@@ -89,36 +124,68 @@ const LandingPageEditorPage = () => {
 
   useEffect(() => {
     if (!notice) return undefined
-    const timer = window.setTimeout(() => setNotice(''), 3000)
+    const timer = window.setTimeout(() => setNotice(''), 3500)
     return () => window.clearTimeout(timer)
   }, [notice])
 
+  // Section Template Library dùng route user-authenticated, không dùng Admin CRUD.
   useEffect(() => {
-    if (!project || !localLandingPage) return undefined
+    let cancelled = false
+    setLibraryStatus('loading')
+    sectionsApi
+      .listAll()
+      .then((response) => {
+        if (cancelled) return
+        setLibrary(toLibraryVariants(response?.data?.data || []))
+        setLibraryStatus('ready')
+      })
+      .catch(() => {
+        if (!cancelled) setLibraryStatus('error')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-    setSaveStatus('saving')
+  // Tương thích cache prototype cũ; không gọi API hoặc tự mutate dữ liệu server.
+  useEffect(() => {
+    if (!localLandingPage || localHydratedIdRef.current === landingPageId) return
+    localHydratedIdRef.current = landingPageId
+    replaceElements(
+      pageSectionsToBuilderElements(localSectionsToRecords(localLandingPage.sections || [])),
+    )
+    setSaveStatus('saved')
+  }, [landingPageId, localLandingPage, replaceElements])
+
+  useEffect(() => {
+    if (!localLandingPage || saveStatus !== 'saving') return undefined
     const timer = window.setTimeout(() => {
-      updateLandingPageSections(projectId, landingPageId, sections)
+      const records = builderElementsToPageSections(builder.elements, landingPageId)
+      updateLandingPageSections(
+        projectId,
+        landingPageId,
+        records.map((record) => ({
+          id: record.content.elements[0]?.id,
+          type: record.sectionType,
+          sectionType: record.sectionType,
+          content: record.content,
+          isVisible: record.isVisible,
+        })),
+      )
       setSaveStatus('saved')
     }, 350)
-
     return () => window.clearTimeout(timer)
   }, [
+    builder.elements,
     landingPageId,
+    localLandingPage,
     projectId,
-    sections,
+    saveStatus,
     updateLandingPageSections,
   ])
 
   useEffect(() => {
-    if (
-      isProjectsLoading ||
-      projectsError ||
-      !project ||
-      localLandingPage
-    ) {
-      return undefined
-    }
+    if (isProjectsLoading || projectsError || !project || localLandingPage) return undefined
 
     const controller = new AbortController()
     setServerPageState({
@@ -134,7 +201,6 @@ const LandingPageEditorPage = () => {
           signal: controller.signal,
         })
         const record = mapLandingPageFromApi(pageResponse?.data?.data)
-
         if (!record || record.projectId !== projectId) {
           throw new Error('Invalid landing page response')
         }
@@ -147,29 +213,24 @@ const LandingPageEditorPage = () => {
           error: '',
         })
 
-        const sectionsResponse = await pageSectionsApi.listByLandingPage(
-          landingPageId,
-          { signal: controller.signal },
-        )
-        const sectionRecords = sectionsResponse?.data?.data
-        if (!Array.isArray(sectionRecords)) {
-          throw new Error('Invalid page sections response')
-        }
+        const sectionsResponse = await pageSectionsApi.listByLandingPage(landingPageId, {
+          signal: controller.signal,
+        })
+        const sectionData = sectionsResponse?.data?.data
+        if (!Array.isArray(sectionData)) throw new Error('Invalid page sections response')
 
-        const mappedSections = sectionRecords.map(mapPageSectionFromApi)
+        const records = sectionData.map(mapPageSectionRecordFromApi)
         if (
-          mappedSections.some(
-            (section) =>
-              !section || section.landingPageId !== landingPageId,
+          records.some(
+            (section) => !section || section.landingPageId !== landingPageId,
           )
         ) {
           throw new Error('Invalid page sections response')
         }
 
         if (controller.signal.aborted) return
-        canonicalServerSectionsRef.current = mappedSections
-        setSections(mappedSections)
-        setSelectedSectionId(mappedSections[0]?.id || null)
+        canonicalServerSectionsRef.current = records
+        replaceElements(pageSectionsToBuilderElements(records))
         setSaveStatus('saved')
         setServerPageState({
           landingPageId,
@@ -179,14 +240,14 @@ const LandingPageEditorPage = () => {
         })
       } catch (error) {
         if (controller.signal.aborted || error.name === 'CanceledError') return
-
         setServerPageState({
           landingPageId,
           status: 'error',
           record: null,
-          error:
-            error?.response?.data?.error ||
+          error: apiErrorMessage(
+            error,
             'Không tải được thông tin Landing Page. Vui lòng thử lại.',
+          ),
         })
       }
     }
@@ -200,140 +261,26 @@ const LandingPageEditorPage = () => {
     project,
     projectId,
     projectsError,
+    replaceElements,
     serverPageRequestVersion,
   ])
 
-  const selectedSection = useMemo(
-    () => sections.find((section) => section.id === selectedSectionId) || null,
-    [sections, selectedSectionId],
-  )
-
-  const markServerDirty = useCallback(() => {
-    if (!localLandingPage) setSaveStatus('dirty')
-  }, [localLandingPage])
-
-  const addSection = useCallback(
-    (type) => {
-      const newSection = {
-        ...createSection(type),
-        ...(localLandingPage
-          ? {}
-          : {
-              serverId: null,
-              landingPageId,
-              orderIndex: sections.length,
-              isVisible: true,
-            }),
-      }
-      setSections((currentSections) => [...currentSections, newSection])
-      setSelectedSectionId(newSection.id)
-      markServerDirty()
-      setNotice('Đã thêm Section mới vào Landing Page.')
-    },
-    [landingPageId, localLandingPage, markServerDirty, sections.length],
-  )
-
-  const updateSection = useCallback(
-    (updatedSection) => {
-      setSections((currentSections) =>
-        currentSections.map((section) =>
-          section.id === updatedSection.id ? updatedSection : section,
-        ),
-      )
-      markServerDirty()
-    },
-    [markServerDirty],
-  )
-
-  const moveSection = useCallback((sectionId, direction) => {
-    setSections((currentSections) => {
-      const currentIndex = currentSections.findIndex(
-        (section) => section.id === sectionId,
-      )
-      const nextIndex = currentIndex + direction
-
-      if (
-        currentIndex === -1 ||
-        nextIndex < 0 ||
-        nextIndex >= currentSections.length
-      ) {
-        return currentSections
-      }
-
-      const reorderedSections = [...currentSections]
-      const [movedSection] = reorderedSections.splice(currentIndex, 1)
-      reorderedSections.splice(nextIndex, 0, movedSection)
-      return reorderedSections
-    })
-    markServerDirty()
-  }, [markServerDirty])
-
-  const duplicateSection = useCallback((sectionId) => {
-    const currentIndex = sections.findIndex(
-      (section) => section.id === sectionId,
-    )
-    if (currentIndex === -1) return
-
-    const duplicatedSection = {
-      ...sections[currentIndex],
-      id: createId(),
-      ...(localLandingPage
-        ? {}
-        : {
-            serverId: null,
-            orderIndex: currentIndex + 1,
-          }),
-    }
-    const nextSections = [...sections]
-    nextSections.splice(currentIndex + 1, 0, duplicatedSection)
-    setSections(nextSections)
-    setSelectedSectionId(duplicatedSection.id)
-    markServerDirty()
-    setNotice('Đã nhân bản Section.')
-  }, [localLandingPage, markServerDirty, sections])
-
-  const deleteSection = useCallback((sectionId) => {
-    const currentIndex = sections.findIndex(
-      (section) => section.id === sectionId,
-    )
-    if (currentIndex === -1) return
-
-    const nextSections = sections.filter(
-      (section) => section.id !== sectionId,
-    )
-    const nextSelectedSection =
-      nextSections[currentIndex] || nextSections[currentIndex - 1] || null
-    setSections(nextSections)
-    setSelectedSectionId(nextSelectedSection?.id || null)
-    markServerDirty()
-    setNotice('Đã xóa Section khỏi Landing Page.')
-  }, [markServerDirty, sections])
-
   const refreshCanonicalServerSections = useCallback(async () => {
     const response = await pageSectionsApi.listByLandingPage(landingPageId)
-    const records = response?.data?.data
-    if (!Array.isArray(records)) {
-      throw new Error('Invalid page sections response')
-    }
-
-    const mappedSections = records.map(mapPageSectionFromApi)
+    const data = response?.data?.data
+    if (!Array.isArray(data)) throw new Error('Invalid page sections response')
+    const records = data.map(mapPageSectionRecordFromApi)
     if (
-      mappedSections.some(
+      records.some(
         (section) => !section || section.landingPageId !== landingPageId,
       )
     ) {
       throw new Error('Invalid page sections response')
     }
-
-    canonicalServerSectionsRef.current = mappedSections
-    setSections(mappedSections)
-    setSelectedSectionId((currentId) =>
-      mappedSections.some((section) => section.id === currentId)
-        ? currentId
-        : mappedSections[0]?.id || null,
-    )
-    return mappedSections
-  }, [landingPageId])
+    canonicalServerSectionsRef.current = records
+    replaceElements(pageSectionsToBuilderElements(records))
+    return records
+  }, [landingPageId, replaceElements])
 
   const saveServerSections = useCallback(async () => {
     if (localLandingPage || saveRequestInFlightRef.current) return false
@@ -344,82 +291,66 @@ const LandingPageEditorPage = () => {
     let serverMutated = false
 
     try {
-      const canonicalSections = canonicalServerSectionsRef.current
-      const currentPersistedSections = sections.filter(
-        (section) => section.serverId,
-      )
-      const currentPersistedIds = new Set(
-        currentPersistedSections.map((section) => section.serverId),
-      )
-      const deletedSections = canonicalSections.filter(
-        (section) => !currentPersistedIds.has(section.serverId),
-      )
+      const canonical = canonicalServerSectionsRef.current
+      const current = builderElementsToPageSections(builder.elements, landingPageId)
+      const persisted = current.filter((section) => section.serverId)
+      const persistedIds = new Set(persisted.map((section) => section.serverId))
+      const deleted = canonical.filter((section) => !persistedIds.has(section.serverId))
 
-      for (const section of deletedSections) {
+      for (const section of deleted) {
         const response = await pageSectionsApi.remove(section.serverId)
-        if (response?.data?.success !== true) {
-          throw new Error('Invalid delete section response')
-        }
+        if (response?.data?.success !== true) throw new Error('Invalid delete section response')
         serverMutated = true
       }
 
-      const canonicalById = new Map(
-        canonicalSections.map((section) => [section.serverId, section]),
-      )
-      const requiresReorder = currentPersistedSections.some(
-        (section) =>
-          canonicalById.get(section.serverId)?.orderIndex !==
-          sections.indexOf(section),
+      const canonicalById = new Map(canonical.map((section) => [section.serverId, section]))
+      const requiresReorder = persisted.some(
+        (section) => canonicalById.get(section.serverId)?.orderIndex !== section.orderIndex,
       )
 
       if (requiresReorder) {
-        for (const [index, section] of currentPersistedSections.entries()) {
+        // Hai lượt order tránh unique collision; retry sau Project creation không liên quan flow này.
+        for (const [index, section] of persisted.entries()) {
           await pageSectionsApi.update(section.serverId, {
-            content: mapEditorSectionToContent(section),
+            content: section.content,
             order_index: -(index + 1),
             is_visible: section.isVisible,
           })
           serverMutated = true
         }
       } else {
-        for (const section of currentPersistedSections) {
+        for (const section of persisted) {
           const canonicalSection = canonicalById.get(section.serverId)
-          const contentChanged =
-            getSectionContentSignature(section) !==
-            getSectionContentSignature(canonicalSection)
-          const visibilityChanged =
-            section.isVisible !== canonicalSection?.isVisible
-
-          if (!contentChanged && !visibilityChanged) continue
-
+          const changed =
+            pageSectionSignature(section) !== pageSectionSignature(canonicalSection)
+          if (!changed) continue
           await pageSectionsApi.update(section.serverId, {
-            content: mapEditorSectionToContent(section),
+            content: section.content,
             is_visible: section.isVisible,
           })
           serverMutated = true
         }
       }
 
-      for (const [index, section] of sections.entries()) {
+      for (const section of current) {
         if (section.serverId) continue
-
         const response = await pageSectionsApi.create({
           landing_page_id: landingPageId,
-          section_type: section.type,
-          content: mapEditorSectionToContent(section),
-          order_index: index,
+          section_type: section.sectionType,
+          content: section.content,
+          order_index: section.orderIndex,
         })
-        const createdSection = mapPageSectionFromApi(response?.data?.data)
-        if (!createdSection || createdSection.landingPageId !== landingPageId) {
+        const created = mapPageSectionRecordFromApi(response?.data?.data)
+        if (!created || created.landingPageId !== landingPageId) {
           throw new Error('Invalid create section response')
         }
         serverMutated = true
       }
 
       if (requiresReorder) {
-        for (const section of currentPersistedSections) {
+        for (const section of persisted) {
           await pageSectionsApi.update(section.serverId, {
-            order_index: sections.indexOf(section),
+            order_index: section.orderIndex,
           })
           serverMutated = true
         }
@@ -434,25 +365,26 @@ const LandingPageEditorPage = () => {
         try {
           await refreshCanonicalServerSections()
         } catch {
-          // Giữ thông báo mutation gốc; lần tải lại trang sẽ lấy canonical state.
+          // Giữ lỗi mutation gốc; reload trang sẽ lấy lại canonical state.
         }
       }
-
       setSaveStatus('error')
       setNotice(
-        error?.response?.data?.error ||
+        apiErrorMessage(
+          error,
           'Không thể lưu nội dung Landing Page. Vui lòng thử lại.',
+        ),
       )
       return false
     } finally {
       saveRequestInFlightRef.current = false
     }
   }, [
+    builder.elements,
     landingPageId,
     localLandingPage,
     refreshCanonicalServerSections,
     saveStatus,
-    sections,
   ])
 
   const openSaveAsTemplate = useCallback(() => {
@@ -486,11 +418,10 @@ const LandingPageEditorPage = () => {
       templateRequestInFlightRef.current = true
       setIsSavingTemplate(true)
       setSaveAsTemplateError('')
-
       try {
         if (saveStatus !== 'saved') {
-          const pageSaved = await saveServerSections()
-          if (!pageSaved) {
+          const saved = await saveServerSections()
+          if (!saved) {
             setSaveAsTemplateError(
               'Không thể lưu Landing Page trước khi tạo mẫu. Vui lòng xử lý lỗi lưu rồi thử lại.',
             )
@@ -505,25 +436,25 @@ const LandingPageEditorPage = () => {
           { signal: controller.signal },
         )
         const template = mapTemplateFromApi(response?.data?.data)
-
         if (!template || template.type !== 'user' || template.name !== name) {
           throw new Error('Invalid save-as-template response')
         }
-
         navigate('/templates/mine')
       } catch (error) {
         if (error.name === 'CanceledError') return
-
         setSaveAsTemplateError(
-          error?.response?.data?.error ||
+          apiErrorMessage(
+            error,
             'Không thể lưu Landing Page thành Template. Vui lòng thử lại.',
+          ),
         )
       } finally {
         saveAsTemplateAbortRef.current = null
         templateRequestInFlightRef.current = false
         setIsSavingTemplate(false)
       }
-    }, [
+    },
+    [
       landingPageId,
       localLandingPage,
       navigate,
@@ -548,30 +479,26 @@ const LandingPageEditorPage = () => {
     publishRequestInFlightRef.current = true
     setIsPublishing(true)
     setPublishResult(null)
-
     try {
       if (saveStatus !== 'saved') {
-        const pageSaved = await saveServerSections()
-        if (!pageSaved) {
-          setNotice(
-            'Không thể lưu Landing Page trước khi xuất bản. Publish đã dừng.',
-          )
+        const saved = await saveServerSections()
+        if (!saved) {
+          setNotice('Không thể lưu Landing Page trước khi xuất bản. Publish đã dừng.')
           return
         }
       }
 
       const response = await landingPagesApi.publish(landingPageId)
       const result = mapPublishResultFromApi(response?.data?.data)
-      if (!result) {
-        throw new Error('Invalid publish response')
-      }
-
+      if (!result) throw new Error('Invalid publish response')
       setPublishResult(result)
       setNotice('Landing Page đã được xuất bản thành công.')
     } catch (error) {
       setNotice(
-        error?.response?.data?.error ||
+        apiErrorMessage(
+          error,
           'Không thể xuất bản Landing Page. Vui lòng thử lại.',
+        ),
       )
     } finally {
       publishRequestInFlightRef.current = false
@@ -584,29 +511,21 @@ const LandingPageEditorPage = () => {
     saveStatus,
   ])
 
-  if (isProjectsLoading) {
-    return (
-      <main
-        className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white"
-        aria-busy="true"
-      >
-        <section className="max-w-lg animate-pulse rounded-2xl border border-white/10 bg-[#201f21] p-8 text-center">
-          <p className="text-sm text-[#c3c6d7]">Đang tải Project...</p>
-        </section>
-      </main>
-    )
-  }
+  if (isProjectsLoading) return <EditorLoadingState>Đang tải Project...</EditorLoadingState>
 
   if (projectsError) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white">
-        <section className="max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#201f21] p-8 text-center" role="alert">
+      <main
+        data-mode={theme}
+        className="app-theme grid min-h-screen place-items-center bg-[var(--bd-app)] px-4 text-[var(--bd-text)]"
+      >
+        <section className="max-w-lg rounded-2xl border border-rose-400/30 bg-[var(--bd-panel)] p-8 text-center" role="alert">
           <h1 className="text-2xl font-semibold">Không tải được Project</h1>
-          <p className="mt-3 text-sm text-[#c3c6d7]">{projectsError}</p>
+          <p className="mt-3 text-sm text-[var(--bd-dim)]">{projectsError}</p>
           <button
             type="button"
             onClick={() => reloadProjects()}
-            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+            className="mt-6 rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white"
           >
             Thử lại
           </button>
@@ -617,13 +536,16 @@ const LandingPageEditorPage = () => {
 
   if (!project) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white">
-        <section className="max-w-lg rounded-2xl border border-white/10 bg-[#201f21] p-8 text-center">
+      <main
+        data-mode={theme}
+        className="app-theme grid min-h-screen place-items-center bg-[var(--bd-app)] px-4 text-[var(--bd-text)]"
+      >
+        <section className="max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel)] p-8 text-center">
           <h1 className="text-3xl font-semibold">Không tìm thấy Project</h1>
           <button
             type="button"
             onClick={() => navigate('/projects')}
-            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+            className="mt-6 rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white"
           >
             Quay lại My Project
           </button>
@@ -638,55 +560,43 @@ const LandingPageEditorPage = () => {
       : { status: 'idle', record: null, error: '' }
 
   if (!localLandingPage) {
-
     if (
       currentServerPageState.status === 'idle' ||
       currentServerPageState.status === 'loading-page' ||
       currentServerPageState.status === 'loading-sections'
     ) {
       return (
-        <main
-          className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white"
-          aria-busy="true"
-        >
-          <section className="max-w-lg animate-pulse rounded-2xl border border-white/10 bg-[#201f21] p-8 text-center">
-            <p className="text-sm text-[#c3c6d7]">
-              {currentServerPageState.status === 'loading-sections'
-                ? 'Đang tải nội dung Section...'
-                : 'Đang tải Landing Page...'}
-            </p>
-          </section>
-        </main>
+        <EditorLoadingState>
+          {currentServerPageState.status === 'loading-sections'
+            ? 'Đang tải nội dung Section...'
+            : 'Đang tải Landing Page...'}
+        </EditorLoadingState>
       )
     }
 
     if (currentServerPageState.status === 'error') {
       return (
-        <main className="grid min-h-screen place-items-center bg-[#0e0e10] px-4 text-white">
-          <section
-            className="max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#201f21] p-8 text-center"
-            role="alert"
-          >
-            <h1 className="text-2xl font-semibold">
-              Không tải được Landing Page
-            </h1>
-            <p className="mt-3 text-sm text-[#c3c6d7]">
+        <main
+          data-mode={theme}
+          className="app-theme grid min-h-screen place-items-center bg-[var(--bd-app)] px-4 text-[var(--bd-text)]"
+        >
+          <section className="max-w-lg rounded-2xl border border-rose-400/30 bg-[var(--bd-panel)] p-8 text-center" role="alert">
+            <h1 className="text-2xl font-semibold">Không tải được Landing Page</h1>
+            <p className="mt-3 text-sm text-[var(--bd-dim)]">
               {currentServerPageState.error}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button
                 type="button"
-                onClick={() =>
-                  setServerPageRequestVersion((version) => version + 1)
-                }
-                className="rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+                onClick={() => setServerPageRequestVersion((version) => version + 1)}
+                className="rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white"
               >
                 Thử lại
               </button>
               <button
                 type="button"
                 onClick={() => navigate(`/projects/${projectId}`)}
-                className="rounded-lg border border-white/15 px-5 py-3 text-[#c3c6d7]"
+                className="rounded-xl border border-[var(--bd-border)] px-5 py-3 text-[var(--bd-dim)]"
               >
                 Quay lại Project
               </button>
@@ -697,11 +607,19 @@ const LandingPageEditorPage = () => {
     }
   }
 
-  const editorLandingPage =
-    localLandingPage || currentServerPageState.record
+  const editorLandingPage = localLandingPage || currentServerPageState.record
+  const libraryEmptyMessage =
+    libraryStatus === 'loading'
+      ? 'Đang tải thư viện Section...'
+      : libraryStatus === 'error'
+        ? 'Không tải được thư viện Section. Các phần tử dựng sẵn vẫn dùng được.'
+        : 'Chưa có Section Template nào.'
 
   return (
-    <div className="flex h-screen min-w-[1000px] flex-col overflow-hidden bg-[#0e0e10] text-[#e5e1e4]">
+    <div
+      data-mode={theme}
+      className="app-theme flex h-screen min-w-[1000px] flex-col overflow-hidden bg-[var(--bd-app)] text-[var(--bd-text)]"
+    >
       <EditorTopbar
         landingPageName={editorLandingPage.name}
         planType={user?.plan_type}
@@ -715,30 +633,23 @@ const LandingPageEditorPage = () => {
         }
         onSave={localLandingPage ? null : saveServerSections}
         onSaveAsTemplate={localLandingPage ? null : openSaveAsTemplate}
-        onUndo={() => setNotice('Undo sẽ được triển khai ở task Editor tiếp theo.')}
-        onRedo={() => setNotice('Redo sẽ được triển khai ở task Editor tiếp theo.')}
+        onUndo={builder.undo}
+        onRedo={builder.redo}
+        canUndo={builder.canUndo}
+        canRedo={builder.canRedo}
         onPreview={() => setNotice('Preview sẽ được triển khai ở task tiếp theo.')}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
-      <div className="flex min-h-0 flex-1">
-        <ElementsPanel onAddSection={addSection} onMessage={setNotice} />
-        <EditorCanvas
-          sections={sections}
-          selectedSectionId={selectedSectionId}
-          viewport={viewport}
-          zoom={zoom}
-          onViewportChange={setViewport}
-          onZoomChange={setZoom}
-          onSelectSection={setSelectedSectionId}
-          onAddSection={addSection}
-          onMoveSection={moveSection}
-          onDuplicateSection={duplicateSection}
-          onDeleteSection={deleteSection}
-        />
-        <PropertiesPanel section={selectedSection} onChange={updateSection} />
-      </div>
+      <BuilderWorkspace
+        controller={builder}
+        settings={BUILDER_SETTINGS}
+        library={library}
+        libraryEmptyMessage={libraryEmptyMessage}
+      />
 
       <StatusNotice>{notice}</StatusNotice>
       <PublishSuccessModal
