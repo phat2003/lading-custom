@@ -1,5 +1,26 @@
 import api from './client'
 
+export function mapTemplateFromApi(template) {
+  if (!template || !template.template_id || !template.name) return null
+  if (template.type !== 'system' && template.type !== 'user') return null
+
+  return {
+    id: template.template_id,
+    name: template.name,
+    type: template.type,
+    ownerId: template.owner_id || null,
+    templateSource: template.template_source || null,
+    category: template.category || '',
+    status: template.status || null,
+    tier: template.tier || null,
+    thumbnailUrl: template.thumbnail_url || '',
+    sectionCount:
+      typeof template.section_count === 'number' ? template.section_count : null,
+    createdAt: template.created_at || null,
+    updatedAt: template.updated_at || null,
+  }
+}
+
 // CRUD System Template (admin). Khớp đúng route backend đã có:
 //   POST   /api/v1/admin/templates
 //   GET    /api/v1/admin/templates

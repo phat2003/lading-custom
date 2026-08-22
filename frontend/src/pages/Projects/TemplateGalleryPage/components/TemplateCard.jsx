@@ -1,9 +1,19 @@
 import { LayoutTemplateIcon, PlusIcon } from '../../../../components/icons'
 
-export default function TemplateCard({ template, onSelect, onLocked }) {
-  const isPro = template.plan === 'pro'
+const TemplateCard = ({ template, locked = false, onSelect, onLocked }) => {
+  const isPro = template.tier === 'premium'
   const isBlank = template.type === 'blank'
   const isUser = template.type === 'user'
+  const detail = isBlank
+    ? template.description
+    : [
+        template.category || null,
+        typeof template.sectionCount === 'number'
+          ? `${template.sectionCount} section`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
 
   return (
     <article className="group relative flex h-[320px] flex-col overflow-hidden rounded-xl border border-[#434655]/30 bg-[#201f21] transition duration-300 hover:-translate-y-1 hover:border-[#00eefc]">
@@ -18,11 +28,21 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
             </div>
           </div>
         ) : (
-          <img
-            src={template.image}
-            alt={`Preview ${template.name}`}
-            className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
-          />
+          <>
+            <div className="project-preview-grid absolute inset-0 grid place-items-center text-[#596070]">
+              <LayoutTemplateIcon size={54} />
+            </div>
+            {template.thumbnailUrl ? (
+              <img
+                src={template.thumbnailUrl}
+                alt={`Preview ${template.name}`}
+                className="relative h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+                onError={(event) => {
+                  event.currentTarget.hidden = true
+                }}
+              />
+            ) : null}
+          </>
         )}
 
         <span
@@ -38,11 +58,9 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
         </span>
 
         <div
-          className={`absolute inset-0 z-10 flex items-center justify-center bg-[#131315]/65 backdrop-blur-[2px] transition-opacity ${
-            isPro ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
-          }`}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-[#131315]/65 opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100"
         >
-          {isPro ? (
+          {locked ? (
             <div className="text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-[#eec200]/30 bg-[#353437] text-2xl text-[#eec200]">
                 ⌑
@@ -70,13 +88,15 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
 
       <button
         type="button"
-        onClick={() => (isPro ? onLocked() : onSelect(template))}
+        onClick={() => (locked ? onLocked() : onSelect(template))}
         className="flex flex-1 flex-col p-4 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#b4c5ff]"
       >
         <h3 className="text-lg font-semibold text-white transition group-hover:text-[#b4c5ff]">
           {template.name}
         </h3>
-        <p className="mt-1 text-sm text-[#c3c6d7]">{template.description}</p>
+        <p className="mt-1 text-sm text-[#c3c6d7]">
+          {detail || 'Chưa có thông tin mô tả'}
+        </p>
         <span className="mt-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-[#8d90a0]">
           <LayoutTemplateIcon size={14} />
           {isBlank
@@ -89,3 +109,5 @@ export default function TemplateCard({ template, onSelect, onLocked }) {
     </article>
   )
 }
+
+export default TemplateCard

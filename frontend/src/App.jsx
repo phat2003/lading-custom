@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -16,6 +16,7 @@ import AdminSettings from './pages/admin/Settings/Settings'
 import TemplateBuilder from './pages/admin/builder/TemplateBuilder'
 import PreviewPage from './pages/admin/builder/PreviewPage'
 import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
+import ProjectDetailPage from './pages/Projects/ProjectDetailPage/ProjectDetailPage'
 import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
 import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
 import { ProjectsProvider } from './pages/Projects/context/ProjectsContext'
@@ -27,6 +28,13 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
+// Chỉ áp dụng typography của khu My Project phía User, không ảnh hưởng Auth/Admin.
+const UserProjectRoute = ({ children }) => (
+  <div className="user-project-ui">
+    <ProtectedRoute>{children}</ProtectedRoute>
+  </div>
+)
+
 // Bọc khu admin: chưa login -> /login; đã login nhưng không phải admin -> trang chủ.
 function AdminRoute({ children }) {
   const { user, loading } = useAuth()
@@ -34,12 +42,6 @@ function AdminRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />
   const isAdmin = user.role === 'admin' || user.role === 'super_admin'
   return isAdmin ? children : <Navigate to="/" replace />
-}
-
-// Điều hướng /projects/:projectId -> tab templates mặc định.
-function ProjectEntryRedirect() {
-  const { projectId } = useParams()
-  return <Navigate to={`/projects/${projectId}/templates`} replace />
 }
 
 export default function App() {
@@ -58,33 +60,41 @@ export default function App() {
         <Route
           path="/projects"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <ProjectsPage />
-            </ProtectedRoute>
+            </UserProjectRoute>
+          }
+        />
+        <Route
+          path="/templates"
+          element={
+            <UserProjectRoute>
+              <TemplateGalleryPage />
+            </UserProjectRoute>
           }
         />
         <Route
           path="/projects/:projectId"
           element={
-            <ProtectedRoute>
-              <ProjectEntryRedirect />
-            </ProtectedRoute>
+            <UserProjectRoute>
+              <ProjectDetailPage />
+            </UserProjectRoute>
           }
         />
         <Route
           path="/projects/:projectId/templates"
           element={
-            <ProtectedRoute>
-              <TemplateGalleryPage />
-            </ProtectedRoute>
+            <UserProjectRoute>
+              <Navigate to="/templates" replace />
+            </UserProjectRoute>
           }
         />
         <Route
           path="/projects/:projectId/editor/:landingPageId"
           element={
-            <ProtectedRoute>
+            <UserProjectRoute>
               <LandingPageEditorPage />
-            </ProtectedRoute>
+            </UserProjectRoute>
           }
         />
 

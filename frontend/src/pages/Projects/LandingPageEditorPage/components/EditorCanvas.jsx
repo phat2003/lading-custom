@@ -189,7 +189,9 @@ function CanvasSection({
         </button>
       </div>
 
-      <SectionContent section={section} />
+      <div className="landing-page-content">
+        <SectionContent section={section} />
+      </div>
     </section>
   )
 }

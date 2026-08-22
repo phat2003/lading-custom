@@ -4,10 +4,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
+import { useLocation } from 'react-router-dom'
+import { projectsApi } from '../../../api/projects'
+import { useAuth } from '../../../context/AuthContext'
 
-const STORAGE_KEY = 'myproject.frontend.projects.v1'
+const LEGACY_PROJECTS_STORAGE_KEY = 'myproject.frontend.projects.v1'
+const LANDING_PAGES_STORAGE_KEY = 'myproject.frontend.landing-pages.v1'
 const ProjectsContext = createContext(null)
 
 function createId() {
@@ -31,45 +36,202 @@ function createStarterSections(sourceType) {
   ]
 }
 
-function loadProjects() {
-  try {
-    const savedProjects = JSON.parse(localStorage.getItem(STORAGE_KEY))
-    if (!Array.isArray(savedProjects)) return []
+function getPreviewType(projectId) {
+  // Chỉ là trang trí UI ổn định theo ID server, không phải dữ liệu nghiệp vụ.
+  return Array.from(String(projectId)).reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  ) % 3
+}
 
-    return savedProjects.map((project) => ({
-      ...project,
-      landingPages: Array.isArray(project.landingPages)
-        ? project.landingPages
-        : [],
-    }))
+export function mapProjectFromApi(project) {
+  if (!project?.project_id) return null
+
+  return {
+    id: project.project_id,
+    name: typeof project.name === 'string' ? project.name : '',
+    ownerId: project.owner_id || null,
+    createdAt: project.created_at || null,
+    updatedAt: project.updated_at || null,
+    previewType: getPreviewType(project.project_id),
+  }
+}
+
+function normalizeLandingPageCache(cache) {
+  if (!cache || typeof cache !== 'object' || Array.isArray(cache)) return {}
+
+  return Object.fromEntries(
+    Object.entries(cache).filter(([, pages]) => Array.isArray(pages)),
+  )
+}
+
+function loadLandingPages() {
+  try {
+    const savedCache = JSON.parse(
+      localStorage.getItem(LANDING_PAGES_STORAGE_KEY),
+    )
+    const normalizedCache = normalizeLandingPageCache(savedCache)
+    if (Object.keys(normalizedCache).length > 0) return normalizedCache
+
+    // Lớp tương thích tạm thời: chỉ lấy Landing Page local từ cấu trúc cũ.
+    // Project entity không được khôi phục hoặc trộn vào danh sách từ server.
+    const legacyProjects = JSON.parse(
+      localStorage.getItem(LEGACY_PROJECTS_STORAGE_KEY),
+    )
+    if (!Array.isArray(legacyProjects)) return {}
+
+    return Object.fromEntries(
+      legacyProjects
+        .filter(
+          (project) => project?.id && Array.isArray(project.landingPages),
+        )
+        .map((project) => [project.id, project.landingPages]),
+    )
   } catch {
-    return []
+    return {}
   }
 }
 
 export function ProjectsProvider({ children }) {
-  const [projects, setProjects] = useState(loadProjects)
+  const { user, loading: authLoading } = useAuth()
+  const location = useLocation()
+  const shouldLoadProjects =
+    location.pathname.startsWith('/projects') ||
+    location.pathname === '/templates'
+  const [projects, setProjects] = useState([])
+  const [projectsStatus, setProjectsStatus] = useState('idle')
+  const [projectsError, setProjectsError] = useState('')
+  const [landingPagesByProject, setLandingPagesByProject] = useState(
+    loadLandingPages,
+  )
+  const requestIdRef = useRef(0)
+  const createdProjectsRef = useRef(new Map())
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
+      localStorage.setItem(
+        LANDING_PAGES_STORAGE_KEY,
+        JSON.stringify(landingPagesByProject),
+      )
     } catch {
-      // Mock storage có thể bị chặn trong chế độ trình duyệt riêng tư.
+      // Cache prototype có thể bị chặn trong chế độ trình duyệt riêng tư.
     }
-  }, [projects])
+  }, [landingPagesByProject])
 
-  const createProject = useCallback((name) => {
-    const newProject = {
-      id: createId(),
-      name,
-      status: 'draft',
-      updatedAt: 'Vừa tạo',
-      previewType: Date.now() % 3,
-      landingPages: [],
+  const reloadProjects = useCallback(async (signal) => {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    setProjectsStatus('loading')
+    setProjectsError('')
+
+    try {
+      const response = await projectsApi.list({ signal })
+      const projectRecords = response?.data?.data
+      if (!Array.isArray(projectRecords)) {
+        throw new Error('Invalid projects response')
+      }
+
+      const nextProjects = projectRecords
+        .map(mapProjectFromApi)
+        .filter(Boolean)
+      const serverProjectIds = new Set(
+        nextProjects.map((project) => project.id),
+      )
+
+      // Giữ kết quả POST đã được server xác nhận nếu một GET cũ trả về muộn.
+      createdProjectsRef.current.forEach((project, projectId) => {
+        if (serverProjectIds.has(projectId)) {
+          createdProjectsRef.current.delete(projectId)
+        } else {
+          nextProjects.unshift(project)
+        }
+      })
+
+      if (requestId !== requestIdRef.current || signal?.aborted) return
+      setProjects(nextProjects)
+      setProjectsStatus('success')
+    } catch (error) {
+      if (
+        requestId !== requestIdRef.current ||
+        signal?.aborted ||
+        error.name === 'CanceledError'
+      ) {
+        return
+      }
+
+      setProjects([])
+      setProjectsError(
+        error?.response?.data?.error ||
+          'Không tải được danh sách Project. Vui lòng thử lại.',
+      )
+      setProjectsStatus('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (authLoading || !shouldLoadProjects) return undefined
+
+    if (!user) {
+      requestIdRef.current += 1
+      createdProjectsRef.current.clear()
+      setProjects([])
+      setProjectsError('')
+      setProjectsStatus('idle')
+      return undefined
     }
 
-    setProjects((currentProjects) => [newProject, ...currentProjects])
+    const controller = new AbortController()
+    reloadProjects(controller.signal)
+    return () => controller.abort()
+  }, [authLoading, reloadProjects, shouldLoadProjects, user])
+
+  const createProject = useCallback(async (name) => {
+    const response = await projectsApi.create({ name: name.trim() })
+    const newProject = mapProjectFromApi(response?.data?.data)
+
+    if (!newProject) {
+      throw new Error('Invalid project response')
+    }
+
+    createdProjectsRef.current.set(newProject.id, newProject)
+    setProjects((currentProjects) => [
+      newProject,
+      ...currentProjects.filter((project) => project.id !== newProject.id),
+    ])
+    setProjectsError('')
+    setProjectsStatus('success')
     return newProject
+  }, [])
+
+  const renameProject = useCallback(async (projectId, name) => {
+    const response = await projectsApi.update(projectId, { name: name.trim() })
+    const updatedProject = mapProjectFromApi(response?.data?.data)
+
+    if (!updatedProject || updatedProject.id !== projectId) {
+      throw new Error('Invalid project response')
+    }
+
+    if (createdProjectsRef.current.has(projectId)) {
+      createdProjectsRef.current.set(projectId, updatedProject)
+    }
+    setProjects((currentProjects) =>
+      currentProjects.map((project) =>
+        project.id === projectId ? updatedProject : project,
+      ),
+    )
+    return updatedProject
+  }, [])
+
+  const deleteProject = useCallback(async (projectId) => {
+    const response = await projectsApi.remove(projectId)
+    if (response?.data?.success !== true) {
+      throw new Error('Invalid delete project response')
+    }
+
+    createdProjectsRef.current.delete(projectId)
+    setProjects((currentProjects) =>
+      currentProjects.filter((project) => project.id !== projectId),
+    )
   }, [])
 
   const getProject = useCallback(
@@ -89,58 +251,56 @@ export function ProjectsProvider({ children }) {
       sections: createStarterSections(payload.source.type),
     }
 
-    setProjects((currentProjects) =>
-      currentProjects.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              updatedAt: 'Vừa cập nhật',
-              landingPages: [newLandingPage, ...project.landingPages],
-            }
-          : project,
-      ),
-    )
+    // Compatibility layer local cho prototype Landing Page; PJ-FE-1 không gọi API Page.
+    setLandingPagesByProject((currentCache) => ({
+      ...currentCache,
+      [projectId]: [newLandingPage, ...(currentCache[projectId] || [])],
+    }))
 
     return newLandingPage
   }, [])
 
   const getLandingPage = useCallback(
-    (projectId, landingPageId) => {
-      const project = projects.find((item) => item.id === projectId)
-      return project?.landingPages.find((page) => page.id === landingPageId)
-    },
-    [projects],
+    (projectId, landingPageId) =>
+      landingPagesByProject[projectId]?.find(
+        (page) => page.id === landingPageId,
+      ),
+    [landingPagesByProject],
   )
 
   const updateLandingPageSections = useCallback(
     (projectId, landingPageId, sections) => {
-      setProjects((currentProjects) =>
-        currentProjects.map((project) =>
-          project.id === projectId
+      setLandingPagesByProject((currentCache) => ({
+        ...currentCache,
+        [projectId]: (currentCache[projectId] || []).map((page) =>
+          page.id === landingPageId
             ? {
-                ...project,
+                ...page,
+                sections,
                 updatedAt: 'Vừa cập nhật',
-                landingPages: project.landingPages.map((page) =>
-                  page.id === landingPageId
-                    ? {
-                        ...page,
-                        sections,
-                        updatedAt: 'Vừa cập nhật',
-                      }
-                    : page,
-                ),
               }
-            : project,
+            : page,
         ),
-      )
+      }))
     },
     [],
   )
 
+  const isProjectsLoading =
+    authLoading ||
+    (shouldLoadProjects &&
+      Boolean(user) &&
+      (projectsStatus === 'idle' || projectsStatus === 'loading'))
+
   const value = useMemo(
     () => ({
       projects,
+      projectsError,
+      isProjectsLoading,
+      reloadProjects,
       createProject,
+      renameProject,
+      deleteProject,
       getProject,
       createLandingPage,
       getLandingPage,
@@ -148,7 +308,12 @@ export function ProjectsProvider({ children }) {
     }),
     [
       projects,
+      projectsError,
+      isProjectsLoading,
+      reloadProjects,
       createProject,
+      renameProject,
+      deleteProject,
       getProject,
       createLandingPage,
       getLandingPage,
