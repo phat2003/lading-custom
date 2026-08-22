@@ -13,6 +13,7 @@ const BuilderWorkspace = ({
   additionalRailItems = [],
   additionalPanels = {},
   propertiesPanelProps = {},
+  getElementDomId,
 }) => (
   <div className="flex min-h-0 flex-1 overflow-hidden">
     <BuilderRail
@@ -54,6 +55,7 @@ const BuilderWorkspace = ({
       onDuplicate={controller.duplicateElement}
       onDelete={controller.deleteElement}
       onFitContent={controller.fitContentToWidth}
+      getElementDomId={getElementDomId}
     />
     <PropertiesPanel
       element={controller.selected}

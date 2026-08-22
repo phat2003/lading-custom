@@ -20,6 +20,7 @@ import { useTheme } from '../../../context/ThemeContext'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
 import EditorTopbar from './components/EditorTopbar'
+import CtaLinkControls from './components/CtaLinkControls'
 import CurrentSectionControls from './components/CurrentSectionControls'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
@@ -29,6 +30,7 @@ import {
   pageSectionSignature,
   pageSectionsToBuilderElements,
 } from './landingPageBuilderAdapter'
+import { getSectionAnchorId } from './ctaLinks'
 import {
   getOrderedSectionRoots,
   getSectionDisplayNames,
@@ -154,6 +156,20 @@ const LandingPageEditorPage = () => {
     },
     [transformElements],
   )
+
+  const getUserElementDomId = useCallback(
+    (element) =>
+      element.type === 'section' && !element.parentId
+        ? getSectionAnchorId(element.id)
+        : undefined,
+    [],
+  )
+
+  const handleNavigateToSection = useCallback((sectionId) => {
+    document
+      .getElementById(getSectionAnchorId(sectionId))
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   useEffect(
     () => () => saveAsTemplateAbortRef.current?.abort(),
@@ -698,6 +714,7 @@ const LandingPageEditorPage = () => {
             />
           ),
         }}
+        getElementDomId={getUserElementDomId}
         propertiesPanelProps={
           builder.selected?.type === 'section'
             ? {
@@ -716,7 +733,20 @@ const LandingPageEditorPage = () => {
                   />
                 ),
               }
-            : undefined
+            : builder.selected?.type === 'button'
+              ? {
+                  title: 'CTA / Button',
+                  beforeContent: (
+                    <CtaLinkControls
+                      button={builder.selected}
+                      sections={sectionRoots}
+                      sectionDisplayNames={sectionDisplayNames}
+                      onUpdate={builder.updateElement}
+                      onNavigate={handleNavigateToSection}
+                    />
+                  ),
+                }
+              : undefined
         }
       />
 

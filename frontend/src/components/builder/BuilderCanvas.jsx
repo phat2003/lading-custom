@@ -24,6 +24,7 @@ const BuilderCanvas = ({
   onDuplicate,
   onDelete,
   onFitContent,
+  getElementDomId,
 }) => {
   const viewportRef = useRef(null)
   const canvasRef = useRef(null)
@@ -200,6 +201,7 @@ const BuilderCanvas = ({
                 onUpdate={onUpdate}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
+                getElementDomId={getElementDomId}
               />
             ))}
           </div>

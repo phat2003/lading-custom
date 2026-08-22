@@ -23,6 +23,7 @@ const CanvasElement = ({
   onUpdate,
   onDuplicate,
   onDelete,
+  getElementDomId,
 }) => {
   const wrapperRef = useRef(null)
   const drag = useRef(null)
@@ -148,6 +149,7 @@ const CanvasElement = ({
 
   return (
     <div
+      id={getElementDomId?.(element)}
       ref={wrapperRef}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -186,6 +188,7 @@ const CanvasElement = ({
           onUpdate={onUpdate}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
+          getElementDomId={getElementDomId}
         />
       ))}
 
@@ -219,4 +222,3 @@ const CanvasElement = ({
 }
 
 export default CanvasElement
-
