@@ -74,6 +74,14 @@ export default function App() {
           }
         />
         <Route
+          path="/templates/mine"
+          element={
+            <UserProjectRoute>
+              <TemplateGalleryPage mode="mine" />
+            </UserProjectRoute>
+          }
+        />
+        <Route
           path="/projects/:projectId"
           element={
             <UserProjectRoute>

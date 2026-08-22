@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { FilterIcon, SearchIcon } from '../../../components/icons'
 import {
@@ -12,7 +12,10 @@ import {
 } from '../../../api/templates'
 import { useProjects } from '../context/ProjectsContext'
 import CreateProjectModal from '../ProjectsPage/components/CreateProjectModal'
+import CloneTemplateModal from './components/CloneTemplateModal'
 import CreateLandingPageModal from './components/CreateLandingPageModal'
+import DeleteTemplateModal from './components/DeleteTemplateModal'
+import RenameTemplateModal from './components/RenameTemplateModal'
 import SelectDestinationModal from './components/SelectDestinationModal'
 import TemplateCard from './components/TemplateCard'
 import ProjectMobileHeader from '../components/ProjectMobileHeader'
@@ -39,10 +42,12 @@ const INITIAL_TEMPLATE_STATE = {
   error: '',
 }
 
-export default function TemplateGalleryPage() {
+const TemplateGalleryPage = ({ mode = 'system' }) => {
   const { user } = useAuth()
   const { projectId } = useParams()
   const isGlobalGallery = !projectId
+  const isMyTemplates = isGlobalGallery && mode === 'mine'
+  const isCreationGallery = isGlobalGallery
   const navigate = useNavigate()
   const {
     projects,
@@ -61,6 +66,9 @@ export default function TemplateGalleryPage() {
   const [templateState, setTemplateState] = useState(INITIAL_TEMPLATE_STATE)
   const [templateReloadKey, setTemplateReloadKey] = useState(0)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [cloneSource, setCloneSource] = useState(null)
+  const [renameTemplate, setRenameTemplate] = useState(null)
+  const [deleteTemplate, setDeleteTemplate] = useState(null)
   const [selectedProject, setSelectedProject] = useState(null)
   const [createdProject, setCreatedProject] = useState(null)
   const [creationStep, setCreationStep] = useState('idle')
@@ -125,12 +133,14 @@ export default function TemplateGalleryPage() {
           throw new Error('Invalid template item response')
         }
 
-        const items = isGlobalGallery
-          ? mappedItems.filter(
+        const items = isMyTemplates
+          ? mappedItems.filter((template) => template.type === 'user')
+          : isGlobalGallery
+            ? mappedItems.filter(
               (template) =>
                 template.type === 'system' && template.status === 'published',
             )
-          : mappedItems
+            : mappedItems
 
         setTemplateState({ status: 'success', items, error: '' })
       })
@@ -152,6 +162,7 @@ export default function TemplateGalleryPage() {
   }, [
     canLoadTemplates,
     isGlobalGallery,
+    isMyTemplates,
     templateReloadKey,
   ])
 
@@ -180,8 +191,32 @@ export default function TemplateGalleryPage() {
     setSelectedTemplate(nextTemplate)
     setSelectedProject(null)
     setCreatedProject(null)
-    setCreationStep(isGlobalGallery ? 'destination' : 'naming')
+    setCreationStep(isCreationGallery ? 'destination' : 'naming')
   }
+
+  const openCloneTemplate = useCallback((template) => {
+    setCloneSource(template)
+  }, [])
+
+  const closeCloneTemplate = useCallback(() => {
+    setCloneSource(null)
+  }, [])
+
+  const openRenameTemplate = useCallback((template) => {
+    setRenameTemplate(template)
+  }, [])
+
+  const closeRenameTemplate = useCallback(() => {
+    setRenameTemplate(null)
+  }, [])
+
+  const openDeleteTemplate = useCallback((template) => {
+    setDeleteTemplate(template)
+  }, [])
+
+  const closeDeleteTemplate = useCallback(() => {
+    setDeleteTemplate(null)
+  }, [])
 
   const showNewProjectForm = () => {
     setProjectCreateError('')
@@ -219,7 +254,7 @@ export default function TemplateGalleryPage() {
   const handleCreateDestinationProject = async (name) => {
     if (
       projectRequestInFlightRef.current ||
-      !isGlobalGallery ||
+      !isCreationGallery ||
       !selectedTemplate
     ) {
       return
@@ -409,12 +444,18 @@ export default function TemplateGalleryPage() {
               ← {isGlobalGallery ? 'My Project' : project.name}
             </button>
             <h1 className="text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
-              {isGlobalGallery ? 'Thư viện Template' : 'Chọn mẫu giao diện'}
+              {isMyTemplates
+                ? 'Mẫu của tôi'
+                : isGlobalGallery
+                  ? 'Thư viện Template'
+                  : 'Chọn mẫu giao diện'}
             </h1>
             <p className="mt-3 text-base text-[#c3c6d7] sm:text-lg">
-              {isGlobalGallery
-                ? 'Chọn Blank hoặc System Template đã xuất bản để bắt đầu.'
-                : 'Bắt đầu nhanh chóng với các mẫu được thiết kế chuyên nghiệp.'}
+              {isMyTemplates
+                ? 'Xem các Template cá nhân đã lưu từ Landing Page.'
+                : isGlobalGallery
+                  ? 'Chọn Blank hoặc System Template đã xuất bản để bắt đầu.'
+                  : 'Bắt đầu nhanh chóng với các mẫu được thiết kế chuyên nghiệp.'}
             </p>
           </div>
 
@@ -428,7 +469,11 @@ export default function TemplateGalleryPage() {
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm kiếm mẫu..."
+                placeholder={
+                  isMyTemplates
+                    ? 'Tìm kiếm mẫu của tôi...'
+                    : 'Tìm kiếm mẫu...'
+                }
                 className="h-12 w-full rounded-lg border border-[#434655]/30 bg-[#2a2a2c] pl-11 pr-4 text-white outline-none transition placeholder:text-[#8d90a0] focus:border-[#b4c5ff] focus:ring-1 focus:ring-[#b4c5ff]"
               />
             </label>
@@ -443,7 +488,40 @@ export default function TemplateGalleryPage() {
           </div>
         </header>
 
-        <section className="mx-auto mt-12 max-w-[1280px]">
+        {isGlobalGallery && (
+          <nav
+            className="mx-auto mt-8 flex max-w-[1280px] gap-2 border-b border-white/10"
+            aria-label="Khu vực Template"
+          >
+            <NavLink
+              end
+              to="/templates"
+              className={({ isActive }) =>
+                `border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                  isActive
+                    ? 'border-[#b4c5ff] text-[#dbe1ff]'
+                    : 'border-transparent text-[#8d90a0] hover:text-white'
+                }`
+              }
+            >
+              Thư viện
+            </NavLink>
+            <NavLink
+              to="/templates/mine"
+              className={({ isActive }) =>
+                `border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                  isActive
+                    ? 'border-[#b4c5ff] text-[#dbe1ff]'
+                    : 'border-transparent text-[#8d90a0] hover:text-white'
+                }`
+              }
+            >
+              Mẫu của tôi
+            </NavLink>
+          </nav>
+        )}
+
+        <section className="mx-auto mt-6 max-w-[1280px]">
           {!isGlobalGallery && (
             <div className="flex flex-wrap gap-3" aria-label="Loại Template">
               {TEMPLATE_FILTERS.map((filter) => (
@@ -468,12 +546,14 @@ export default function TemplateGalleryPage() {
             aria-label="Template Gallery"
             aria-busy={templateState.status === 'loading'}
           >
-            <TemplateCard
-              template={BLANK_OPTION}
-              locked={false}
-              onSelect={handleSelectTemplate}
-              onLocked={() => {}}
-            />
+            {!isMyTemplates && (
+              <TemplateCard
+                template={BLANK_OPTION}
+                locked={false}
+                onSelect={handleSelectTemplate}
+                onLocked={() => {}}
+              />
+            )}
 
             {templateState.status === 'loading' ? (
               [0, 1, 2].map((item) => (
@@ -512,6 +592,11 @@ export default function TemplateGalleryPage() {
                     user?.plan_type !== 'pro'
                   }
                   onSelect={handleSelectTemplate}
+                  onUse={isMyTemplates ? handleSelectTemplate : null}
+                  onClone={isGlobalGallery ? openCloneTemplate : null}
+                  onRename={isMyTemplates ? openRenameTemplate : null}
+                  onDelete={isMyTemplates ? openDeleteTemplate : null}
+                  interactive={!isMyTemplates}
                   onLocked={() =>
                     showMessage(`“${template.name}” yêu cầu gói Pro.`)
                   }
@@ -520,21 +605,25 @@ export default function TemplateGalleryPage() {
             ) : (
               <div className="rounded-xl border border-white/10 bg-[#1c1b1d] p-10 text-center sm:col-span-2 xl:col-span-2">
                 <h2 className="text-xl font-semibold text-white">
-                  {isGlobalGallery && !searchTerm.trim()
-                    ? 'Chưa có System Template khả dụng'
-                    : activeFilter === 'user' && !searchTerm.trim()
-                    ? 'Bạn chưa có Template cá nhân'
-                    : activeFilter === 'system' && !searchTerm.trim()
+                  {isMyTemplates && !searchTerm.trim()
+                    ? 'Bạn chưa có mẫu cá nhân nào'
+                    : isGlobalGallery && !searchTerm.trim()
                       ? 'Chưa có System Template khả dụng'
-                      : 'Không tìm thấy mẫu'}
+                    : activeFilter === 'user' && !searchTerm.trim()
+                      ? 'Bạn chưa có Template cá nhân'
+                      : activeFilter === 'system' && !searchTerm.trim()
+                        ? 'Chưa có System Template khả dụng'
+                        : 'Không tìm thấy mẫu'}
                 </h2>
                 <p className="mt-2 text-sm text-[#c3c6d7]">
                   {searchTerm.trim()
                     ? isGlobalGallery
                       ? 'Thử thay đổi từ khóa tìm kiếm.'
                       : 'Thử thay đổi từ khóa hoặc chọn loại Template khác.'
-                    : isGlobalGallery
-                      ? 'Bạn vẫn có thể bắt đầu từ trang trắng.'
+                    : isMyTemplates
+                      ? 'Những Landing Page được lưu thành Template sẽ xuất hiện tại đây.'
+                      : isGlobalGallery
+                        ? 'Bạn vẫn có thể bắt đầu từ trang trắng.'
                       : 'Chọn loại Template khác hoặc bắt đầu từ trang trắng.'}
                 </p>
               </div>
@@ -544,9 +633,21 @@ export default function TemplateGalleryPage() {
       </main>
 
       <StatusNotice>{notice}</StatusNotice>
+      <CloneTemplateModal
+        template={cloneSource}
+        onClose={closeCloneTemplate}
+      />
+      <RenameTemplateModal
+        template={renameTemplate}
+        onClose={closeRenameTemplate}
+      />
+      <DeleteTemplateModal
+        template={deleteTemplate}
+        onClose={closeDeleteTemplate}
+      />
       <SelectDestinationModal
         open={
-          isGlobalGallery &&
+          isCreationGallery &&
           (creationStep === 'destination' ||
             creationStep === 'existing-project')
         }
@@ -564,7 +665,7 @@ export default function TemplateGalleryPage() {
       />
       <CreateProjectModal
         open={
-          isGlobalGallery &&
+          isCreationGallery &&
           creationStep === 'new-project' &&
           Boolean(selectedTemplate)
         }
@@ -580,7 +681,10 @@ export default function TemplateGalleryPage() {
         onErrorClear={() => setProjectCreateError('')}
       />
       <CreateLandingPageModal
-        open={creationStep === 'naming' && Boolean(selectedTemplate)}
+        open={
+          creationStep === 'naming' &&
+          Boolean(selectedTemplate)
+        }
         template={selectedTemplate}
         project={isGlobalGallery ? selectedProject : project}
         onClose={closeLandingPageStep}
@@ -597,3 +701,5 @@ export default function TemplateGalleryPage() {
     </div>
   )
 }
+
+export default TemplateGalleryPage
