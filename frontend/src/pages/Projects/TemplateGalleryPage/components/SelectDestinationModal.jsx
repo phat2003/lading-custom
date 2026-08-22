@@ -59,7 +59,11 @@ const SelectDestinationModal = ({
 
         <div className="border-b border-white/10 px-7 pb-5 pt-7">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#00eefc]">
-            {source.type === 'blank' ? 'Blank' : 'System Template'}
+            {source.type === 'blank'
+              ? 'Blank'
+              : source.type === 'user'
+                ? 'User Template'
+                : 'System Template'}
           </p>
           <h2
             id="destination-modal-title"
@@ -109,7 +113,7 @@ const SelectDestinationModal = ({
                   Bạn chưa có Project
                 </h3>
                 <p className="mt-2 text-sm text-[#c3c6d7]">
-                  Tạo Landing Page trong Project mới sẽ được hỗ trợ ở bước tiếp theo.
+                  Quay lại và chọn Project mới để tiếp tục tạo Landing Page.
                 </p>
               </div>
             ) : (

@@ -97,7 +97,7 @@ export function ProjectsProvider({ children }) {
   const location = useLocation()
   const shouldLoadProjects =
     location.pathname.startsWith('/projects') ||
-    location.pathname === '/templates'
+    location.pathname.startsWith('/templates')
   const [projects, setProjects] = useState([])
   const [projectsStatus, setProjectsStatus] = useState('idle')
   const [projectsError, setProjectsError] = useState('')

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   landingPagesApi,
   mapLandingPageFromApi,
+  mapPublishResultFromApi,
 } from '../../../api/landingPages'
 import {
   mapEditorSectionToContent,
@@ -10,14 +11,18 @@ import {
   pageSectionsApi,
 } from '../../../api/pageSections'
 import { mapTemplateFromApi } from '../../../api/templates'
+import { useAuth } from '../../../context/AuthContext'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
 import EditorCanvas from './components/EditorCanvas'
 import EditorTopbar from './components/EditorTopbar'
 import ElementsPanel from './components/ElementsPanel'
 import PropertiesPanel from './components/PropertiesPanel'
+import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
 import { createLegacyStarterSection, createSection } from './sectionPresets'
+
+const PUBLISH_CLICK_GUARD_MS = 750
 
 function createId() {
   return window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
@@ -38,6 +43,7 @@ function getSectionContentSignature(section) {
 const LandingPageEditorPage = () => {
   const { projectId, landingPageId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const {
     getProject,
     getLandingPage,
@@ -59,6 +65,8 @@ const LandingPageEditorPage = () => {
   const [saveStatus, setSaveStatus] = useState('saved')
   const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [publishResult, setPublishResult] = useState(null)
   const [saveAsTemplateError, setSaveAsTemplateError] = useState('')
   const [serverPageState, setServerPageState] = useState({
     landingPageId: null,
@@ -70,6 +78,8 @@ const LandingPageEditorPage = () => {
   const canonicalServerSectionsRef = useRef([])
   const saveRequestInFlightRef = useRef(false)
   const templateRequestInFlightRef = useRef(false)
+  const publishRequestInFlightRef = useRef(false)
+  const lastPublishAttemptAtRef = useRef(0)
   const saveAsTemplateAbortRef = useRef(null)
 
   useEffect(
@@ -446,7 +456,11 @@ const LandingPageEditorPage = () => {
   ])
 
   const openSaveAsTemplate = useCallback(() => {
-    if (saveRequestInFlightRef.current || templateRequestInFlightRef.current) {
+    if (
+      saveRequestInFlightRef.current ||
+      templateRequestInFlightRef.current ||
+      publishRequestInFlightRef.current
+    ) {
       return
     }
     setSaveAsTemplateError('')
@@ -517,6 +531,58 @@ const LandingPageEditorPage = () => {
       saveStatus,
     ],
   )
+
+  const handlePublish = useCallback(async () => {
+    const now = Date.now()
+    if (
+      localLandingPage ||
+      publishRequestInFlightRef.current ||
+      saveRequestInFlightRef.current ||
+      templateRequestInFlightRef.current ||
+      now - lastPublishAttemptAtRef.current < PUBLISH_CLICK_GUARD_MS
+    ) {
+      return
+    }
+
+    lastPublishAttemptAtRef.current = now
+    publishRequestInFlightRef.current = true
+    setIsPublishing(true)
+    setPublishResult(null)
+
+    try {
+      if (saveStatus !== 'saved') {
+        const pageSaved = await saveServerSections()
+        if (!pageSaved) {
+          setNotice(
+            'Không thể lưu Landing Page trước khi xuất bản. Publish đã dừng.',
+          )
+          return
+        }
+      }
+
+      const response = await landingPagesApi.publish(landingPageId)
+      const result = mapPublishResultFromApi(response?.data?.data)
+      if (!result) {
+        throw new Error('Invalid publish response')
+      }
+
+      setPublishResult(result)
+      setNotice('Landing Page đã được xuất bản thành công.')
+    } catch (error) {
+      setNotice(
+        error?.response?.data?.error ||
+          'Không thể xuất bản Landing Page. Vui lòng thử lại.',
+      )
+    } finally {
+      publishRequestInFlightRef.current = false
+      setIsPublishing(false)
+    }
+  }, [
+    landingPageId,
+    localLandingPage,
+    saveServerSections,
+    saveStatus,
+  ])
 
   if (isProjectsLoading) {
     return (
@@ -638,6 +704,7 @@ const LandingPageEditorPage = () => {
     <div className="flex h-screen min-w-[1000px] flex-col overflow-hidden bg-[#0e0e10] text-[#e5e1e4]">
       <EditorTopbar
         landingPageName={editorLandingPage.name}
+        planType={user?.plan_type}
         saveStatus={saveStatus}
         onBack={() =>
           navigate(
@@ -651,7 +718,8 @@ const LandingPageEditorPage = () => {
         onUndo={() => setNotice('Undo sẽ được triển khai ở task Editor tiếp theo.')}
         onRedo={() => setNotice('Redo sẽ được triển khai ở task Editor tiếp theo.')}
         onPreview={() => setNotice('Preview sẽ được triển khai ở task tiếp theo.')}
-        onPublish={() => setNotice('Publish cần tích hợp API ở task riêng.')}
+        onPublish={localLandingPage ? null : handlePublish}
+        publishing={isPublishing}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -673,6 +741,10 @@ const LandingPageEditorPage = () => {
       </div>
 
       <StatusNotice>{notice}</StatusNotice>
+      <PublishSuccessModal
+        result={publishResult}
+        onClose={() => setPublishResult(null)}
+      />
       <SaveAsTemplateModal
         open={isSaveAsTemplateOpen}
         initialName={editorLandingPage.name}

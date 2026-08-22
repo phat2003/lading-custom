@@ -7,6 +7,7 @@ const SAVE_STATUS = {
 
 const EditorTopbar = ({
   landingPageName,
+  planType,
   saveStatus,
   onBack,
   onSave,
@@ -15,8 +16,10 @@ const EditorTopbar = ({
   onRedo,
   onPreview,
   onPublish,
+  publishing = false,
 }) => {
   const status = SAVE_STATUS[saveStatus] || SAVE_STATUS.saved
+  const planLabel = planType === 'pro' ? 'PRO' : 'FREE'
 
   return (
     <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-[#434655]/20 bg-[#201f21] px-5">
@@ -35,7 +38,7 @@ const EditorTopbar = ({
           </span>
           <span className="text-lg font-bold">Myproject</span>
           <span className="rounded border border-white/10 bg-[#353437] px-2 py-1 font-mono text-[9px] text-[#c3c6d7]">
-            FREE
+            {planLabel}
           </span>
         </button>
         <div className="h-7 w-px bg-white/10" />
@@ -73,7 +76,9 @@ const EditorTopbar = ({
           <button
             type="button"
             onClick={onSave}
-            disabled={saveStatus === 'saved' || saveStatus === 'saving'}
+            disabled={
+              publishing || saveStatus === 'saved' || saveStatus === 'saving'
+            }
             className="rounded bg-[#2563eb] px-4 py-2 font-mono text-xs font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {saveStatus === 'saving'
@@ -87,7 +92,7 @@ const EditorTopbar = ({
           <button
             type="button"
             onClick={onSaveAsTemplate}
-            disabled={saveStatus === 'saving'}
+            disabled={publishing || saveStatus === 'saving'}
             className="rounded border border-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:border-[#00eefc]/50 hover:text-[#d3fbff] disabled:cursor-wait disabled:opacity-45"
           >
             Lưu thành mẫu
@@ -103,9 +108,10 @@ const EditorTopbar = ({
         <button
           type="button"
           onClick={onPublish}
-          className="rounded bg-[#eec200] px-5 py-2 font-semibold text-[#231b00] shadow-[0_0_20px_rgba(238,194,0,0.2)] transition hover:bg-[#ffe083]"
+          disabled={!onPublish || publishing || saveStatus === 'saving'}
+          className="rounded bg-[#eec200] px-5 py-2 font-semibold text-[#231b00] shadow-[0_0_20px_rgba(238,194,0,0.2)] transition hover:bg-[#ffe083] disabled:cursor-wait disabled:opacity-55"
         >
-          Xuất bản
+          {publishing ? 'Đang xuất bản...' : 'Xuất bản'}
         </button>
       </div>
     </header>

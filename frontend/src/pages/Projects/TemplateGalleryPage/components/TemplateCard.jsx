@@ -1,6 +1,5 @@
 import {
   CopyIcon,
-  EyeIcon,
   LayoutTemplateIcon,
   PencilIcon,
   PlusIcon,
@@ -12,7 +11,7 @@ const TemplateCard = ({
   locked = false,
   interactive = true,
   onSelect,
-  onView,
+  onUse,
   onRename,
   onDelete,
   onClone,
@@ -21,7 +20,7 @@ const TemplateCard = ({
   const isPro = template.tier === 'premium'
   const isBlank = template.type === 'blank'
   const isUser = template.type === 'user'
-  const hasManagementActions = Boolean(onView || onRename || onDelete)
+  const hasManagementActions = Boolean(onRename || onDelete)
   const detail = isBlank
     ? template.description
     : [
@@ -60,7 +59,7 @@ const TemplateCard = ({
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-xl border border-[#434655]/30 bg-[#201f21] transition duration-300 hover:-translate-y-1 hover:border-[#00eefc] ${
-        hasManagementActions ? 'h-[370px]' : 'h-[320px]'
+        onUse ? 'h-[430px]' : hasManagementActions ? 'h-[370px]' : 'h-[320px]'
       }`}
     >
       <div className="relative h-48 overflow-hidden bg-[#0e0e10]">
@@ -161,20 +160,25 @@ const TemplateCard = ({
         <div className="flex flex-1 flex-col p-4 text-left">{details}</div>
       )}
 
-      {hasManagementActions && (
-        <div className="grid grid-cols-3 gap-2 border-t border-white/10 p-3">
+      {onUse && (
+        <div className="border-t border-white/10 px-3 pt-3">
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation()
-              onView?.(template)
+              onUse(template)
             }}
-            className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-[#dbe1ff] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#00eefc]/50"
-            aria-label={`Xem Template ${template.name}`}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(37,99,235,0.3)] transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-[#b4c5ff]/60"
+            aria-label={`Sử dụng Template ${template.name}`}
           >
-            <EyeIcon size={15} />
-            Xem
+            <PlusIcon size={16} />
+            Sử dụng mẫu
           </button>
+        </div>
+      )}
+
+      {hasManagementActions && (
+        <div className="grid grid-cols-2 gap-2 border-t border-white/10 p-3">
           <button
             type="button"
             onClick={(event) => {

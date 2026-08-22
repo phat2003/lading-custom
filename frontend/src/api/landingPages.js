@@ -16,6 +16,33 @@ export const mapLandingPageFromApi = (landingPage) => {
   }
 }
 
+export const mapPublishResultFromApi = (result) => {
+  if (
+    result?.status !== 'published' ||
+    typeof result.public_link !== 'string' ||
+    !result.public_link.trim()
+  ) {
+    return null
+  }
+
+  let publicLink
+  try {
+    publicLink = new URL(result.public_link.trim())
+  } catch {
+    return null
+  }
+  if (!['http:', 'https:'].includes(publicLink.protocol)) return null
+
+  return {
+    status: result.status,
+    publishedUrl:
+      typeof result.published_url === 'string'
+        ? result.published_url
+        : null,
+    publicLink: publicLink.toString(),
+  }
+}
+
 export const landingPagesApi = {
   listByProject: (projectId, config) =>
     api.get('/pages', {
@@ -30,6 +57,8 @@ export const landingPagesApi = {
   createFromTemplate: (payload) => api.post('/pages/from-template', payload),
   saveAsTemplate: (payload, config) =>
     api.post('/pages/save-as-template', payload, config),
+  publish: (id, config) =>
+    api.post(`/landing-pages/${id}/publish`, undefined, config),
   update: (id, payload) => api.put(`/pages/${id}`, payload),
   remove: (id) => api.delete(`/pages/${id}`),
 }

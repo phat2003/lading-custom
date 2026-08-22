@@ -18,7 +18,6 @@ import DeleteTemplateModal from './components/DeleteTemplateModal'
 import RenameTemplateModal from './components/RenameTemplateModal'
 import SelectDestinationModal from './components/SelectDestinationModal'
 import TemplateCard from './components/TemplateCard'
-import TemplateDetailModal from './components/TemplateDetailModal'
 import ProjectMobileHeader from '../components/ProjectMobileHeader'
 import ProjectSidebar from '../components/ProjectSidebar'
 import StatusNotice from '../components/StatusNotice'
@@ -48,7 +47,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
   const { projectId } = useParams()
   const isGlobalGallery = !projectId
   const isMyTemplates = isGlobalGallery && mode === 'mine'
-  const isCreationGallery = isGlobalGallery && !isMyTemplates
+  const isCreationGallery = isGlobalGallery
   const navigate = useNavigate()
   const {
     projects,
@@ -68,7 +67,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
   const [templateReloadKey, setTemplateReloadKey] = useState(0)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [cloneSource, setCloneSource] = useState(null)
-  const [detailTemplate, setDetailTemplate] = useState(null)
   const [renameTemplate, setRenameTemplate] = useState(null)
   const [deleteTemplate, setDeleteTemplate] = useState(null)
   const [selectedProject, setSelectedProject] = useState(null)
@@ -188,8 +186,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
   }, [])
 
   const handleSelectTemplate = (nextTemplate) => {
-    if (isMyTemplates) return
-
     setProjectCreateError('')
     setCreateError('')
     setSelectedTemplate(nextTemplate)
@@ -204,14 +200,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
 
   const closeCloneTemplate = useCallback(() => {
     setCloneSource(null)
-  }, [])
-
-  const openTemplateDetail = useCallback((template) => {
-    setDetailTemplate(template)
-  }, [])
-
-  const closeTemplateDetail = useCallback(() => {
-    setDetailTemplate(null)
   }, [])
 
   const openRenameTemplate = useCallback((template) => {
@@ -313,7 +301,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
     if (
       !destinationProjectId ||
       createRequestInFlightRef.current ||
-      isMyTemplates ||
       !selectedTemplate
     ) {
       return
@@ -605,8 +592,8 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                     user?.plan_type !== 'pro'
                   }
                   onSelect={handleSelectTemplate}
+                  onUse={isMyTemplates ? handleSelectTemplate : null}
                   onClone={isGlobalGallery ? openCloneTemplate : null}
-                  onView={isMyTemplates ? openTemplateDetail : null}
                   onRename={isMyTemplates ? openRenameTemplate : null}
                   onDelete={isMyTemplates ? openDeleteTemplate : null}
                   interactive={!isMyTemplates}
@@ -649,10 +636,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
       <CloneTemplateModal
         template={cloneSource}
         onClose={closeCloneTemplate}
-      />
-      <TemplateDetailModal
-        template={detailTemplate}
-        onClose={closeTemplateDetail}
       />
       <RenameTemplateModal
         template={renameTemplate}
@@ -699,7 +682,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
       />
       <CreateLandingPageModal
         open={
-          !isMyTemplates &&
           creationStep === 'naming' &&
           Boolean(selectedTemplate)
         }

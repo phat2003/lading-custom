@@ -51,6 +51,7 @@ export default function ProjectSidebar({
   onShowMessage,
 }) {
   const displayName = user?.full_name || user?.email || 'Design Pro'
+  const planLabel = user?.plan_type === 'pro' ? 'Pro Plan' : 'Free Plan'
 
   return (
     <>
@@ -139,7 +140,7 @@ export default function ProjectSidebar({
                 <p className="truncate text-sm text-white">{displayName}</p>
                 <p className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-[#c3c6d7]">
                   <span className="h-2 w-2 rounded-full bg-[#00eefc]" />
-                  Free Plan
+                  {planLabel}
                 </p>
               </div>
             </div>
