@@ -8,13 +8,18 @@ const cloneStyle = (style) => ({ ...(style || {}) })
 
 // Controller dùng chung cho Admin Builder và User Landing Page Editor.
 // Persistence không nằm ở đây: mỗi domain tự hydrate/serialize dữ liệu server của mình.
-export const useBuilderController = ({ initialElements = [], settings, onMutate }) => {
+export const useBuilderController = ({
+  initialElements = [],
+  initialPanel = 'add',
+  settings,
+  onMutate,
+}) => {
   const [device, setDevice] = useState('desktop')
   const [elements, setElements] = useState(initialElements)
   const [past, setPast] = useState([])
   const [future, setFuture] = useState([])
   const [selectedId, setSelectedId] = useState(null)
-  const [activePanel, setActivePanel] = useState('add')
+  const [activePanel, setActivePanel] = useState(initialPanel)
   const [recent, setRecent] = useState([])
   const elementsRef = useRef(elements)
   const pastRef = useRef(past)
@@ -238,6 +243,10 @@ export const useBuilderController = ({ initialElements = [], settings, onMutate 
     [commit, device],
   )
 
+  // Một transaction generic tạo đúng một history step. Domain orchestration có thể dùng
+  // cho mutation atomic như document/section reorder mà không đưa business rule vào core.
+  const transformElements = useCallback((updater) => commit(updater), [commit])
+
   const duplicateElement = useCallback(
     (id) => {
       const list = elementsRef.current
@@ -438,6 +447,7 @@ export const useBuilderController = ({ initialElements = [], settings, onMutate 
     moveElement,
     resizeElement,
     updateElement,
+    transformElements,
     duplicateElement,
     deleteElement,
     toggleHidden,

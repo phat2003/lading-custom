@@ -56,13 +56,20 @@ const TYPE_NAME = {
   divider: 'Đường kẻ', spacer: 'Khoảng trống',
 }
 
-const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
+const PropertiesPanel = ({
+  element,
+  onUpdate,
+  onDelete,
+  title = 'Thuộc tính',
+  beforeContent = null,
+  showDeleteButton = true,
+}) => {
   if (!element) {
     return (
       <aside className="w-80 shrink-0 border-l border-[var(--bd-border)] bg-[var(--bd-panel)] backdrop-blur-xl">
         <div className="flex items-center gap-2 border-b border-[var(--bd-border)] px-4 py-3.5">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--bd-muted)]" />
-          <h2 className="text-sm font-semibold text-[var(--bd-text)]">Thuộc tính</h2>
+          <h2 className="text-sm font-semibold text-[var(--bd-text)]">{title}</h2>
         </div>
         <p className="p-5 text-sm leading-relaxed text-[var(--bd-muted)]">
           Chọn một phần tử trên canvas để chỉnh sửa thuộc tính.
@@ -139,21 +146,24 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-4 py-3.5 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-violet-400 to-cyan-400" />
-          <h2 className="text-sm font-semibold text-[var(--bd-text)]">Thuộc tính</h2>
+          <h2 className="text-sm font-semibold text-[var(--bd-text)]">{title}</h2>
           <span className="rounded-md bg-[var(--bd-fill-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--bd-dim)]">
             {TYPE_NAME[type] || type}
           </span>
         </div>
-        <button
-          onClick={() => onDelete(id)}
-          title="Xóa phần tử"
-          className="rounded-lg p-1.5 text-[var(--bd-muted)] transition-all duration-200 hover:bg-red-500/15 hover:text-red-400"
-        >
-          <TrashIcon size={15} />
-        </button>
+        {showDeleteButton && (
+          <button
+            onClick={() => onDelete(id)}
+            title="Xóa phần tử"
+            className="rounded-lg p-1.5 text-[var(--bd-muted)] transition-all duration-200 hover:bg-red-500/15 hover:text-red-400"
+          >
+            <TrashIcon size={15} />
+          </button>
+        )}
       </div>
 
       <div className="space-y-3 p-3">
+        {beforeContent}
         {isIcon && (
           <Group title="Biểu tượng">
             <div className="grid grid-cols-6 gap-1.5">
@@ -371,4 +381,3 @@ const PropertiesPanel = ({ element, onUpdate, onDelete }) => {
 }
 
 export default PropertiesPanel
-

@@ -5,9 +5,9 @@ const ITEMS = [
   { key: 'layers', icon: LayersIcon, label: 'Lớp' },
 ]
 
-const BuilderRail = ({ activePanel, onToggle }) => (
+const BuilderRail = ({ activePanel, onToggle, additionalItems = [] }) => (
   <nav className="flex w-[72px] shrink-0 flex-col items-center gap-2 border-r border-[var(--bd-border)] bg-[var(--bd-topbar)] py-4 backdrop-blur-xl">
-    {ITEMS.map(({ key, icon: IconComp, label }, i) => {
+    {[...ITEMS, ...additionalItems].map(({ key, icon: IconComp, label }, i) => {
       const active = activePanel === key
       return (
         <button
@@ -41,4 +41,3 @@ const BuilderRail = ({ activePanel, onToggle }) => (
 )
 
 export default BuilderRail
-

@@ -5,9 +5,21 @@ import LayersPanel from './LayersPanel'
 import PropertiesPanel from './PropertiesPanel'
 
 // Khung Builder thuần UI/interaction. Admin và User truyền persistence/topbar từ bên ngoài.
-const BuilderWorkspace = ({ controller, settings, library = [], libraryEmptyMessage }) => (
+const BuilderWorkspace = ({
+  controller,
+  settings,
+  library = [],
+  libraryEmptyMessage,
+  additionalRailItems = [],
+  additionalPanels = {},
+  propertiesPanelProps = {},
+}) => (
   <div className="flex min-h-0 flex-1 overflow-hidden">
-    <BuilderRail activePanel={controller.activePanel} onToggle={controller.togglePanel} />
+    <BuilderRail
+      activePanel={controller.activePanel}
+      onToggle={controller.togglePanel}
+      additionalItems={additionalRailItems}
+    />
     {controller.activePanel === 'add' && (
       <ElementPanel
         recent={controller.recent}
@@ -26,6 +38,7 @@ const BuilderWorkspace = ({ controller, settings, library = [], libraryEmptyMess
         onMoveLayer={controller.moveLayer}
       />
     )}
+    {additionalPanels[controller.activePanel] || null}
     <BuilderCanvas
       device={controller.device}
       settings={settings}
@@ -46,6 +59,7 @@ const BuilderWorkspace = ({ controller, settings, library = [], libraryEmptyMess
       element={controller.selected}
       onUpdate={controller.updateElement}
       onDelete={controller.deleteElement}
+      {...propertiesPanelProps}
     />
   </div>
 )

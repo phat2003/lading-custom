@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   landingPagesApi,
@@ -12,6 +12,7 @@ import {
 import { sectionsApi } from '../../../api/sections'
 import { mapTemplateFromApi } from '../../../api/templates'
 import BuilderWorkspace from '../../../components/builder/BuilderWorkspace'
+import { ListIcon } from '../../../components/icons'
 import { toLibraryVariants } from '../../../components/builder/sectionLibrary'
 import { useBuilderController } from '../../../components/builder/useBuilderController'
 import { useAuth } from '../../../context/AuthContext'
@@ -19,13 +20,21 @@ import { useTheme } from '../../../context/ThemeContext'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
 import EditorTopbar from './components/EditorTopbar'
+import CurrentSectionControls from './components/CurrentSectionControls'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
+import SectionListPanel from './components/SectionListPanel'
 import {
   builderElementsToPageSections,
   pageSectionSignature,
   pageSectionsToBuilderElements,
 } from './landingPageBuilderAdapter'
+import {
+  getOrderedSectionRoots,
+  getSectionDisplayNames,
+  moveSectionByOffset,
+  reorderSectionAt,
+} from './sectionManagement'
 
 const PUBLISH_CLICK_GUARD_MS = 750
 const BUILDER_SETTINGS = {
@@ -112,10 +121,39 @@ const LandingPageEditorPage = () => {
 
   const builder = useBuilderController({
     initialElements: [],
+    initialPanel: 'sections',
     settings: BUILDER_SETTINGS,
     onMutate: markBuilderDirty,
   })
-  const { replaceElements } = builder
+  const { replaceElements, transformElements } = builder
+
+  const sectionRoots = useMemo(
+    () => getOrderedSectionRoots(builder.viewElements),
+    [builder.viewElements],
+  )
+  const sectionDisplayNames = useMemo(
+    () => getSectionDisplayNames(sectionRoots),
+    [sectionRoots],
+  )
+  const selectedSectionIndex = builder.selected
+    ? sectionRoots.findIndex((section) => section.id === builder.selected.id)
+    : -1
+
+  const handleMoveSection = useCallback(
+    (sectionId, offset) => {
+      transformElements((elements) => moveSectionByOffset(elements, sectionId, offset))
+    },
+    [transformElements],
+  )
+
+  const handleReorderSection = useCallback(
+    (sectionId, targetId, placement) => {
+      transformElements((elements) =>
+        reorderSectionAt(elements, sectionId, targetId, placement),
+      )
+    },
+    [transformElements],
+  )
 
   useEffect(
     () => () => saveAsTemplateAbortRef.current?.abort(),
@@ -649,6 +687,37 @@ const LandingPageEditorPage = () => {
         settings={BUILDER_SETTINGS}
         library={library}
         libraryEmptyMessage={libraryEmptyMessage}
+        additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
+        additionalPanels={{
+          sections: (
+            <SectionListPanel
+              elements={builder.viewElements}
+              selectedId={builder.selectedId}
+              onSelect={builder.setSelectedId}
+              onReorder={handleReorderSection}
+            />
+          ),
+        }}
+        propertiesPanelProps={
+          builder.selected?.type === 'section'
+            ? {
+                title: 'Current Section',
+                showDeleteButton: false,
+                beforeContent: (
+                  <CurrentSectionControls
+                    section={builder.selected}
+                    displayName={sectionDisplayNames.get(builder.selected.id)}
+                    isFirst={selectedSectionIndex === 0}
+                    isLast={selectedSectionIndex === sectionRoots.length - 1}
+                    onUpdate={builder.updateElement}
+                    onMoveUp={() => handleMoveSection(builder.selected.id, -1)}
+                    onMoveDown={() => handleMoveSection(builder.selected.id, 1)}
+                    onDelete={() => builder.deleteElement(builder.selected.id)}
+                  />
+                ),
+              }
+            : undefined
+        }
       />
 
       <StatusNotice>{notice}</StatusNotice>
