@@ -4,6 +4,7 @@ import {
   landingPagesApi,
   mapLandingPageFromApi,
   mapPublishResultFromApi,
+  resolveLandingPagePublicUrl,
 } from '../../../api/landingPages'
 import {
   mapPageSectionRecordFromApi,
@@ -39,6 +40,12 @@ import {
 } from './sectionManagement'
 
 const PUBLISH_CLICK_GUARD_MS = 750
+const INITIAL_TARGET_PAGES_STATE = {
+  projectId: null,
+  status: 'idle',
+  items: [],
+  error: '',
+}
 const BUILDER_SETTINGS = {
   desktopWidth: 896,
   mobileWidth: 390,
@@ -108,6 +115,10 @@ const LandingPageEditorPage = () => {
     error: '',
   })
   const [serverPageRequestVersion, setServerPageRequestVersion] = useState(0)
+  const [targetPagesRequestVersion, setTargetPagesRequestVersion] = useState(0)
+  const [targetPagesState, setTargetPagesState] = useState(
+    INITIAL_TARGET_PAGES_STATE,
+  )
 
   const canonicalServerSectionsRef = useRef([])
   const localHydratedIdRef = useRef(null)
@@ -171,6 +182,11 @@ const LandingPageEditorPage = () => {
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
+  const handleNavigateToLandingPage = useCallback((targetLandingPage) => {
+    if (!targetLandingPage.publicUrl) return
+    window.open(targetLandingPage.publicUrl, '_blank', 'noopener,noreferrer')
+  }, [])
+
   useEffect(
     () => () => saveAsTemplateAbortRef.current?.abort(),
     [],
@@ -200,6 +216,69 @@ const LandingPageEditorPage = () => {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (isProjectsLoading || projectsError || !project) return undefined
+
+    const controller = new AbortController()
+    setTargetPagesState({
+      projectId,
+      status: 'loading',
+      items: [],
+      error: '',
+    })
+
+    landingPagesApi
+      .listByProject(projectId, { signal: controller.signal })
+      .then((response) => {
+        const data = response?.data?.data
+        if (!Array.isArray(data)) throw new Error('Invalid landing pages response')
+
+        const mapped = data.map(mapLandingPageFromApi)
+        if (
+          mapped.some(
+            (landingPage) =>
+              !landingPage || landingPage.projectId !== projectId,
+          )
+        ) {
+          throw new Error('Invalid landing pages response')
+        }
+
+        if (controller.signal.aborted) return
+        setTargetPagesState({
+          projectId,
+          status: 'ready',
+          items: mapped
+            .filter((landingPage) => landingPage.id !== landingPageId)
+            .map((landingPage) => ({
+              ...landingPage,
+              publicUrl: resolveLandingPagePublicUrl(landingPage),
+            })),
+          error: '',
+        })
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || error.name === 'CanceledError') return
+        setTargetPagesState({
+          projectId,
+          status: 'error',
+          items: [],
+          error: apiErrorMessage(
+            error,
+            'Không tải được danh sách Landing Page trong Project.',
+          ),
+        })
+      })
+
+    return () => controller.abort()
+  }, [
+    isProjectsLoading,
+    landingPageId,
+    project,
+    projectId,
+    projectsError,
+    targetPagesRequestVersion,
+  ])
 
   // Tương thích cache prototype cũ; không gọi API hoặc tự mutate dữ liệu server.
   useEffect(() => {
@@ -741,8 +820,23 @@ const LandingPageEditorPage = () => {
                       button={builder.selected}
                       sections={sectionRoots}
                       sectionDisplayNames={sectionDisplayNames}
+                      landingPages={
+                        targetPagesState.projectId === projectId
+                          ? targetPagesState.items
+                          : []
+                      }
+                      landingPagesStatus={
+                        targetPagesState.projectId === projectId
+                          ? targetPagesState.status
+                          : 'loading'
+                      }
+                      landingPagesError={targetPagesState.error}
                       onUpdate={builder.updateElement}
-                      onNavigate={handleNavigateToSection}
+                      onNavigateToSection={handleNavigateToSection}
+                      onNavigateToLandingPage={handleNavigateToLandingPage}
+                      onRetryLandingPages={() =>
+                        setTargetPagesRequestVersion((version) => version + 1)
+                      }
                     />
                   ),
                 }
