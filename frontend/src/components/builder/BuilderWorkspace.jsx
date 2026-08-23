@@ -15,6 +15,7 @@ const BuilderWorkspace = ({
   libraryInvalidCount,
   onRetryLibrary,
   enableLibraryHoverPreview = false,
+  onAddElement,
   onAddBlock,
   additionalRailItems = [],
   additionalPanels = {},
@@ -56,7 +57,7 @@ const BuilderWorkspace = ({
       settings={settings}
       elements={controller.viewElements}
       selectedId={controller.selectedId}
-      onAddElement={controller.addElement}
+      onAddElement={onAddElement || controller.addElement}
       onAddBlock={onAddBlock || controller.addBlock}
       onSelect={controller.setSelectedId}
       onBeginGesture={controller.beginGesture}

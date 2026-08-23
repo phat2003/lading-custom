@@ -154,6 +154,7 @@ const LandingPageEditorPage = () => {
     onMutate: markBuilderDirty,
   })
   const {
+    addElement,
     addBlock,
     replaceElements,
     setSelectedId,
@@ -188,16 +189,15 @@ const LandingPageEditorPage = () => {
     [transformElements],
   )
 
-  const handleAddBuilderBlock = useCallback(
-    (blockDefinition, x, y) => {
-      // Block dựng sẵn giữ interaction shared hiện tại. Section Template API dùng
-      // document-order semantics của User để Canvas/List/persistence luôn đồng bộ.
-      if (!blockDefinition?.section?.sourceSectionTemplateId) {
-        addBlock(blockDefinition, x, y)
-        return
-      }
+  const insertTopLevelSection = useCallback(
+    (blockDefinition, y) => {
+      const sourceRoot =
+        blockDefinition?.elements?.find(
+          (element) => element.type === 'section' && !element.parentId,
+        ) || blockDefinition?.section
+      if (!sourceRoot) return false
 
-      const sectionWidth = blockDefinition.section.style?.width || 820
+      const sectionWidth = sourceRoot.style?.width || 820
       const centeredX = Math.max(
         0,
         (BUILDER_SETTINGS.desktopWidth - sectionWidth) / 2,
@@ -206,14 +206,48 @@ const LandingPageEditorPage = () => {
       const root = graph.find(
         (element) => element.type === 'section' && !element.parentId,
       )
-      if (!root) return
+      if (!root) return false
 
       const inserted = transformElements((elements) =>
         insertSectionGraphAt(elements, graph, y),
       )
       if (inserted) setSelectedId(root.id)
+      return inserted
     },
-    [addBlock, setSelectedId, transformElements],
+    [setSelectedId, transformElements],
+  )
+
+  const handleAddBuilderElement = useCallback(
+    (payload, x, y, parentId) => {
+      if (payload?.type !== 'section') {
+        addElement(payload, x, y, parentId)
+        return
+      }
+
+      const inserted = insertTopLevelSection(
+        {
+          section: {
+            ...payload,
+            type: 'section',
+            parentId: null,
+            sectionType: payload.sectionType || 'custom',
+            hidden: payload.hidden === true,
+          },
+        },
+        y,
+      )
+      if (!inserted) addElement(payload, x, y, null)
+    },
+    [addElement, insertTopLevelSection],
+  )
+
+  const handleAddBuilderBlock = useCallback(
+    (blockDefinition, x, y) => {
+      if (!insertTopLevelSection(blockDefinition, y)) {
+        addBlock(blockDefinition, x, y)
+      }
+    },
+    [addBlock, insertTopLevelSection],
   )
 
   const handleUploadUserImage = useCallback(async (file) => {
@@ -859,6 +893,7 @@ const LandingPageEditorPage = () => {
           setLibraryRequestVersion((version) => version + 1)
         }
         enableLibraryHoverPreview
+        onAddElement={handleAddBuilderElement}
         onAddBlock={handleAddBuilderBlock}
         additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
         additionalPanels={{
