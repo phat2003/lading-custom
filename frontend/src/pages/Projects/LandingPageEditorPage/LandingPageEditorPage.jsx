@@ -10,11 +10,17 @@ import {
   mapPageSectionRecordFromApi,
   pageSectionsApi,
 } from '../../../api/pageSections'
-import { sectionsApi } from '../../../api/sections'
+import {
+  mapSectionTemplateFromApi,
+  sectionsApi,
+} from '../../../api/sections'
 import { mapTemplateFromApi } from '../../../api/templates'
 import BuilderWorkspace from '../../../components/builder/BuilderWorkspace'
 import { ListIcon } from '../../../components/icons'
-import { toLibraryVariants } from '../../../components/builder/sectionLibrary'
+import {
+  cloneLibraryBlock,
+  normalizeSectionTemplateLibrary,
+} from '../../../components/builder/sectionLibrary'
 import { useBuilderController } from '../../../components/builder/useBuilderController'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
@@ -35,6 +41,7 @@ import { getSectionAnchorId } from './ctaLinks'
 import {
   getOrderedSectionRoots,
   getSectionDisplayNames,
+  insertSectionGraphAt,
   moveSectionByOffset,
   reorderSectionAt,
 } from './sectionManagement'
@@ -103,6 +110,9 @@ const LandingPageEditorPage = () => {
   const [saveStatus, setSaveStatus] = useState('saved')
   const [library, setLibrary] = useState([])
   const [libraryStatus, setLibraryStatus] = useState('loading')
+  const [libraryError, setLibraryError] = useState('')
+  const [libraryInvalidCount, setLibraryInvalidCount] = useState(0)
+  const [libraryRequestVersion, setLibraryRequestVersion] = useState(0)
   const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
@@ -138,7 +148,12 @@ const LandingPageEditorPage = () => {
     settings: BUILDER_SETTINGS,
     onMutate: markBuilderDirty,
   })
-  const { replaceElements, transformElements } = builder
+  const {
+    addBlock,
+    replaceElements,
+    setSelectedId,
+    transformElements,
+  } = builder
 
   const sectionRoots = useMemo(
     () => getOrderedSectionRoots(builder.viewElements),
@@ -166,6 +181,34 @@ const LandingPageEditorPage = () => {
       )
     },
     [transformElements],
+  )
+
+  const handleAddBuilderBlock = useCallback(
+    (blockDefinition, x, y) => {
+      // Block dựng sẵn giữ interaction shared hiện tại. Section Template API dùng
+      // document-order semantics của User để Canvas/List/persistence luôn đồng bộ.
+      if (!blockDefinition?.section?.sourceSectionTemplateId) {
+        addBlock(blockDefinition, x, y)
+        return
+      }
+
+      const sectionWidth = blockDefinition.section.style?.width || 820
+      const centeredX = Math.max(
+        0,
+        (BUILDER_SETTINGS.desktopWidth - sectionWidth) / 2,
+      )
+      const graph = cloneLibraryBlock(blockDefinition, { x: centeredX, y })
+      const root = graph.find(
+        (element) => element.type === 'section' && !element.parentId,
+      )
+      if (!root) return
+
+      const inserted = transformElements((elements) =>
+        insertSectionGraphAt(elements, graph, y),
+      )
+      if (inserted) setSelectedId(root.id)
+    },
+    [addBlock, setSelectedId, transformElements],
   )
 
   const getUserElementDomId = useCallback(
@@ -200,22 +243,33 @@ const LandingPageEditorPage = () => {
 
   // Section Template Library dùng route user-authenticated, không dùng Admin CRUD.
   useEffect(() => {
-    let cancelled = false
+    const controller = new AbortController()
     setLibraryStatus('loading')
+    setLibraryError('')
     sectionsApi
-      .listAll()
+      .listAll(undefined, { signal: controller.signal })
       .then((response) => {
-        if (cancelled) return
-        setLibrary(toLibraryVariants(response?.data?.data || []))
+        const data = response?.data?.data
+        if (!Array.isArray(data)) throw new Error('Invalid section template response')
+        const normalized = normalizeSectionTemplateLibrary(
+          data.map(mapSectionTemplateFromApi),
+        )
+        if (controller.signal.aborted) return
+        setLibrary(normalized.variants)
+        setLibraryInvalidCount(normalized.invalidCount)
         setLibraryStatus('ready')
       })
-      .catch(() => {
-        if (!cancelled) setLibraryStatus('error')
+      .catch((error) => {
+        if (controller.signal.aborted || error.name === 'CanceledError') return
+        setLibrary([])
+        setLibraryInvalidCount(0)
+        setLibraryError(
+          apiErrorMessage(error, 'Không thể tải Section Template.'),
+        )
+        setLibraryStatus('error')
       })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    return () => controller.abort()
+  }, [libraryRequestVersion])
 
   useEffect(() => {
     if (isProjectsLoading || projectsError || !project) return undefined
@@ -741,12 +795,7 @@ const LandingPageEditorPage = () => {
   }
 
   const editorLandingPage = localLandingPage || currentServerPageState.record
-  const libraryEmptyMessage =
-    libraryStatus === 'loading'
-      ? 'Đang tải thư viện Section...'
-      : libraryStatus === 'error'
-        ? 'Không tải được thư viện Section. Các phần tử dựng sẵn vẫn dùng được.'
-        : 'Chưa có Section Template nào.'
+  const libraryEmptyMessage = 'Chưa có Section Template nào.'
 
   return (
     <div
@@ -781,7 +830,15 @@ const LandingPageEditorPage = () => {
         controller={builder}
         settings={BUILDER_SETTINGS}
         library={library}
+        libraryStatus={libraryStatus}
+        libraryError={libraryError}
+        libraryInvalidCount={libraryInvalidCount}
         libraryEmptyMessage={libraryEmptyMessage}
+        onRetryLibrary={() =>
+          setLibraryRequestVersion((version) => version + 1)
+        }
+        enableLibraryHoverPreview
+        onAddBlock={handleAddBuilderBlock}
         additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
         additionalPanels={{
           sections: (

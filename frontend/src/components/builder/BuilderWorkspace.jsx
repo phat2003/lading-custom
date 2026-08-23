@@ -10,6 +10,12 @@ const BuilderWorkspace = ({
   settings,
   library = [],
   libraryEmptyMessage,
+  libraryStatus,
+  libraryError,
+  libraryInvalidCount,
+  onRetryLibrary,
+  enableLibraryHoverPreview = false,
+  onAddBlock,
   additionalRailItems = [],
   additionalPanels = {},
   propertiesPanelProps = {},
@@ -26,6 +32,11 @@ const BuilderWorkspace = ({
         recent={controller.recent}
         library={library}
         libraryEmptyMessage={libraryEmptyMessage}
+        libraryStatus={libraryStatus}
+        libraryError={libraryError}
+        libraryInvalidCount={libraryInvalidCount}
+        onRetryLibrary={onRetryLibrary}
+        enableLibraryHoverPreview={enableLibraryHoverPreview}
         onUse={controller.useRecent}
       />
     )}
@@ -46,7 +57,7 @@ const BuilderWorkspace = ({
       elements={controller.viewElements}
       selectedId={controller.selectedId}
       onAddElement={controller.addElement}
-      onAddBlock={controller.addBlock}
+      onAddBlock={onAddBlock || controller.addBlock}
       onSelect={controller.setSelectedId}
       onBeginGesture={controller.beginGesture}
       onMove={controller.moveElement}

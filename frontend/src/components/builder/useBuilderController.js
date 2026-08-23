@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { buildMobileLayout, clampBox, viewAll, viewOf, writeLayer } from './deviceLayout'
+import { cloneLibraryBlock } from './sectionLibrary'
 
 const newId = () =>
   globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -163,26 +164,13 @@ export const useBuilderController = ({
 
   const addBlock = useCallback(
     (blockDefinition, x, y) => {
-      const sectionId = newId()
-      const section = {
-        id: sectionId,
-        type: 'section',
-        content: '',
-        x,
-        y,
-        parentId: null,
-        sectionType: blockDefinition.section.sectionType || 'custom',
-        sourceSectionTemplateId: blockDefinition.section.sourceSectionTemplateId || null,
-        style: cloneStyle(blockDefinition.section.style),
-      }
-      const children = blockDefinition.children.map((child) => ({
-        ...child,
-        id: newId(),
-        parentId: sectionId,
-        style: cloneStyle(child.style),
-      }))
-      commit((list) => [...list, section, ...children])
-      setSelectedId(sectionId)
+      const graph = cloneLibraryBlock(blockDefinition, { x, y })
+      const section = graph.find(
+        (element) => element.type === 'section' && !element.parentId,
+      )
+      if (!section) return
+      commit((list) => [...list, ...graph])
+      setSelectedId(section.id)
     },
     [commit],
   )

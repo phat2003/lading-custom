@@ -105,3 +105,21 @@ export const reorderSectionAt = (elements, sectionId, targetId, placement = 'bef
   orderedIds.splice(insertIndex, 0, sectionId)
   return reflowByIds(elements, orderedIds)
 }
+
+// Chèn một graph Section mới theo vị trí thả rồi reflow toàn bộ root Section.
+// Child giữ nguyên tọa độ tương đối; order của Section List/Canvas/serializer cùng dựa trên y.
+export const insertSectionGraphAt = (elements, graph, dropY) => {
+  const newRoot = graph.find(
+    (element) => element.type === 'section' && !element.parentId,
+  )
+  if (!newRoot) return elements
+
+  const roots = getOrderedSectionRoots(elements)
+  const insertIndex = roots.findIndex(
+    (root) => dropY < (root.y || 0) + (root.style?.height || 300) / 2,
+  )
+  const orderedIds = roots.map((root) => root.id)
+  orderedIds.splice(insertIndex < 0 ? orderedIds.length : insertIndex, 0, newRoot.id)
+
+  return reflowByIds([...elements, ...graph], orderedIds)
+}
