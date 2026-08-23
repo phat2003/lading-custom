@@ -30,6 +30,7 @@ import { useProjects } from '../context/ProjectsContext'
 import EditorTopbar from './components/EditorTopbar'
 import CtaLinkControls from './components/CtaLinkControls'
 import CurrentSectionControls from './components/CurrentSectionControls'
+import DesktopPreviewPanel from './components/DesktopPreviewPanel'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
 import SectionListPanel from './components/SectionListPanel'
@@ -113,6 +114,7 @@ const LandingPageEditorPage = () => {
 
   const [notice, setNotice] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [library, setLibrary] = useState([])
   const [libraryStatus, setLibraryStatus] = useState('loading')
   const [libraryError, setLibraryError] = useState('')
@@ -874,90 +876,107 @@ const LandingPageEditorPage = () => {
         onRedo={builder.redo}
         canUndo={builder.canUndo}
         canRedo={builder.canRedo}
-        onPreview={() => setNotice('Preview sẽ được triển khai ở task tiếp theo.')}
+        onPreview={() => setPreviewOpen((open) => !open)}
+        previewOpen={previewOpen}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
 
-      <BuilderWorkspace
-        controller={builder}
-        settings={BUILDER_SETTINGS}
-        library={library}
-        libraryStatus={libraryStatus}
-        libraryError={libraryError}
-        libraryInvalidCount={libraryInvalidCount}
-        libraryEmptyMessage={libraryEmptyMessage}
-        onRetryLibrary={() =>
-          setLibraryRequestVersion((version) => version + 1)
-        }
-        enableLibraryHoverPreview
-        onAddElement={handleAddBuilderElement}
-        onAddBlock={handleAddBuilderBlock}
-        additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
-        additionalPanels={{
-          sections: (
-            <SectionListPanel
-              elements={builder.viewElements}
-              selectedId={builder.selectedId}
-              onSelect={builder.setSelectedId}
-              onReorder={handleReorderSection}
-            />
-          ),
-        }}
-        getElementDomId={getUserElementDomId}
-        propertiesPanelProps={{
-          onUploadImage: handleUploadUserImage,
-          imageUploadAccept: USER_IMAGE_ACCEPT,
-          ...(builder.selected?.type === 'section'
-            ? {
-                title: 'Current Section',
-                showDeleteButton: false,
-                beforeContent: (
-                  <CurrentSectionControls
-                    section={builder.selected}
-                    displayName={sectionDisplayNames.get(builder.selected.id)}
-                    isFirst={selectedSectionIndex === 0}
-                    isLast={selectedSectionIndex === sectionRoots.length - 1}
-                    onUpdate={builder.updateElement}
-                    onMoveUp={() => handleMoveSection(builder.selected.id, -1)}
-                    onMoveDown={() => handleMoveSection(builder.selected.id, 1)}
-                    onDelete={() => builder.deleteElement(builder.selected.id)}
-                  />
-                ),
-              }
-            : builder.selected?.type === 'button'
+      <div className="flex min-h-0 flex-1 flex-col">
+        <BuilderWorkspace
+          controller={builder}
+          settings={BUILDER_SETTINGS}
+          library={library}
+          libraryStatus={libraryStatus}
+          libraryError={libraryError}
+          libraryInvalidCount={libraryInvalidCount}
+          libraryEmptyMessage={libraryEmptyMessage}
+          onRetryLibrary={() =>
+            setLibraryRequestVersion((version) => version + 1)
+          }
+          enableLibraryHoverPreview
+          onAddElement={handleAddBuilderElement}
+          onAddBlock={handleAddBuilderBlock}
+          additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
+          additionalPanels={{
+            sections: (
+              <SectionListPanel
+                elements={builder.viewElements}
+                selectedId={builder.selectedId}
+                onSelect={builder.setSelectedId}
+                onReorder={handleReorderSection}
+              />
+            ),
+          }}
+          getElementDomId={getUserElementDomId}
+          propertiesPanelProps={{
+            onUploadImage: handleUploadUserImage,
+            imageUploadAccept: USER_IMAGE_ACCEPT,
+            ...(builder.selected?.type === 'section'
               ? {
-                  title: 'CTA / Button',
+                  title: 'Current Section',
+                  showDeleteButton: false,
                   beforeContent: (
-                    <CtaLinkControls
-                      button={builder.selected}
-                      sections={sectionRoots}
-                      sectionDisplayNames={sectionDisplayNames}
-                      landingPages={
-                        targetPagesState.projectId === projectId
-                          ? targetPagesState.items
-                          : []
-                      }
-                      landingPagesStatus={
-                        targetPagesState.projectId === projectId
-                          ? targetPagesState.status
-                          : 'loading'
-                      }
-                      landingPagesError={targetPagesState.error}
+                    <CurrentSectionControls
+                      section={builder.selected}
+                      displayName={sectionDisplayNames.get(builder.selected.id)}
+                      isFirst={selectedSectionIndex === 0}
+                      isLast={selectedSectionIndex === sectionRoots.length - 1}
                       onUpdate={builder.updateElement}
-                      onNavigateToSection={handleNavigateToSection}
-                      onNavigateToLandingPage={handleNavigateToLandingPage}
-                      onRetryLandingPages={() =>
-                        setTargetPagesRequestVersion((version) => version + 1)
-                      }
+                      onMoveUp={() => handleMoveSection(builder.selected.id, -1)}
+                      onMoveDown={() => handleMoveSection(builder.selected.id, 1)}
+                      onDelete={() => builder.deleteElement(builder.selected.id)}
                     />
                   ),
                 }
-              : {})
-        }}
-      />
+              : builder.selected?.type === 'button'
+                ? {
+                    title: 'CTA / Button',
+                    beforeContent: (
+                      <CtaLinkControls
+                        button={builder.selected}
+                        sections={sectionRoots}
+                        sectionDisplayNames={sectionDisplayNames}
+                        landingPages={
+                          targetPagesState.projectId === projectId
+                            ? targetPagesState.items
+                            : []
+                        }
+                        landingPagesStatus={
+                          targetPagesState.projectId === projectId
+                            ? targetPagesState.status
+                            : 'loading'
+                        }
+                        landingPagesError={targetPagesState.error}
+                        onUpdate={builder.updateElement}
+                        onNavigateToSection={handleNavigateToSection}
+                        onNavigateToLandingPage={handleNavigateToLandingPage}
+                        onRetryLandingPages={() =>
+                          setTargetPagesRequestVersion((version) => version + 1)
+                        }
+                      />
+                    ),
+                  }
+                : {})
+          }}
+        />
+
+        {previewOpen && (
+          <DesktopPreviewPanel
+            elements={builder.elements}
+            settings={BUILDER_SETTINGS}
+            landingPages={
+              targetPagesState.projectId === projectId
+                ? targetPagesState.items
+                : []
+            }
+            onNavigateToLandingPage={handleNavigateToLandingPage}
+            onClose={() => setPreviewOpen(false)}
+          />
+        )}
+      </div>
 
       <StatusNotice>{notice}</StatusNotice>
       <PublishSuccessModal

@@ -31,6 +31,7 @@ const EditorTopbar = ({
   canUndo,
   canRedo,
   onPreview,
+  previewOpen = false,
   onPublish,
   publishing = false,
   theme,
@@ -117,10 +118,15 @@ const EditorTopbar = ({
         <button
           type="button"
           onClick={onPreview}
-          className="hidden items-center gap-2 rounded-xl border border-[var(--bd-border)] px-3.5 py-2 text-xs text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] xl:flex"
+          aria-pressed={previewOpen}
+          className={`hidden items-center gap-2 rounded-xl border px-3.5 py-2 text-xs transition md:flex ${
+            previewOpen
+              ? 'border-violet-400/60 bg-violet-500/10 text-[var(--bd-accent)]'
+              : 'border-[var(--bd-border)] text-[var(--bd-text)] hover:border-violet-400/50 hover:text-[var(--bd-accent)]'
+          }`}
         >
           <EyeIcon size={15} />
-          Preview
+          {previewOpen ? 'Đóng Preview' : 'Preview'}
         </button>
         <button
           type="button"
