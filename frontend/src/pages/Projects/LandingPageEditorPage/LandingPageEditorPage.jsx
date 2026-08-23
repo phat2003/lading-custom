@@ -15,6 +15,7 @@ import {
   sectionsApi,
 } from '../../../api/sections'
 import { mapTemplateFromApi } from '../../../api/templates'
+import { mapMediaAssetFromApi, mediaApi } from '../../../api/media'
 import BuilderWorkspace from '../../../components/builder/BuilderWorkspace'
 import { ListIcon } from '../../../components/icons'
 import {
@@ -45,6 +46,10 @@ import {
   moveSectionByOffset,
   reorderSectionAt,
 } from './sectionManagement'
+import {
+  getUserImageValidationError,
+  USER_IMAGE_ACCEPT,
+} from './imageUpload'
 
 const PUBLISH_CLICK_GUARD_MS = 750
 const INITIAL_TARGET_PAGES_STATE = {
@@ -210,6 +215,22 @@ const LandingPageEditorPage = () => {
     },
     [addBlock, setSelectedId, transformElements],
   )
+
+  const handleUploadUserImage = useCallback(async (file) => {
+    const validationError = getUserImageValidationError(file)
+    if (validationError) throw new Error(validationError)
+
+    try {
+      const response = await mediaApi.uploadUserImage(file)
+      const asset = mapMediaAssetFromApi(response?.data?.data)
+      if (!asset) throw new Error('Invalid user media response')
+      return asset.fileUrl
+    } catch (error) {
+      throw new Error(
+        apiErrorMessage(error, 'Không thể tải ảnh lên. Vui lòng thử lại.'),
+      )
+    }
+  }, [])
 
   const getUserElementDomId = useCallback(
     (element) =>
@@ -851,8 +872,10 @@ const LandingPageEditorPage = () => {
           ),
         }}
         getElementDomId={getUserElementDomId}
-        propertiesPanelProps={
-          builder.selected?.type === 'section'
+        propertiesPanelProps={{
+          onUploadImage: handleUploadUserImage,
+          imageUploadAccept: USER_IMAGE_ACCEPT,
+          ...(builder.selected?.type === 'section'
             ? {
                 title: 'Current Section',
                 showDeleteButton: false,
@@ -897,8 +920,8 @@ const LandingPageEditorPage = () => {
                     />
                   ),
                 }
-              : undefined
-        }
+              : {})
+        }}
       />
 
       <StatusNotice>{notice}</StatusNotice>

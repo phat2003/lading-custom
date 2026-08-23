@@ -225,9 +225,13 @@ export const useBuilderController = ({
 
   const updateElement = useCallback(
     (id, patch) =>
-      commit((list) =>
-        list.map((element) => (element.id === id ? writeLayer(element, device, patch) : element)),
-      ),
+      commit((list) => {
+        const index = list.findIndex((element) => element.id === id)
+        if (index < 0) return list
+        const next = list.slice()
+        next[index] = writeLayer(list[index], device, patch)
+        return next
+      }),
     [commit, device],
   )
 

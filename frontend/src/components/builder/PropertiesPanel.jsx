@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { fonts } from './palette'
 import { ICON_MAP, ICON_NAMES } from './iconMap'
 import {
@@ -34,6 +35,81 @@ const Group = ({ title, children }) => (
   </section>
 )
 
+const ImageUploadControl = ({
+  targetId,
+  label,
+  accept,
+  onUploadImage,
+  onUploaded,
+}) => {
+  const [status, setStatus] = useState('idle')
+  const [error, setError] = useState('')
+  const uploadingRef = useRef(false)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  const handleChange = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || uploadingRef.current) return
+
+    uploadingRef.current = true
+    setStatus('uploading')
+    setError('')
+    try {
+      const fileUrl = await onUploadImage(file)
+      if (typeof fileUrl !== 'string' || !fileUrl.trim()) {
+        throw new Error('Upload thành công nhưng không nhận được URL ảnh hợp lệ.')
+      }
+      // Luôn cập nhật đúng element bắt đầu upload; nếu element đã bị xóa,
+      // Builder sẽ bỏ qua mutation thay vì áp vào selection hiện tại.
+      onUploaded(fileUrl.trim(), targetId)
+      if (mountedRef.current) setStatus('success')
+    } catch (uploadError) {
+      if (mountedRef.current) {
+        setStatus('error')
+        setError(uploadError?.message || 'Không thể tải ảnh lên. Vui lòng thử lại.')
+      }
+    } finally {
+      uploadingRef.current = false
+    }
+  }
+
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      <input
+        type="file"
+        accept={accept}
+        disabled={status === 'uploading'}
+        onChange={handleChange}
+        className={`${fileCls} disabled:cursor-not-allowed disabled:opacity-50`}
+      />
+      {status === 'uploading' && (
+        <p className="mt-2 text-xs text-[var(--bd-accent)]" role="status">
+          Đang tải ảnh...
+        </p>
+      )}
+      {status === 'success' && (
+        <p className="mt-2 text-xs text-emerald-400" role="status">
+          Ảnh đã được tải lên.
+        </p>
+      )}
+      {status === 'error' && (
+        <p className="mt-2 text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
 const ALIGNS = [
   ['left', AlignLeftIcon],
   ['center', AlignCenterIcon],
@@ -60,6 +136,8 @@ const PropertiesPanel = ({
   element,
   onUpdate,
   onDelete,
+  onUploadImage = null,
+  imageUploadAccept = 'image/*',
   title = 'Thuộc tính',
   beforeContent = null,
   showDeleteButton = true,
@@ -207,10 +285,23 @@ const PropertiesPanel = ({
             )}
 
             {isImage && (
-              <div>
-                <label className={labelCls}>Tải ảnh lên</label>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className={fileCls} />
-              </div>
+              onUploadImage ? (
+                <ImageUploadControl
+                  key={`image-${id}`}
+                  targetId={id}
+                  label="Tải ảnh lên"
+                  accept={imageUploadAccept}
+                  onUploadImage={onUploadImage}
+                  onUploaded={(fileUrl, targetId) =>
+                    onUpdate(targetId, { content: fileUrl })
+                  }
+                />
+              ) : (
+                <div>
+                  <label className={labelCls}>Tải ảnh lên</label>
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className={fileCls} />
+                </div>
+              )
             )}
           </Group>
         )}
@@ -297,7 +388,22 @@ const PropertiesPanel = ({
               <div>
                 <label className={labelCls}>Ảnh nền</label>
                 <input value={style.backgroundImage && !style.backgroundImage.startsWith('data:') ? style.backgroundImage : ''} onChange={(e) => setStyle({ backgroundImage: e.target.value || undefined })} placeholder="URL ảnh" className={inputCls} />
-                <input type="file" accept="image/*" onChange={handleBgUpload} className={`mt-2 ${fileCls}`} />
+                {onUploadImage ? (
+                  <div className="mt-2">
+                    <ImageUploadControl
+                      key={`background-${id}`}
+                      targetId={id}
+                      label="Tải ảnh nền lên"
+                      accept={imageUploadAccept}
+                      onUploadImage={onUploadImage}
+                      onUploaded={(fileUrl, targetId) =>
+                        onUpdate(targetId, { style: { backgroundImage: fileUrl } })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <input type="file" accept="image/*" onChange={handleBgUpload} className={`mt-2 ${fileCls}`} />
+                )}
                 {style.backgroundImage && (
                   <button onClick={() => setStyle({ backgroundImage: undefined })} className="mt-2 text-xs text-red-400 transition-colors hover:text-red-300">
                     Xóa ảnh nền
