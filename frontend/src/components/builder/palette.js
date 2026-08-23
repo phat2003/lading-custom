@@ -264,4 +264,3 @@ export const paletteBlocks = {
 }
 
 export const fonts = ['Inter', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Roboto']
-

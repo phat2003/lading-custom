@@ -47,4 +47,3 @@ const EditableText = ({ element, onCommit }) => {
 }
 
 export default EditableText
-

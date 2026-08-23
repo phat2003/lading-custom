@@ -62,4 +62,3 @@ export const ICON_MAP = {
 }
 
 export const ICON_NAMES = Object.keys(ICON_MAP)
-

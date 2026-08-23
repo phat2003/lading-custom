@@ -98,4 +98,3 @@ const BlockThumb = ({ label }) => (
 )
 
 export default BlockThumb
-

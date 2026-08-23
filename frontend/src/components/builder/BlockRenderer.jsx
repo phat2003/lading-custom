@@ -270,4 +270,3 @@ const BlockRenderer = ({ element }) => {
 }
 
 export default BlockRenderer
-

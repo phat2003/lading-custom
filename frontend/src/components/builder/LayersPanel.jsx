@@ -148,4 +148,3 @@ const LayersPanel = ({ elements, selectedId, onSelect, onToggleHidden, onDelete,
 }
 
 export default LayersPanel
-

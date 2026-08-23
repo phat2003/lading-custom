@@ -280,4 +280,3 @@ export const pageSectionSignature = (section) =>
     content: section?.content || {},
     isVisible: section?.isVisible !== false,
   })
-

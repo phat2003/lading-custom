@@ -71,4 +71,3 @@ export const clampBox = ({ x, y, width, height }, bounds) => {
     y: Math.min(Math.max(0, y), maxY),
   }
 }
-

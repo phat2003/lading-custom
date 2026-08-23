@@ -108,4 +108,3 @@ export const contentHeight = (elements = []) => {
   const bottom = Math.max(...roots.map((el) => (el.y || 0) + (el.style?.height || 0)))
   return Math.max(900, Math.ceil(bottom) + 200)
 }
-
