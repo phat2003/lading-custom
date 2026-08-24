@@ -43,6 +43,22 @@ export const mapPublishResultFromApi = (result) => {
   }
 }
 
+export const mapStaticPreviewResultFromApi = (result) => {
+  if (typeof result?.html !== 'string') return null
+
+  const html = result.html.trim()
+  if (
+    !html ||
+    !/<(?:!doctype\s+html|html|head|body|main|section|div)(?:\s|>)/i.test(
+      html,
+    )
+  ) {
+    return null
+  }
+
+  return { html }
+}
+
 export const resolveLandingPagePublicUrl = (landingPage) => {
   if (landingPage?.status !== 'published') return null
 
@@ -74,6 +90,8 @@ export const landingPagesApi = {
   createFromTemplate: (payload) => api.post('/pages/from-template', payload),
   saveAsTemplate: (payload, config) =>
     api.post('/pages/save-as-template', payload, config),
+  generateStaticPreview: (id, config) =>
+    api.post(`/landing-pages/${id}/generate-static`, undefined, config),
   publish: (id, config) =>
     api.post(`/landing-pages/${id}/publish`, undefined, config),
   update: (id, payload) => api.put(`/pages/${id}`, payload),

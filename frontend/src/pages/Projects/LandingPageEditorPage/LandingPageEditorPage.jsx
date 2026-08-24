@@ -4,6 +4,7 @@ import {
   landingPagesApi,
   mapLandingPageFromApi,
   mapPublishResultFromApi,
+  mapStaticPreviewResultFromApi,
   resolveLandingPagePublicUrl,
 } from '../../../api/landingPages'
 import {
@@ -34,6 +35,7 @@ import DesktopPreviewPanel from './components/DesktopPreviewPanel'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
 import SectionListPanel from './components/SectionListPanel'
+import StaticPreviewDialog from './components/StaticPreviewDialog'
 import {
   builderElementsToPageSections,
   pageSectionSignature,
@@ -57,6 +59,12 @@ const INITIAL_TARGET_PAGES_STATE = {
   projectId: null,
   status: 'idle',
   items: [],
+  error: '',
+}
+const INITIAL_STATIC_PREVIEW_STATE = {
+  open: false,
+  status: 'idle',
+  html: '',
   error: '',
 }
 const BUILDER_SETTINGS = {
@@ -124,6 +132,9 @@ const LandingPageEditorPage = () => {
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishResult, setPublishResult] = useState(null)
+  const [staticPreviewState, setStaticPreviewState] = useState(
+    INITIAL_STATIC_PREVIEW_STATE,
+  )
   const [saveAsTemplateError, setSaveAsTemplateError] = useState('')
   const [serverPageState, setServerPageState] = useState({
     landingPageId: null,
@@ -142,8 +153,13 @@ const LandingPageEditorPage = () => {
   const saveRequestInFlightRef = useRef(false)
   const templateRequestInFlightRef = useRef(false)
   const publishRequestInFlightRef = useRef(false)
+  const staticPreviewRequestInFlightRef = useRef(false)
+  const staticPreviewOpenRef = useRef(false)
   const lastPublishAttemptAtRef = useRef(0)
   const saveAsTemplateAbortRef = useRef(null)
+  const isStaticPreviewBusy =
+    staticPreviewState.status === 'saving' ||
+    staticPreviewState.status === 'generating'
 
   const markBuilderDirty = useCallback(() => {
     setSaveStatus(localLandingPage ? 'saving' : 'dirty')
@@ -635,6 +651,7 @@ const LandingPageEditorPage = () => {
     if (
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
+      staticPreviewRequestInFlightRef.current ||
       publishRequestInFlightRef.current
     ) {
       return
@@ -654,7 +671,8 @@ const LandingPageEditorPage = () => {
       if (
         localLandingPage ||
         templateRequestInFlightRef.current ||
-        saveRequestInFlightRef.current
+        saveRequestInFlightRef.current ||
+        staticPreviewRequestInFlightRef.current
       ) {
         return
       }
@@ -712,6 +730,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       publishRequestInFlightRef.current ||
+      staticPreviewRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       now - lastPublishAttemptAtRef.current < PUBLISH_CLICK_GUARD_MS
@@ -754,6 +773,85 @@ const LandingPageEditorPage = () => {
     saveServerSections,
     saveStatus,
   ])
+
+  const handleStaticPreview = useCallback(async () => {
+    if (
+      localLandingPage ||
+      staticPreviewRequestInFlightRef.current ||
+      saveRequestInFlightRef.current ||
+      templateRequestInFlightRef.current ||
+      publishRequestInFlightRef.current
+    ) {
+      return
+    }
+
+    staticPreviewRequestInFlightRef.current = true
+    staticPreviewOpenRef.current = true
+    setPreviewOpen(false)
+    setStaticPreviewState({
+      open: true,
+      status: saveStatus === 'saved' ? 'generating' : 'saving',
+      html: '',
+      error: '',
+    })
+
+    try {
+      if (saveStatus !== 'saved') {
+        const saved = await saveServerSections()
+        if (!saved) {
+          setStaticPreviewState({
+            open: staticPreviewOpenRef.current,
+            status: 'error',
+            html: '',
+            error:
+              'Không thể lưu Landing Page trước khi tạo bản xem trước tĩnh. Vui lòng xử lý lỗi lưu rồi thử lại.',
+          })
+          return
+        }
+      }
+
+      setStaticPreviewState({
+        open: staticPreviewOpenRef.current,
+        status: 'generating',
+        html: '',
+        error: '',
+      })
+      const response = await landingPagesApi.generateStaticPreview(
+        landingPageId,
+      )
+      const result = mapStaticPreviewResultFromApi(response?.data?.data)
+      if (!result) throw new Error('Invalid static preview response')
+
+      setStaticPreviewState({
+        open: staticPreviewOpenRef.current,
+        status: 'success',
+        html: result.html,
+        error: '',
+      })
+    } catch (error) {
+      setStaticPreviewState({
+        open: staticPreviewOpenRef.current,
+        status: 'error',
+        html: '',
+        error: apiErrorMessage(
+          error,
+          'Không thể tạo bản xem trước tĩnh. Vui lòng thử lại.',
+        ),
+      })
+    } finally {
+      staticPreviewRequestInFlightRef.current = false
+    }
+  }, [
+    landingPageId,
+    localLandingPage,
+    saveServerSections,
+    saveStatus,
+  ])
+
+  const closeStaticPreview = useCallback(() => {
+    staticPreviewOpenRef.current = false
+    setStaticPreviewState((state) => ({ ...state, open: false }))
+  }, [])
 
   if (isProjectsLoading) return <EditorLoadingState>Đang tải Project...</EditorLoadingState>
 
@@ -878,6 +976,8 @@ const LandingPageEditorPage = () => {
         canRedo={builder.canRedo}
         onPreview={() => setPreviewOpen((open) => !open)}
         previewOpen={previewOpen}
+        onStaticPreview={localLandingPage ? null : handleStaticPreview}
+        staticPreviewing={isStaticPreviewBusy}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
         theme={theme}
@@ -977,6 +1077,15 @@ const LandingPageEditorPage = () => {
           />
         )}
       </div>
+
+      <StaticPreviewDialog
+        open={staticPreviewState.open}
+        status={staticPreviewState.status}
+        html={staticPreviewState.html}
+        error={staticPreviewState.error}
+        onClose={closeStaticPreview}
+        onRetry={handleStaticPreview}
+      />
 
       <StatusNotice>{notice}</StatusNotice>
       <PublishSuccessModal
