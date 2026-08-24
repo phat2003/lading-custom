@@ -391,10 +391,12 @@ FROM app_user WHERE email = 'admin@lpbuilder.com';
 -- Section rong 960px cho khop "K/thuoc Desktop" mac dinh o Thiet lap trang.
 -- UUID co dinh de nap lai khong sinh ban trung.
 -- ---------------------------------------------------------------------
-INSERT INTO template (template_id, name, type, owner_id, template_source, category, status, tier) VALUES
-  ('11111111-1111-4111-8111-111111111111', 'SaaS Landing Pro', 'system', NULL, 'created_by_admin', 'SaaS',    'published', 'premium'),
-  ('22222222-2222-4222-8222-222222222222', 'Agency Showcase',  'system', NULL, 'created_by_admin', 'Agency',  'published', 'free'),
-  ('33333333-3333-4333-8333-333333333333', 'Startup Launch',   'system', NULL, 'created_by_admin', 'Startup', 'draft',     'free');
+-- thumbnail_url tro toi file SVG trong frontend/public/templates/ (co commit vao git),
+-- KHONG dung backend/uploads/ vi thu muc do bi .gitignore -> may khac se hong anh.
+INSERT INTO template (template_id, name, type, owner_id, template_source, category, status, tier, thumbnail_url) VALUES
+  ('11111111-1111-4111-8111-111111111111', 'SaaS Landing Pro', 'system', NULL, 'created_by_admin', 'SaaS',    'published', 'premium', '/templates/saas-landing-pro.svg'),
+  ('22222222-2222-4222-8222-222222222222', 'Agency Showcase',  'system', NULL, 'created_by_admin', 'Agency',  'published', 'free',    '/templates/agency-showcase.svg'),
+  ('33333333-3333-4333-8333-333333333333', 'Startup Launch',   'system', NULL, 'created_by_admin', 'Startup', 'draft',     'free',    '/templates/startup-launch.svg');
 
 INSERT INTO template_section (template_id, section_type, order_index, section_content) VALUES
   ('11111111-1111-4111-8111-111111111111', 'hero', 0, '{"elements":[{"id":"t1s0","type":"section","content":"","x":0,"y":0,"parentId":null,"sectionType":"hero","style":{"width":960,"height":380,"bgColor":"#f8fafc","borderRadius":0,"columns":1}},{"id":"t1s0a","type":"heading","content":"Giải pháp SaaS cho doanh nghiệp hiện đại","x":180,"y":90,"parentId":"t1s0","style":{"width":600,"fontSize":40,"fontFamily":"Inter","fontWeight":800,"color":"#0f172a","textAlign":"center"}},{"id":"t1s0b","type":"paragraph","content":"Tăng trưởng nhanh hơn với nền tảng quản lý toàn diện, dễ dùng và tiết kiệm chi phí.","x":210,"y":180,"parentId":"t1s0","style":{"width":540,"fontSize":16,"fontFamily":"Inter","color":"#475569","textAlign":"center"}},{"id":"t1s0c","type":"button","content":"Dùng thử miễn phí","x":400,"y":250,"parentId":"t1s0","style":{"width":160,"height":46,"fontSize":15,"fontFamily":"Inter","fontWeight":600,"color":"#ffffff","bgColor":"#2563eb","borderRadius":8}}]}'::jsonb),

@@ -12,7 +12,7 @@ import { sectionsApi } from '../../../api/sections'
 import { templatesApi } from '../../../api/templates'
 import { toLibraryVariants } from './sectionLibrary'
 import { useTheme } from '../../../context/ThemeContext'
-import { elementsToSections, sectionsToElements } from './templateContent'
+import { elementsToSections, sectionsToElements, contentHeight } from './templateContent'
 import { PREVIEW_KEY } from './PreviewPage'
 import PageSettingsPanel from './components/PageSettingsPanel'
 import PageSettingsModal from './components/PageSettingsModal'
@@ -59,6 +59,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [library, setLibrary] = useState([]) // section mẫu admin đã lưu, lấy từ API
   // Thiết lập toàn trang (font, khổ trang, SEO, mã chèn thêm...).
   const [settings, setSettings] = useState(() => loadPageSettings(id))
+  // Chiều dài trang — tính theo nội dung khi nạp template/section đã lưu,
+  // để mở ra là thấy đủ, không phải bấm "Tăng chiều dài trang".
+  const [pageHeight, setPageHeight] = useState(900)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDialog, setSettingsDialog] = useState(null) // tab đang mở trong hộp thoại
 
@@ -82,7 +85,13 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const changeDevice = (next) => {
     if (next === 'mobile' && elements.some((el) => !el.mobile)) {
       const k = (settings.mobileWidth || 420) / (settings.desktopWidth || 896)
-      setElements((list) => buildMobileLayout(list, k))
+      setElements((list) => {
+        const built = buildMobileLayout(list, k)
+        setPageHeight(contentHeight(viewAll(built, 'mobile')))
+        return built
+      })
+    } else {
+      setPageHeight(contentHeight(viewAll(elements, next)))
     }
     setDevice(next)
   }
@@ -90,7 +99,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   // Khuôn giới hạn của 1 phần tử: top-level theo khổ trang,
   // phần tử con theo lòng Section cha.
   const boundsFor = (el) => {
-    if (!el.parentId) return { width: pageWidth, height: Infinity }
+    // Phần tử ngoài cùng bị chặn theo đúng khổ trang (cả chiều dọc),
+    // vì trang đã bật overflow-hidden nên kéo ra ngoài là bị cắt mất.
+    if (!el.parentId) return { width: pageWidth, height: pageHeight }
     const parent = elements.find((p) => p.id === el.parentId)
     const pv = parent ? viewOf(parent, device) : null
     return { width: pv?.style?.width || pageWidth, height: pv?.style?.height || Infinity }
@@ -125,7 +136,10 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         const t = res.data.data
         setTemplateMeta({ id: t.template_id, name: t.name, category: t.category, tier: t.tier })
         const loaded = sectionsToElements(t.sections || [])
-        if (loaded.length) setElements(loaded)
+        if (loaded.length) {
+          setElements(loaded)
+          setPageHeight(contentHeight(loaded))
+        }
       })
       .catch(() => {
         if (!cancelled) setSaveError('Không tải được template này.')
@@ -231,7 +245,10 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         })
         // default_content lưu dạng { elements: [...] } do chính builder sinh ra.
         const saved = s.default_content?.elements
-        if (Array.isArray(saved) && saved.length) setElements(saved)
+        if (Array.isArray(saved) && saved.length) {
+          setElements(saved)
+          setPageHeight(contentHeight(saved))
+        }
       })
       .catch(() => {
         if (!cancelled) setSaveError('Không tải được section này.')
@@ -514,6 +531,8 @@ const TemplateBuilder = ({ mode = 'template' }) => {
           onDuplicate={duplicateElement}
           onDelete={deleteElement}
           onFitContent={fitContentToWidth}
+          pageHeight={pageHeight}
+          onPageHeightChange={setPageHeight}
         />
         {/* Cột thuộc tính cố định: luôn hiển thị để bố cục không bị nhảy khi chọn/bỏ chọn */}
         <PropertiesPanel element={selected} onUpdate={updateElement} onDelete={deleteElement} />
