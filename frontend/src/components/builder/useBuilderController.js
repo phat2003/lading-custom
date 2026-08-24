@@ -14,6 +14,7 @@ export const useBuilderController = ({
   initialPanel = 'add',
   settings,
   onMutate,
+  pageHeight,
 }) => {
   const [device, setDevice] = useState('desktop')
   const [elements, setElements] = useState(initialElements)
@@ -128,7 +129,12 @@ export const useBuilderController = ({
 
   const boundsFor = useCallback(
     (element, list = elementsRef.current) => {
-      if (!element.parentId) return { width: pageWidth, height: Infinity }
+      if (!element.parentId) {
+        return {
+          width: pageWidth,
+          height: Number.isFinite(pageHeight) ? pageHeight : Infinity,
+        }
+      }
       const parent = list.find((candidate) => candidate.id === element.parentId)
       const parentView = parent ? viewOf(parent, device) : null
       return {
@@ -136,7 +142,7 @@ export const useBuilderController = ({
         height: parentView?.style?.height || Infinity,
       }
     },
-    [device, pageWidth],
+    [device, pageHeight, pageWidth],
   )
 
   const useRecent = useCallback(

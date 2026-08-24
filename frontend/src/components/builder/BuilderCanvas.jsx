@@ -25,22 +25,31 @@ const BuilderCanvas = ({
   onDelete,
   onFitContent,
   getElementDomId,
+  pageHeight: controlledPageHeight,
+  onPageHeightChange,
 }) => {
   const viewportRef = useRef(null)
   const canvasRef = useRef(null)
-  const [pageHeight, setPageHeight] = useState(900)
+  const [internalPageHeight, setInternalPageHeight] = useState(900)
   const [isOver, setIsOver] = useState(false) // đang rê phần tử qua canvas
   const [viewportW, setViewportW] = useState(0)
+  const pageHeight = controlledPageHeight ?? internalPageHeight
+
+  const changePageHeight = (nextHeight) => {
+    if (onPageHeightChange) onPageHeightChange(nextHeight)
+    else setInternalPageHeight(nextHeight)
+  }
 
   // Hydrate trang dài từ server phải mở ra đủ chiều cao, không bị cắt ở mốc 900px mặc định.
   useEffect(() => {
+    if (controlledPageHeight != null) return
     const roots = elements.filter((element) => !element.parentId)
     if (!roots.length) return
     const bottom = Math.max(
       ...roots.map((element) => (element.y || 0) + (element.style?.height || 0)),
     )
-    setPageHeight((height) => Math.max(height, Math.ceil(bottom) + 160))
-  }, [elements])
+    setInternalPageHeight((height) => Math.max(height, Math.ceil(bottom) + 160))
+  }, [controlledPageHeight, elements])
 
   // Theo dõi bề rộng vùng canvas để tự tính tỉ lệ thu nhỏ.
   useEffect(() => {
@@ -222,14 +231,17 @@ const BuilderCanvas = ({
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-          <button onClick={() => setPageHeight((h) => Math.max(400, h - 400))} className={lengthBtn}>
+          <button
+            onClick={() => changePageHeight(Math.max(400, pageHeight - 400))}
+            className={lengthBtn}
+          >
             <MinusIcon size={16} /> Thu ngắn trang
           </button>
           <span className="rounded-lg bg-[var(--bd-fill)] px-2.5 py-1 text-xs tabular-nums text-[var(--bd-muted)]">
             {pageWidth} × {pageHeight}px
             {zoomPct < 100 && <span className="ml-1.5 text-[var(--bd-accent)]">· {zoomPct}%</span>}
           </span>
-          <button onClick={() => setPageHeight((h) => h + 400)} className={lengthBtn}>
+          <button onClick={() => changePageHeight(pageHeight + 400)} className={lengthBtn}>
             <PlusIcon size={16} /> Tăng chiều dài trang
           </button>
         </div>
