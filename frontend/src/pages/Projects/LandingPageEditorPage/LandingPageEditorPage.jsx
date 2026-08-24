@@ -4,6 +4,7 @@ import {
   landingPagesApi,
   mapLandingPageFromApi,
   mapPublishResultFromApi,
+  mapStaticPreviewResultFromApi,
   resolveLandingPagePublicUrl,
 } from '../../../api/landingPages'
 import {
@@ -30,9 +31,11 @@ import { useProjects } from '../context/ProjectsContext'
 import EditorTopbar from './components/EditorTopbar'
 import CtaLinkControls from './components/CtaLinkControls'
 import CurrentSectionControls from './components/CurrentSectionControls'
+import DesktopPreviewPanel from './components/DesktopPreviewPanel'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
 import SectionListPanel from './components/SectionListPanel'
+import StaticPreviewDialog from './components/StaticPreviewDialog'
 import {
   builderElementsToPageSections,
   pageSectionSignature,
@@ -56,6 +59,12 @@ const INITIAL_TARGET_PAGES_STATE = {
   projectId: null,
   status: 'idle',
   items: [],
+  error: '',
+}
+const INITIAL_STATIC_PREVIEW_STATE = {
+  open: false,
+  status: 'idle',
+  html: '',
   error: '',
 }
 const BUILDER_SETTINGS = {
@@ -113,6 +122,7 @@ const LandingPageEditorPage = () => {
 
   const [notice, setNotice] = useState('')
   const [saveStatus, setSaveStatus] = useState('saved')
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [library, setLibrary] = useState([])
   const [libraryStatus, setLibraryStatus] = useState('loading')
   const [libraryError, setLibraryError] = useState('')
@@ -122,6 +132,9 @@ const LandingPageEditorPage = () => {
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishResult, setPublishResult] = useState(null)
+  const [staticPreviewState, setStaticPreviewState] = useState(
+    INITIAL_STATIC_PREVIEW_STATE,
+  )
   const [saveAsTemplateError, setSaveAsTemplateError] = useState('')
   const [serverPageState, setServerPageState] = useState({
     landingPageId: null,
@@ -140,8 +153,13 @@ const LandingPageEditorPage = () => {
   const saveRequestInFlightRef = useRef(false)
   const templateRequestInFlightRef = useRef(false)
   const publishRequestInFlightRef = useRef(false)
+  const staticPreviewRequestInFlightRef = useRef(false)
+  const staticPreviewOpenRef = useRef(false)
   const lastPublishAttemptAtRef = useRef(0)
   const saveAsTemplateAbortRef = useRef(null)
+  const isStaticPreviewBusy =
+    staticPreviewState.status === 'saving' ||
+    staticPreviewState.status === 'generating'
 
   const markBuilderDirty = useCallback(() => {
     setSaveStatus(localLandingPage ? 'saving' : 'dirty')
@@ -633,6 +651,7 @@ const LandingPageEditorPage = () => {
     if (
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
+      staticPreviewRequestInFlightRef.current ||
       publishRequestInFlightRef.current
     ) {
       return
@@ -652,7 +671,8 @@ const LandingPageEditorPage = () => {
       if (
         localLandingPage ||
         templateRequestInFlightRef.current ||
-        saveRequestInFlightRef.current
+        saveRequestInFlightRef.current ||
+        staticPreviewRequestInFlightRef.current
       ) {
         return
       }
@@ -710,6 +730,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       publishRequestInFlightRef.current ||
+      staticPreviewRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       now - lastPublishAttemptAtRef.current < PUBLISH_CLICK_GUARD_MS
@@ -752,6 +773,85 @@ const LandingPageEditorPage = () => {
     saveServerSections,
     saveStatus,
   ])
+
+  const handleStaticPreview = useCallback(async () => {
+    if (
+      localLandingPage ||
+      staticPreviewRequestInFlightRef.current ||
+      saveRequestInFlightRef.current ||
+      templateRequestInFlightRef.current ||
+      publishRequestInFlightRef.current
+    ) {
+      return
+    }
+
+    staticPreviewRequestInFlightRef.current = true
+    staticPreviewOpenRef.current = true
+    setPreviewOpen(false)
+    setStaticPreviewState({
+      open: true,
+      status: saveStatus === 'saved' ? 'generating' : 'saving',
+      html: '',
+      error: '',
+    })
+
+    try {
+      if (saveStatus !== 'saved') {
+        const saved = await saveServerSections()
+        if (!saved) {
+          setStaticPreviewState({
+            open: staticPreviewOpenRef.current,
+            status: 'error',
+            html: '',
+            error:
+              'Không thể lưu Landing Page trước khi tạo bản xem trước tĩnh. Vui lòng xử lý lỗi lưu rồi thử lại.',
+          })
+          return
+        }
+      }
+
+      setStaticPreviewState({
+        open: staticPreviewOpenRef.current,
+        status: 'generating',
+        html: '',
+        error: '',
+      })
+      const response = await landingPagesApi.generateStaticPreview(
+        landingPageId,
+      )
+      const result = mapStaticPreviewResultFromApi(response?.data?.data)
+      if (!result) throw new Error('Invalid static preview response')
+
+      setStaticPreviewState({
+        open: staticPreviewOpenRef.current,
+        status: 'success',
+        html: result.html,
+        error: '',
+      })
+    } catch (error) {
+      setStaticPreviewState({
+        open: staticPreviewOpenRef.current,
+        status: 'error',
+        html: '',
+        error: apiErrorMessage(
+          error,
+          'Không thể tạo bản xem trước tĩnh. Vui lòng thử lại.',
+        ),
+      })
+    } finally {
+      staticPreviewRequestInFlightRef.current = false
+    }
+  }, [
+    landingPageId,
+    localLandingPage,
+    saveServerSections,
+    saveStatus,
+  ])
+
+  const closeStaticPreview = useCallback(() => {
+    staticPreviewOpenRef.current = false
+    setStaticPreviewState((state) => ({ ...state, open: false }))
+  }, [])
 
   if (isProjectsLoading) return <EditorLoadingState>Đang tải Project...</EditorLoadingState>
 
@@ -874,89 +974,117 @@ const LandingPageEditorPage = () => {
         onRedo={builder.redo}
         canUndo={builder.canUndo}
         canRedo={builder.canRedo}
-        onPreview={() => setNotice('Preview sẽ được triển khai ở task tiếp theo.')}
+        onPreview={() => setPreviewOpen((open) => !open)}
+        previewOpen={previewOpen}
+        onStaticPreview={localLandingPage ? null : handleStaticPreview}
+        staticPreviewing={isStaticPreviewBusy}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
 
-      <BuilderWorkspace
-        controller={builder}
-        settings={BUILDER_SETTINGS}
-        library={library}
-        libraryStatus={libraryStatus}
-        libraryError={libraryError}
-        libraryInvalidCount={libraryInvalidCount}
-        libraryEmptyMessage={libraryEmptyMessage}
-        onRetryLibrary={() =>
-          setLibraryRequestVersion((version) => version + 1)
-        }
-        enableLibraryHoverPreview
-        onAddElement={handleAddBuilderElement}
-        onAddBlock={handleAddBuilderBlock}
-        additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
-        additionalPanels={{
-          sections: (
-            <SectionListPanel
-              elements={builder.viewElements}
-              selectedId={builder.selectedId}
-              onSelect={builder.setSelectedId}
-              onReorder={handleReorderSection}
-            />
-          ),
-        }}
-        getElementDomId={getUserElementDomId}
-        propertiesPanelProps={{
-          onUploadImage: handleUploadUserImage,
-          imageUploadAccept: USER_IMAGE_ACCEPT,
-          ...(builder.selected?.type === 'section'
-            ? {
-                title: 'Current Section',
-                showDeleteButton: false,
-                beforeContent: (
-                  <CurrentSectionControls
-                    section={builder.selected}
-                    displayName={sectionDisplayNames.get(builder.selected.id)}
-                    isFirst={selectedSectionIndex === 0}
-                    isLast={selectedSectionIndex === sectionRoots.length - 1}
-                    onUpdate={builder.updateElement}
-                    onMoveUp={() => handleMoveSection(builder.selected.id, -1)}
-                    onMoveDown={() => handleMoveSection(builder.selected.id, 1)}
-                    onDelete={() => builder.deleteElement(builder.selected.id)}
-                  />
-                ),
-              }
-            : builder.selected?.type === 'button'
+      <div className="flex min-h-0 flex-1 flex-col">
+        <BuilderWorkspace
+          controller={builder}
+          settings={BUILDER_SETTINGS}
+          library={library}
+          libraryStatus={libraryStatus}
+          libraryError={libraryError}
+          libraryInvalidCount={libraryInvalidCount}
+          libraryEmptyMessage={libraryEmptyMessage}
+          onRetryLibrary={() =>
+            setLibraryRequestVersion((version) => version + 1)
+          }
+          enableLibraryHoverPreview
+          onAddElement={handleAddBuilderElement}
+          onAddBlock={handleAddBuilderBlock}
+          additionalRailItems={[{ key: 'sections', icon: ListIcon, label: 'Sections' }]}
+          additionalPanels={{
+            sections: (
+              <SectionListPanel
+                elements={builder.viewElements}
+                selectedId={builder.selectedId}
+                onSelect={builder.setSelectedId}
+                onReorder={handleReorderSection}
+              />
+            ),
+          }}
+          getElementDomId={getUserElementDomId}
+          propertiesPanelProps={{
+            onUploadImage: handleUploadUserImage,
+            imageUploadAccept: USER_IMAGE_ACCEPT,
+            ...(builder.selected?.type === 'section'
               ? {
-                  title: 'CTA / Button',
+                  title: 'Current Section',
+                  showDeleteButton: false,
                   beforeContent: (
-                    <CtaLinkControls
-                      button={builder.selected}
-                      sections={sectionRoots}
-                      sectionDisplayNames={sectionDisplayNames}
-                      landingPages={
-                        targetPagesState.projectId === projectId
-                          ? targetPagesState.items
-                          : []
-                      }
-                      landingPagesStatus={
-                        targetPagesState.projectId === projectId
-                          ? targetPagesState.status
-                          : 'loading'
-                      }
-                      landingPagesError={targetPagesState.error}
+                    <CurrentSectionControls
+                      section={builder.selected}
+                      displayName={sectionDisplayNames.get(builder.selected.id)}
+                      isFirst={selectedSectionIndex === 0}
+                      isLast={selectedSectionIndex === sectionRoots.length - 1}
                       onUpdate={builder.updateElement}
-                      onNavigateToSection={handleNavigateToSection}
-                      onNavigateToLandingPage={handleNavigateToLandingPage}
-                      onRetryLandingPages={() =>
-                        setTargetPagesRequestVersion((version) => version + 1)
-                      }
+                      onMoveUp={() => handleMoveSection(builder.selected.id, -1)}
+                      onMoveDown={() => handleMoveSection(builder.selected.id, 1)}
+                      onDelete={() => builder.deleteElement(builder.selected.id)}
                     />
                   ),
                 }
-              : {})
-        }}
+              : builder.selected?.type === 'button'
+                ? {
+                    title: 'CTA / Button',
+                    beforeContent: (
+                      <CtaLinkControls
+                        button={builder.selected}
+                        sections={sectionRoots}
+                        sectionDisplayNames={sectionDisplayNames}
+                        landingPages={
+                          targetPagesState.projectId === projectId
+                            ? targetPagesState.items
+                            : []
+                        }
+                        landingPagesStatus={
+                          targetPagesState.projectId === projectId
+                            ? targetPagesState.status
+                            : 'loading'
+                        }
+                        landingPagesError={targetPagesState.error}
+                        onUpdate={builder.updateElement}
+                        onNavigateToSection={handleNavigateToSection}
+                        onNavigateToLandingPage={handleNavigateToLandingPage}
+                        onRetryLandingPages={() =>
+                          setTargetPagesRequestVersion((version) => version + 1)
+                        }
+                      />
+                    ),
+                  }
+                : {})
+          }}
+        />
+
+        {previewOpen && (
+          <DesktopPreviewPanel
+            elements={builder.elements}
+            settings={BUILDER_SETTINGS}
+            landingPages={
+              targetPagesState.projectId === projectId
+                ? targetPagesState.items
+                : []
+            }
+            onNavigateToLandingPage={handleNavigateToLandingPage}
+            onClose={() => setPreviewOpen(false)}
+          />
+        )}
+      </div>
+
+      <StaticPreviewDialog
+        open={staticPreviewState.open}
+        status={staticPreviewState.status}
+        html={staticPreviewState.html}
+        error={staticPreviewState.error}
+        onClose={closeStaticPreview}
+        onRetry={handleStaticPreview}
       />
 
       <StatusNotice>{notice}</StatusNotice>
