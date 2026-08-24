@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1283" width="960" height="1283" font-family="Inter, Arial, sans-serif">
+  <!-- Hero -->
+  <rect width="960" height="380" fill="#f8fafc"/>
+  <rect x="230" y="110" width="500" height="26" rx="4" fill="#0f172a"/>
+  <rect x="300" y="150" width="360" height="26" rx="4" fill="#0f172a"/>
+  <rect x="270" y="205" width="420" height="10" rx="5" fill="#94a3b8"/>
+  <rect x="330" y="228" width="300" height="10" rx="5" fill="#94a3b8"/>
+  <rect x="400" y="270" width="160" height="46" rx="8" fill="#2563eb"/>
+  <rect x="440" y="288" width="80" height="9" rx="4" fill="#ffffff" opacity=".9"/>
+
+  <!-- Tính năng -->
+  <rect y="381" width="960" height="320" fill="#ffffff"/>
+  <rect x="390" y="415" width="180" height="18" rx="4" fill="#0f172a"/>
+  <g fill="#2563eb">
+    <circle cx="180" cy="510" r="20"/><circle cx="480" cy="510" r="20"/><circle cx="780" cy="510" r="20"/>
+  </g>
+  <g fill="#111827">
+    <rect x="130" y="552" width="100" height="12" rx="4"/><rect x="430" y="552" width="100" height="12" rx="4"/><rect x="730" y="552" width="100" height="12" rx="4"/>
+  </g>
+  <g fill="#94a3b8">
+    <rect x="110" y="580" width="140" height="9" rx="4"/><rect x="410" y="580" width="140" height="9" rx="4"/><rect x="710" y="580" width="140" height="9" rx="4"/>
+  </g>
+
+  <!-- Bảng giá -->
+  <rect y="702" width="960" height="380" fill="#f8fafc"/>
+  <rect x="430" y="730" width="100" height="20" rx="4" fill="#0f172a"/>
+  <rect x="90" y="802" width="220" height="230" rx="12" fill="#ffffff"/>
+  <rect x="370" y="792" width="220" height="250" rx="12" fill="#2563eb"/>
+  <rect x="650" y="802" width="220" height="230" rx="12" fill="#ffffff"/>
+  <g fill="#cbd5e1">
+    <rect x="140" y="860" width="120" height="12" rx="4"/><rect x="700" y="860" width="120" height="12" rx="4"/>
+  </g>
+  <rect x="420" y="850" width="120" height="12" rx="4" fill="#ffffff" opacity=".85"/>
+
+  <!-- CTA -->
+  <rect y="1083" width="960" height="200" fill="#2563eb"/>
+  <rect x="360" y="1138" width="240" height="20" rx="4" fill="#ffffff" opacity=".9"/>
+  <rect x="390" y="1198" width="180" height="44" rx="8" fill="#ffffff"/>
+</svg>

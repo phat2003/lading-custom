@@ -3,8 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { sectionsApi } from '../../../api/sections'
 import { templatesApi } from '../../../api/templates'
 import BuilderWorkspace from '../../../components/builder/BuilderWorkspace'
+import { buildMobileLayout, viewAll } from '../../../components/builder/deviceLayout'
 import { toLibraryVariants } from '../../../components/builder/sectionLibrary'
-import { elementsToSections, sectionsToElements } from '../../../components/builder/templateContent'
+import {
+  contentHeight,
+  elementsToSections,
+  sectionsToElements,
+} from '../../../components/builder/templateContent'
 import { useBuilderController } from '../../../components/builder/useBuilderController'
 import { useTheme } from '../../../context/ThemeContext'
 import BuilderTopbar from './components/BuilderTopbar'
@@ -46,18 +51,33 @@ const TemplateBuilder = ({ mode = 'template' }) => {
   const [publishIntent, setPublishIntent] = useState(false)
   const [library, setLibrary] = useState([])
   const [settings, setSettings] = useState(() => loadPageSettings(id))
+  const [pageHeight, setPageHeight] = useState(900)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDialog, setSettingsDialog] = useState(null)
 
   const builder = useBuilderController({
     initialElements: isSection ? blankSection() : [],
     settings,
+    pageHeight,
   })
   const { replaceElements } = builder
 
   const updateSettings = (next) => {
     setSettings(next)
     savePageSettings(id, next)
+  }
+
+  const handleDeviceChange = (nextDevice) => {
+    let projectedElements = viewAll(builder.elements, nextDevice)
+    if (nextDevice === 'mobile' && builder.elements.some((element) => !element.mobile)) {
+      const withMobileLayout = buildMobileLayout(
+        builder.elements,
+        (settings.mobileWidth || 420) / (settings.desktopWidth || 896),
+      )
+      projectedElements = viewAll(withMobileLayout, nextDevice)
+    }
+    setPageHeight(contentHeight(projectedElements))
+    builder.changeDevice(nextDevice)
   }
 
   useEffect(() => {
@@ -87,7 +107,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
           category: template.category,
           tier: template.tier,
         })
-        replaceElements(sectionsToElements(template.sections || []))
+        const loaded = sectionsToElements(template.sections || [])
+        replaceElements(loaded)
+        setPageHeight(contentHeight(loaded))
       })
       .catch(() => {
         if (!cancelled) setSaveError('Không tải được template này.')
@@ -112,7 +134,9 @@ const TemplateBuilder = ({ mode = 'template' }) => {
           thumbnailUrl: section.thumbnail_url || '',
         })
         const saved = section.default_content?.elements
-        replaceElements(Array.isArray(saved) && saved.length ? saved : blankSection())
+        const loaded = Array.isArray(saved) && saved.length ? saved : blankSection()
+        replaceElements(loaded)
+        setPageHeight(contentHeight(loaded))
       })
       .catch(() => {
         if (!cancelled) setSaveError('Không tải được section này.')
@@ -195,7 +219,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
     >
       <BuilderTopbar
         device={builder.device}
-        onDeviceChange={builder.changeDevice}
+        onDeviceChange={handleDeviceChange}
         onUndo={builder.undo}
         onRedo={builder.redo}
         canUndo={builder.canUndo}
@@ -216,6 +240,7 @@ const TemplateBuilder = ({ mode = 'template' }) => {
         settings={settings}
         library={library}
         libraryEmptyMessage="Chưa có section mẫu nào. Tạo và lưu Section để sử dụng tại đây."
+        canvasProps={{ pageHeight, onPageHeightChange: setPageHeight }}
       />
 
       <PageSettingsPanel

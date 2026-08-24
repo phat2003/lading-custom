@@ -21,6 +21,7 @@ const BuilderWorkspace = ({
   additionalPanels = {},
   propertiesPanelProps = {},
   getElementDomId,
+  canvasProps = {},
 }) => (
   <div className="flex min-h-0 flex-1 overflow-hidden">
     <BuilderRail
@@ -68,6 +69,8 @@ const BuilderWorkspace = ({
       onDelete={controller.deleteElement}
       onFitContent={controller.fitContentToWidth}
       getElementDomId={getElementDomId}
+      pageHeight={canvasProps.pageHeight}
+      onPageHeightChange={canvasProps.onPageHeightChange}
     />
     <PropertiesPanel
       element={controller.selected}
