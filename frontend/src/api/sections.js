@@ -1,5 +1,36 @@
 import api from './client'
 
+const resolveAssetUrl = (value) => {
+  if (typeof value !== 'string' || !value.trim()) return ''
+
+  try {
+    const apiBaseUrl = new URL(
+      api.defaults.baseURL,
+      globalThis.location?.origin || 'http://localhost',
+    )
+    const url = new URL(value.trim(), `${apiBaseUrl.origin}/`)
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+export const mapSectionTemplateFromApi = (template) => {
+  if (!template || typeof template !== 'object') return null
+
+  return {
+    id: template.section_template_id || '',
+    sectionType:
+      typeof template.section_type === 'string' ? template.section_type : '',
+    displayName:
+      typeof template.display_name === 'string' ? template.display_name : '',
+    defaultContent: template.default_content,
+    thumbnailUrl: resolveAssetUrl(template.thumbnail_url),
+    createdBy: template.created_by || null,
+    createdAt: template.created_at || null,
+  }
+}
+
 // Section Template Library — thư viện section mẫu toàn cục.
 //
 // Quyền ĐỌC và quyền GHI nằm ở 2 nhóm route khác nhau:
@@ -22,5 +53,6 @@ export const sectionsApi = {
   remove: (id) => api.delete(`/admin/section-templates/${id}`),
 
   // Dùng cho editor: toàn bộ thư viện, không phân trang.
-  listAll: (params) => api.get('/section-templates', { params }),
+  listAll: (params, config) =>
+    api.get('/section-templates', { ...config, params }),
 }

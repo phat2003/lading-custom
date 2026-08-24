@@ -5,6 +5,22 @@ const getSectionContent = (content) =>
     ? content
     : {}
 
+// Record chuẩn cho Builder: giữ content nguyên vẹn thay vì flatten các field legacy.
+export const mapPageSectionRecordFromApi = (section) => {
+  if (!section?.section_id) return null
+
+  return {
+    serverId: section.section_id,
+    landingPageId: section.landing_page_id || null,
+    sectionType:
+      typeof section.section_type === 'string' ? section.section_type : 'custom',
+    content: getSectionContent(section.content),
+    orderIndex: Number.isInteger(section.order_index) ? section.order_index : 0,
+    isVisible:
+      typeof section.is_visible === 'boolean' ? section.is_visible : true,
+  }
+}
+
 export const mapPageSectionFromApi = (section) => {
   if (!section?.section_id) return null
 

@@ -43,6 +43,23 @@ export const mapPublishResultFromApi = (result) => {
   }
 }
 
+export const resolveLandingPagePublicUrl = (landingPage) => {
+  if (landingPage?.status !== 'published') return null
+
+  const slug = landingPage.publishedUrl?.trim()
+  if (!slug || !/^[a-zA-Z0-9_-]+$/.test(slug)) return null
+
+  try {
+    const apiBaseUrl = new URL(
+      api.defaults.baseURL,
+      globalThis.location?.origin || 'http://localhost',
+    )
+    return new URL(`/p/${encodeURIComponent(slug)}`, apiBaseUrl.origin).toString()
+  } catch {
+    return null
+  }
+}
+
 export const landingPagesApi = {
   listByProject: (projectId, config) =>
     api.get('/pages', {
