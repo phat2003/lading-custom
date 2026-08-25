@@ -26,7 +26,11 @@ import {
 import { useBuilderController } from '../../../components/builder/useBuilderController'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
-import { canExportPdf } from '../../../utils/planEntitlements'
+import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
+import {
+  canExportHtml,
+  canExportPdf,
+} from '../../../utils/planEntitlements'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
 import EditorTopbar from './components/EditorTopbar'
@@ -48,6 +52,13 @@ import {
   mapPdfExportResponse,
   pdfExportErrorMessage,
 } from './pdfExport'
+import {
+  downloadHtmlExportBlob,
+  HTML_EXPORT_PRO_REASON,
+  htmlExportErrorMessage,
+  isHtmlExportEntitlementError,
+  mapHtmlExportResponse,
+} from './htmlExport'
 import {
   getOrderedSectionRoots,
   getSectionDisplayNames,
@@ -113,7 +124,7 @@ const EditorLoadingState = ({ children }) => (
 const LandingPageEditorPage = () => {
   const { projectId, landingPageId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const {
     getProject,
@@ -137,7 +148,8 @@ const LandingPageEditorPage = () => {
   const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
-  const [isExportingPdf, setIsExportingPdf] = useState(false)
+  const [exportingFormat, setExportingFormat] = useState(null)
+  const [upgradeReason, setUpgradeReason] = useState('')
   const [publishResult, setPublishResult] = useState(null)
   const [staticPreviewState, setStaticPreviewState] = useState(
     INITIAL_STATIC_PREVIEW_STATE,
@@ -160,7 +172,7 @@ const LandingPageEditorPage = () => {
   const saveRequestInFlightRef = useRef(false)
   const templateRequestInFlightRef = useRef(false)
   const publishRequestInFlightRef = useRef(false)
-  const pdfExportRequestInFlightRef = useRef(false)
+  const exportRequestInFlightRef = useRef(false)
   const staticPreviewRequestInFlightRef = useRef(false)
   const staticPreviewOpenRef = useRef(false)
   const lastPublishAttemptAtRef = useRef(0)
@@ -664,7 +676,7 @@ const LandingPageEditorPage = () => {
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       staticPreviewRequestInFlightRef.current ||
-      pdfExportRequestInFlightRef.current ||
+      exportRequestInFlightRef.current ||
       publishRequestInFlightRef.current
     ) {
       return
@@ -686,7 +698,7 @@ const LandingPageEditorPage = () => {
         templateRequestInFlightRef.current ||
         saveRequestInFlightRef.current ||
         staticPreviewRequestInFlightRef.current ||
-        pdfExportRequestInFlightRef.current
+        exportRequestInFlightRef.current
       ) {
         return
       }
@@ -744,7 +756,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       publishRequestInFlightRef.current ||
-      pdfExportRequestInFlightRef.current ||
+      exportRequestInFlightRef.current ||
       staticPreviewRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
@@ -793,7 +805,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       staticPreviewRequestInFlightRef.current ||
-      pdfExportRequestInFlightRef.current ||
+      exportRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       publishRequestInFlightRef.current
@@ -868,7 +880,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       !canExportPdf(user) ||
-      pdfExportRequestInFlightRef.current ||
+      exportRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       staticPreviewRequestInFlightRef.current ||
@@ -877,8 +889,8 @@ const LandingPageEditorPage = () => {
       return
     }
 
-    pdfExportRequestInFlightRef.current = true
-    setIsExportingPdf(true)
+    exportRequestInFlightRef.current = true
+    setExportingFormat('pdf')
     try {
       if (saveStatus !== 'saved') {
         const saved = await saveServerSections()
@@ -903,13 +915,76 @@ const LandingPageEditorPage = () => {
         ),
       )
     } finally {
-      pdfExportRequestInFlightRef.current = false
-      setIsExportingPdf(false)
+      exportRequestInFlightRef.current = false
+      setExportingFormat(null)
     }
   }, [
     exportLandingPageName,
     landingPageId,
     localLandingPage,
+    saveServerSections,
+    saveStatus,
+    user,
+  ])
+
+  const handleExportHtml = useCallback(async () => {
+    if (localLandingPage || exportRequestInFlightRef.current) return
+
+    // Gate trước Save để Free/unknown plan không tạo mutation hoặc request đặc quyền.
+    if (!canExportHtml(user)) {
+      setUpgradeReason(HTML_EXPORT_PRO_REASON)
+      return
+    }
+
+    if (
+      saveRequestInFlightRef.current ||
+      templateRequestInFlightRef.current ||
+      staticPreviewRequestInFlightRef.current ||
+      publishRequestInFlightRef.current
+    ) {
+      return
+    }
+
+    exportRequestInFlightRef.current = true
+    setExportingFormat('html')
+    try {
+      if (saveStatus !== 'saved') {
+        const saved = await saveServerSections()
+        if (!saved) {
+          setNotice(
+            'Không thể lưu Landing Page trước khi xuất HTML/CSS/JS. Export đã dừng.',
+          )
+          return
+        }
+      }
+
+      const response = await landingPagesApi.exportHtml(landingPageId)
+      const result = await mapHtmlExportResponse(
+        response,
+        exportLandingPageName || 'landing-page',
+      )
+      downloadHtmlExportBlob(result.blob, result.filename)
+      setNotice(`Đã tải xuống ${result.filename}`)
+    } catch (error) {
+      const message = await htmlExportErrorMessage(
+        error,
+        'Không thể xuất HTML/CSS/JS. Vui lòng thử lại.',
+      )
+      if (isHtmlExportEntitlementError(error, message)) {
+        setUpgradeReason(HTML_EXPORT_PRO_REASON)
+        refreshUser().catch(() => undefined)
+        return
+      }
+      setNotice(message)
+    } finally {
+      exportRequestInFlightRef.current = false
+      setExportingFormat(null)
+    }
+  }, [
+    exportLandingPageName,
+    landingPageId,
+    localLandingPage,
+    refreshUser,
     saveServerSections,
     saveStatus,
     user,
@@ -1046,7 +1121,9 @@ const LandingPageEditorPage = () => {
         onStaticPreview={localLandingPage ? null : handleStaticPreview}
         staticPreviewing={isStaticPreviewBusy}
         onExportPdf={localLandingPage ? null : handleExportPdf}
-        exportingPdf={isExportingPdf}
+        onExportHtml={localLandingPage ? null : handleExportHtml}
+        htmlExportAllowed={canExportHtml(user)}
+        exportingFormat={exportingFormat}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
         theme={theme}
@@ -1157,6 +1234,12 @@ const LandingPageEditorPage = () => {
       />
 
       <StatusNotice>{notice}</StatusNotice>
+      <UpgradeRequiredDialog
+        open={Boolean(upgradeReason)}
+        onClose={() => setUpgradeReason('')}
+        reason={upgradeReason}
+        currentPlan={user}
+      />
       <PublishSuccessModal
         result={publishResult}
         onClose={() => setPublishResult(null)}

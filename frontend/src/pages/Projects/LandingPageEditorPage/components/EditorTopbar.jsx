@@ -1,6 +1,5 @@
 import {
   CodeIcon,
-  DownloadIcon,
   EyeIcon,
   GlobeIcon,
   HomeIcon,
@@ -11,6 +10,7 @@ import {
   UndoIcon,
 } from '../../../../components/icons'
 import { normalizePlan } from '../../../../utils/planEntitlements'
+import ExportMenu from './ExportMenu'
 
 const SAVE_STATUS = {
   saved: { label: 'Đã lưu', className: 'text-emerald-400' },
@@ -38,7 +38,9 @@ const EditorTopbar = ({
   onStaticPreview,
   staticPreviewing = false,
   onExportPdf,
-  exportingPdf = false,
+  onExportHtml,
+  htmlExportAllowed = false,
+  exportingFormat = null,
   onPublish,
   publishing = false,
   theme,
@@ -46,6 +48,7 @@ const EditorTopbar = ({
 }) => {
   const status = SAVE_STATUS[saveStatus] || SAVE_STATUS.saved
   const planLabel = normalizePlan(planType).toUpperCase()
+  const exporting = Boolean(exportingFormat)
 
   return (
     <header className="z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--bd-border)] bg-[var(--bd-topbar)] px-4 backdrop-blur-xl">
@@ -107,7 +110,7 @@ const EditorTopbar = ({
             onClick={onSave}
             disabled={
               staticPreviewing ||
-              exportingPdf ||
+              exporting ||
               publishing ||
               saveStatus === 'saved' ||
               saveStatus === 'saving'
@@ -124,7 +127,7 @@ const EditorTopbar = ({
             onClick={onSaveAsTemplate}
             disabled={
               staticPreviewing ||
-              exportingPdf ||
+              exporting ||
               publishing ||
               saveStatus === 'saving'
             }
@@ -152,7 +155,7 @@ const EditorTopbar = ({
             onClick={onStaticPreview}
             disabled={
               staticPreviewing ||
-              exportingPdf ||
+              exporting ||
               publishing ||
               saveStatus === 'saving'
             }
@@ -174,22 +177,15 @@ const EditorTopbar = ({
           </button>
         )}
         {onExportPdf && (
-          <button
-            type="button"
-            onClick={onExportPdf}
+          <ExportMenu
+            onExportPdf={onExportPdf}
+            onExportHtml={onExportHtml}
+            htmlExportAllowed={htmlExportAllowed}
+            exportingFormat={exportingFormat}
             disabled={
-              exportingPdf ||
-              staticPreviewing ||
-              publishing ||
-              saveStatus === 'saving'
+              staticPreviewing || publishing || saveStatus === 'saving'
             }
-            className="hidden items-center gap-2 rounded-xl border border-[var(--bd-border)] px-2.5 py-2 text-xs text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:cursor-wait disabled:opacity-45 md:flex xl:px-3.5"
-            title="Xuất Landing Page đã lưu thành PDF"
-            aria-label={exportingPdf ? 'Đang xuất PDF' : 'Xuất PDF'}
-          >
-            <DownloadIcon size={15} />
-            <span>{exportingPdf ? 'Đang xuất...' : 'PDF'}</span>
-          </button>
+          />
         )}
         <button
           type="button"
@@ -197,7 +193,7 @@ const EditorTopbar = ({
           disabled={
             !onPublish ||
             staticPreviewing ||
-            exportingPdf ||
+            exporting ||
             publishing ||
             saveStatus === 'saving'
           }
