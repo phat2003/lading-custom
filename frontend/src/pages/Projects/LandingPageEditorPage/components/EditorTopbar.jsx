@@ -1,5 +1,6 @@
 import {
   CodeIcon,
+  DownloadIcon,
   EyeIcon,
   GlobeIcon,
   HomeIcon,
@@ -36,6 +37,8 @@ const EditorTopbar = ({
   previewOpen = false,
   onStaticPreview,
   staticPreviewing = false,
+  onExportPdf,
+  exportingPdf = false,
   onPublish,
   publishing = false,
   theme,
@@ -104,6 +107,7 @@ const EditorTopbar = ({
             onClick={onSave}
             disabled={
               staticPreviewing ||
+              exportingPdf ||
               publishing ||
               saveStatus === 'saved' ||
               saveStatus === 'saving'
@@ -119,7 +123,10 @@ const EditorTopbar = ({
             type="button"
             onClick={onSaveAsTemplate}
             disabled={
-              staticPreviewing || publishing || saveStatus === 'saving'
+              staticPreviewing ||
+              exportingPdf ||
+              publishing ||
+              saveStatus === 'saving'
             }
             className="hidden rounded-xl border border-[var(--bd-border)] px-3.5 py-2 text-xs font-semibold text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:opacity-45 xl:block"
           >
@@ -144,7 +151,10 @@ const EditorTopbar = ({
             type="button"
             onClick={onStaticPreview}
             disabled={
-              staticPreviewing || publishing || saveStatus === 'saving'
+              staticPreviewing ||
+              exportingPdf ||
+              publishing ||
+              saveStatus === 'saving'
             }
             className="hidden items-center gap-2 rounded-xl border border-[var(--bd-border)] px-2.5 py-2 text-xs text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:cursor-wait disabled:opacity-45 md:flex xl:px-3.5"
             title="Tạo HTML tĩnh từ dữ liệu đã lưu trên server"
@@ -163,12 +173,31 @@ const EditorTopbar = ({
             </span>
           </button>
         )}
+        {onExportPdf && (
+          <button
+            type="button"
+            onClick={onExportPdf}
+            disabled={
+              exportingPdf ||
+              staticPreviewing ||
+              publishing ||
+              saveStatus === 'saving'
+            }
+            className="hidden items-center gap-2 rounded-xl border border-[var(--bd-border)] px-2.5 py-2 text-xs text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:cursor-wait disabled:opacity-45 md:flex xl:px-3.5"
+            title="Xuất Landing Page đã lưu thành PDF"
+            aria-label={exportingPdf ? 'Đang xuất PDF' : 'Xuất PDF'}
+          >
+            <DownloadIcon size={15} />
+            <span>{exportingPdf ? 'Đang xuất...' : 'PDF'}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={onPublish}
           disabled={
             !onPublish ||
             staticPreviewing ||
+            exportingPdf ||
             publishing ||
             saveStatus === 'saving'
           }

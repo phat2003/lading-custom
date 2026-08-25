@@ -26,6 +26,7 @@ import {
 import { useBuilderController } from '../../../components/builder/useBuilderController'
 import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
+import { canExportPdf } from '../../../utils/planEntitlements'
 import StatusNotice from '../components/StatusNotice'
 import { useProjects } from '../context/ProjectsContext'
 import EditorTopbar from './components/EditorTopbar'
@@ -42,6 +43,11 @@ import {
   pageSectionsToBuilderElements,
 } from './landingPageBuilderAdapter'
 import { getSectionAnchorId } from './ctaLinks'
+import {
+  downloadPdfBlob,
+  mapPdfExportResponse,
+  pdfExportErrorMessage,
+} from './pdfExport'
 import {
   getOrderedSectionRoots,
   getSectionDisplayNames,
@@ -131,6 +137,7 @@ const LandingPageEditorPage = () => {
   const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [publishResult, setPublishResult] = useState(null)
   const [staticPreviewState, setStaticPreviewState] = useState(
     INITIAL_STATIC_PREVIEW_STATE,
@@ -153,6 +160,7 @@ const LandingPageEditorPage = () => {
   const saveRequestInFlightRef = useRef(false)
   const templateRequestInFlightRef = useRef(false)
   const publishRequestInFlightRef = useRef(false)
+  const pdfExportRequestInFlightRef = useRef(false)
   const staticPreviewRequestInFlightRef = useRef(false)
   const staticPreviewOpenRef = useRef(false)
   const lastPublishAttemptAtRef = useRef(0)
@@ -160,6 +168,10 @@ const LandingPageEditorPage = () => {
   const isStaticPreviewBusy =
     staticPreviewState.status === 'saving' ||
     staticPreviewState.status === 'generating'
+  const exportLandingPageName =
+    serverPageState.landingPageId === landingPageId
+      ? serverPageState.record?.name
+      : ''
 
   const markBuilderDirty = useCallback(() => {
     setSaveStatus(localLandingPage ? 'saving' : 'dirty')
@@ -652,6 +664,7 @@ const LandingPageEditorPage = () => {
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       staticPreviewRequestInFlightRef.current ||
+      pdfExportRequestInFlightRef.current ||
       publishRequestInFlightRef.current
     ) {
       return
@@ -672,7 +685,8 @@ const LandingPageEditorPage = () => {
         localLandingPage ||
         templateRequestInFlightRef.current ||
         saveRequestInFlightRef.current ||
-        staticPreviewRequestInFlightRef.current
+        staticPreviewRequestInFlightRef.current ||
+        pdfExportRequestInFlightRef.current
       ) {
         return
       }
@@ -730,6 +744,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       publishRequestInFlightRef.current ||
+      pdfExportRequestInFlightRef.current ||
       staticPreviewRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
@@ -778,6 +793,7 @@ const LandingPageEditorPage = () => {
     if (
       localLandingPage ||
       staticPreviewRequestInFlightRef.current ||
+      pdfExportRequestInFlightRef.current ||
       saveRequestInFlightRef.current ||
       templateRequestInFlightRef.current ||
       publishRequestInFlightRef.current
@@ -846,6 +862,57 @@ const LandingPageEditorPage = () => {
     localLandingPage,
     saveServerSections,
     saveStatus,
+  ])
+
+  const handleExportPdf = useCallback(async () => {
+    if (
+      localLandingPage ||
+      !canExportPdf(user) ||
+      pdfExportRequestInFlightRef.current ||
+      saveRequestInFlightRef.current ||
+      templateRequestInFlightRef.current ||
+      staticPreviewRequestInFlightRef.current ||
+      publishRequestInFlightRef.current
+    ) {
+      return
+    }
+
+    pdfExportRequestInFlightRef.current = true
+    setIsExportingPdf(true)
+    try {
+      if (saveStatus !== 'saved') {
+        const saved = await saveServerSections()
+        if (!saved) {
+          setNotice('Không thể lưu Landing Page trước khi xuất PDF. Export đã dừng.')
+          return
+        }
+      }
+
+      const response = await landingPagesApi.exportPdf(landingPageId)
+      const result = await mapPdfExportResponse(
+        response,
+        exportLandingPageName || 'landing-page',
+      )
+      downloadPdfBlob(result.blob, result.filename)
+      setNotice(`Đã tải xuống ${result.filename}`)
+    } catch (error) {
+      setNotice(
+        await pdfExportErrorMessage(
+          error,
+          'Không thể xuất PDF. Vui lòng thử lại.',
+        ),
+      )
+    } finally {
+      pdfExportRequestInFlightRef.current = false
+      setIsExportingPdf(false)
+    }
+  }, [
+    exportLandingPageName,
+    landingPageId,
+    localLandingPage,
+    saveServerSections,
+    saveStatus,
+    user,
   ])
 
   const closeStaticPreview = useCallback(() => {
@@ -978,6 +1045,8 @@ const LandingPageEditorPage = () => {
         previewOpen={previewOpen}
         onStaticPreview={localLandingPage ? null : handleStaticPreview}
         staticPreviewing={isStaticPreviewBusy}
+        onExportPdf={localLandingPage ? null : handleExportPdf}
+        exportingPdf={isExportingPdf}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
         theme={theme}
