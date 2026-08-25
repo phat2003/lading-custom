@@ -3,7 +3,12 @@ import { NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { FilterIcon, SearchIcon } from '../../../components/icons'
 import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
-import { canUsePremiumTemplates } from '../../../utils/planEntitlements'
+import {
+  canUsePremiumTemplates,
+  FREE_PROJECT_LIMIT_REASON,
+  isProjectLimitError,
+  isProjectQuotaResponse,
+} from '../../../utils/planEntitlements'
 import {
   landingPagesApi,
   mapLandingPageFromApi,
@@ -273,6 +278,14 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
       setSelectedProject(nextProject)
       setCreationStep('naming')
     } catch (error) {
+      if (isProjectLimitError(error) || isProjectQuotaResponse(error)) {
+        setUpgradeReason(FREE_PROJECT_LIMIT_REASON)
+        if (isProjectQuotaResponse(error)) {
+          refreshUser().catch(() => undefined)
+        }
+        return
+      }
+
       setProjectCreateError(
         error?.response?.data?.error ||
           'Không thể tạo Project. Vui lòng thử lại.',

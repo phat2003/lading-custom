@@ -107,6 +107,10 @@ const TemplateCard = ({
             type="button"
             onClick={(event) => {
               event.stopPropagation()
+              if (locked) {
+                onLocked()
+                return
+              }
               onClone(template)
             }}
             className="absolute bottom-3 right-3 z-20 flex items-center gap-2 rounded-lg border border-white/15 bg-[#201f21]/95 px-3 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur transition hover:border-[#00eefc]/50 hover:text-[#d3fbff] focus:outline-none focus:ring-2 focus:ring-[#00eefc]/50"
@@ -166,6 +170,10 @@ const TemplateCard = ({
             type="button"
             onClick={(event) => {
               event.stopPropagation()
+              if (locked) {
+                onLocked()
+                return
+              }
               onUse(template)
             }}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(37,99,235,0.3)] transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-[#b4c5ff]/60"

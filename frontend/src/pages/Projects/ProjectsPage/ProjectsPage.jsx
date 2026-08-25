@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
+import {
+  FREE_PROJECT_LIMIT_REASON,
+  isProjectLimitError,
+  isProjectQuotaResponse,
+} from '../../../utils/planEntitlements'
 import { useProjects } from '../context/ProjectsContext'
 import CreateProjectModal from './components/CreateProjectModal'
 import DeleteProjectModal from './components/DeleteProjectModal'
@@ -14,7 +19,7 @@ import ProjectSidebar from '../components/ProjectSidebar'
 import StatusNotice from '../components/StatusNotice'
 
 export default function ProjectsPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const {
     projects,
     projectsError,
@@ -112,6 +117,14 @@ export default function ProjectsPage() {
       setIsCreateModalOpen(false)
       setNotice(`Đã tạo Project “${project.name}” thành công.`)
     } catch (error) {
+      if (isProjectLimitError(error) || isProjectQuotaResponse(error)) {
+        setUpgradeReason(FREE_PROJECT_LIMIT_REASON)
+        if (isProjectQuotaResponse(error)) {
+          refreshUser().catch(() => undefined)
+        }
+        return
+      }
+
       setCreateError(
         error?.response?.data?.error ||
           'Không thể tạo Project. Vui lòng thử lại.',
