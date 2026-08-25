@@ -9,6 +9,7 @@ import {
   SunIcon,
   UndoIcon,
 } from '../../../../components/icons'
+import { normalizePlan } from '../../../../utils/planEntitlements'
 
 const SAVE_STATUS = {
   saved: { label: 'Đã lưu', className: 'text-emerald-400' },
@@ -41,7 +42,7 @@ const EditorTopbar = ({
   onToggleTheme,
 }) => {
   const status = SAVE_STATUS[saveStatus] || SAVE_STATUS.saved
-  const planLabel = String(planType || 'free').toUpperCase()
+  const planLabel = normalizePlan(planType).toUpperCase()
 
   return (
     <header className="z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--bd-border)] bg-[var(--bd-topbar)] px-4 backdrop-blur-xl">

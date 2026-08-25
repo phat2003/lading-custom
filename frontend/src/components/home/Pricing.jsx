@@ -1,8 +1,49 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import UpgradeRequiredDialog from '../pricing/UpgradeRequiredDialog'
+import { isFreePlan, isProPlan } from '../../utils/planEntitlements'
+
+const FREE_FEATURES = [
+  '1 Project',
+  '3 Free Template',
+  'Realtime Preview',
+  'Responsive Preview',
+  'Publish Public Link',
+  'Export PDF',
+  'Watermark hệ thống',
+]
+
+const PRO_FEATURES = [
+  'Không giới hạn Project',
+  'Premium Template',
+  'Export HTML/CSS/JS',
+  'Custom Branding',
+  'Không watermark',
+]
+
+const FeatureList = ({ items }) => (
+  <ul className="space-y-4 border-t border-slate-900 pt-6 text-sm text-slate-300">
+    {items.map((item) => (
+      <li key={item} className="flex items-center gap-3">
+        <svg className="h-5 w-5 flex-shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>{item}</span>
+      </li>
+    ))}
+  </ul>
+)
 
 export default function Pricing() {
+  const { user } = useAuth()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const freeCurrent = Boolean(user) && isFreePlan(user)
+  const proCurrent = Boolean(user) && isProPlan(user)
+
   return (
-    <section id="pricing" className="bg-slate-950 py-20 border-t border-slate-900 relative">
+    <>
+    <section id="pricing" className="relative border-t border-slate-900 bg-slate-950 py-20">
       {/* Background glow behind pricing cards */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
 
@@ -25,47 +66,34 @@ export default function Pricing() {
           <div className="border border-slate-900 bg-slate-950/60 rounded-3xl p-8 flex flex-col justify-between hover:border-slate-800 transition-all duration-300 shadow-xl backdrop-blur-sm">
             <div className="space-y-6">
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white">Free</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-xl font-bold text-white">Free</h3>
+                  {freeCurrent && <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">Gói hiện tại</span>}
+                </div>
                 <p className="text-sm text-slate-400">Khởi đầu cho dự án nhỏ hoàn toàn miễn phí</p>
               </div>
 
               {/* Price */}
-              <div className="flex items-baseline text-white">
-                <span className="text-4xl font-extrabold tracking-tight">0 VNĐ</span>
-                <span className="ml-1 text-sm text-slate-500 font-medium">/tháng</span>
-              </div>
+              <div className="text-4xl font-extrabold tracking-tight text-white">Miễn phí</div>
 
               {/* Features List */}
-              <ul className="space-y-4 border-t border-slate-900 pt-6 text-sm text-slate-300">
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>1 Website</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Tên miền subdomain của LP Builder</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Hơn 10+ template cơ bản</span>
-                </li>
-              </ul>
+              <FeatureList items={FREE_FEATURES} />
             </div>
 
             {/* Action */}
             <div className="pt-8">
-              <Link
-                to="/register"
-                className="block w-full text-center rounded-xl border border-slate-800 bg-slate-900/50 py-3.5 text-sm font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-colors"
-              >
-                Bắt đầu miễn phí
-              </Link>
+              {user ? (
+                <div className="block w-full rounded-xl border border-slate-800 bg-slate-900/50 py-3.5 text-center text-sm font-semibold text-slate-400">
+                  {freeCurrent ? 'Gói hiện tại' : 'Gói Free'}
+                </div>
+              ) : (
+                <Link
+                  to="/register"
+                  className="block w-full rounded-xl border border-slate-800 bg-slate-900/50 py-3.5 text-center text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-800/80 hover:text-white"
+                >
+                  Bắt đầu miễn phí
+                </Link>
+              )}
             </div>
           </div>
 
@@ -78,7 +106,10 @@ export default function Pricing() {
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white">Pro</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-xl font-bold text-white">Pro</h3>
+                  {proCurrent && <span className="rounded-full bg-blue-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-200">Gói hiện tại</span>}
+                </div>
                 <p className="text-sm text-slate-400">Lựa chọn tốt nhất cho doanh nghiệp chuyên nghiệp</p>
               </div>
 
@@ -89,54 +120,31 @@ export default function Pricing() {
               </div>
 
               {/* Features List */}
-              <ul className="space-y-4 border-t border-slate-900 pt-6 text-sm text-slate-300">
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Không giới hạn trang web</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Tên miền tùy chỉnh (.com, .vn, ...)</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Hỗ trợ ưu tiên 24/7</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Tất cả mẫu template cao cấp</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Tích hợp Analytics & Marketing nâng cao</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Hỗ trợ tối ưu SEO chuyên sâu</span>
-                </li>
-              </ul>
+              <FeatureList items={PRO_FEATURES} />
             </div>
 
             {/* Action */}
             <div className="pt-8">
-              <Link
-                to="/register"
-                className="block w-full text-center rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-              >
-                Đăng ký Pro
-              </Link>
+              {proCurrent ? (
+                <div className="block w-full rounded-xl bg-blue-600/20 py-3.5 text-center text-sm font-semibold text-blue-200">
+                  Gói hiện tại
+                </div>
+              ) : user ? (
+                <button
+                  type="button"
+                  onClick={() => setUpgradeOpen(true)}
+                  className="block w-full rounded-xl bg-blue-600 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-blue-600/40 active:translate-y-0"
+                >
+                  Nâng cấp Pro
+                </button>
+              ) : (
+                <Link
+                  to="/register"
+                  className="block w-full rounded-xl bg-blue-600 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-blue-600/40 active:translate-y-0"
+                >
+                  Đăng ký để dùng Pro
+                </Link>
+              )}
             </div>
           </div>
 
@@ -144,5 +152,13 @@ export default function Pricing() {
 
       </div>
     </section>
+    <UpgradeRequiredDialog
+      open={upgradeOpen}
+      onClose={() => setUpgradeOpen(false)}
+      reason="Gói Pro đã được mô tả đầy đủ, nhưng hệ thống hiện chưa có checkout tự phục vụ để hoàn tất nâng cấp."
+      currentPlan={user}
+      showPricingAction={false}
+    />
+    </>
   )
 }

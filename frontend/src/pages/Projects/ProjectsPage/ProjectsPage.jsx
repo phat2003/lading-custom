@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
+import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
 import { useProjects } from '../context/ProjectsContext'
 import CreateProjectModal from './components/CreateProjectModal'
 import DeleteProjectModal from './components/DeleteProjectModal'
@@ -29,6 +30,7 @@ export default function ProjectsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
+  const [upgradeReason, setUpgradeReason] = useState('')
   const [createError, setCreateError] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [projectToRename, setProjectToRename] = useState(null)
@@ -270,9 +272,7 @@ export default function ProjectsPage() {
         submitting={isCreating}
         serverError={createError}
         onErrorClear={() => setCreateError('')}
-        onUpgrade={() =>
-          showComingSoon('Luồng nâng cấp Pro chưa nằm trong task frontend hiện tại.')
-        }
+        onUpgrade={() => setUpgradeReason('Tính năng Team yêu cầu gói Pro.')}
       />
 
       <RenameProjectModal
@@ -290,6 +290,12 @@ export default function ProjectsPage() {
         error={deleteError}
         onClose={closeDeleteModal}
         onConfirm={handleDeleteProject}
+      />
+      <UpgradeRequiredDialog
+        open={Boolean(upgradeReason)}
+        onClose={() => setUpgradeReason('')}
+        reason={upgradeReason}
+        currentPlan={user}
       />
     </div>
   )

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { FilterIcon, SearchIcon } from '../../../components/icons'
+import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
+import { canUsePremiumTemplates } from '../../../utils/planEntitlements'
 import {
   landingPagesApi,
   mapLandingPageFromApi,
@@ -43,7 +45,7 @@ const INITIAL_TEMPLATE_STATE = {
 }
 
 const TemplateGalleryPage = ({ mode = 'system' }) => {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { projectId } = useParams()
   const isGlobalGallery = !projectId
   const isMyTemplates = isGlobalGallery && mode === 'mine'
@@ -74,6 +76,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
   const [creationStep, setCreationStep] = useState('idle')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
+  const [upgradeReason, setUpgradeReason] = useState('')
   const [projectCreateError, setProjectCreateError] = useState('')
   const [createError, setCreateError] = useState('')
   const [isCreatingProject, setIsCreatingProject] = useState(false)
@@ -347,6 +350,11 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
           ? 'Không thể tạo Landing Page. Vui lòng thử lại.'
           : 'Không thể tạo Landing Page từ Template. Vui lòng thử lại.')
 
+      if (error?.response?.status === 402) {
+        setUpgradeReason(pageError)
+        refreshUser().catch(() => undefined)
+      }
+
       setCreateError(
         createdProject
           ? `Project “${createdProject.name}” đã được tạo. ${pageError}`
@@ -589,7 +597,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                   locked={
                     template.type === 'system' &&
                     template.tier === 'premium' &&
-                    user?.plan_type !== 'pro'
+                    !canUsePremiumTemplates(user)
                   }
                   onSelect={handleSelectTemplate}
                   onUse={isMyTemplates ? handleSelectTemplate : null}
@@ -597,9 +605,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                   onRename={isMyTemplates ? openRenameTemplate : null}
                   onDelete={isMyTemplates ? openDeleteTemplate : null}
                   interactive={!isMyTemplates}
-                  onLocked={() =>
-                    showMessage(`“${template.name}” yêu cầu gói Pro.`)
-                  }
+                  onLocked={() => setUpgradeReason(`“${template.name}” yêu cầu gói Pro.`)}
                 />
               ))
             ) : (
@@ -673,9 +679,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
         onClose={resetCreationFlow}
         onBack={backToDestinationChoice}
         onCreate={handleCreateDestinationProject}
-        onUpgrade={() =>
-          showMessage('Luồng nâng cấp Pro chưa nằm trong task hiện tại.')
-        }
+        onUpgrade={() => setUpgradeReason('Tính năng Team yêu cầu gói Pro.')}
         submitting={isCreatingProject}
         serverError={projectCreateError}
         onErrorClear={() => setProjectCreateError('')}
@@ -697,6 +701,12 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
         submitting={isCreating}
         serverError={createError}
         onErrorClear={() => setCreateError('')}
+      />
+      <UpgradeRequiredDialog
+        open={Boolean(upgradeReason)}
+        onClose={() => setUpgradeReason('')}
+        reason={upgradeReason}
+        currentPlan={user}
       />
     </div>
   )
