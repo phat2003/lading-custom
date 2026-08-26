@@ -186,7 +186,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#131315] text-[#e5e1e4]">
+    <div className="min-h-screen bg-[var(--bd-fill)] text-[var(--bd-text)]">
       <ProjectSidebar
         user={user}
         isOpen={isMobileMenuOpen}
@@ -220,23 +220,23 @@ export default function ProjectsPage() {
               {[0, 1, 2].map((item) => (
                 <div
                   key={item}
-                  className="h-[292px] animate-pulse rounded-xl border border-white/10 bg-[#1c1b1d]"
+                  className="h-[292px] animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
                 />
               ))}
             </section>
           ) : projectsError ? (
             <section
-              className="relative mx-auto mt-20 max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center"
+              className="relative mx-auto mt-20 max-w-lg rounded-2xl border border-red-400/30 bg-[var(--bd-panel-solid)] p-8 text-center"
               role="alert"
             >
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-[var(--bd-text)]">
                 Không tải được danh sách Project
               </h2>
-              <p className="mt-2 text-sm text-[#c3c6d7]">{projectsError}</p>
+              <p className="mt-2 text-sm text-[var(--bd-dim)]">{projectsError}</p>
               <button
                 type="button"
                 onClick={() => reloadProjects()}
-                className="mt-5 rounded-lg bg-[#b4c5ff] px-4 py-2 text-sm font-semibold text-[#002a78] transition hover:bg-[#d3fbff]"
+                className="mt-5 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 Thử lại
               </button>
@@ -259,15 +259,15 @@ export default function ProjectsPage() {
               ))}
             </section>
           ) : (
-            <section className="relative mx-auto mt-20 max-w-lg rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
+            <section className="relative mx-auto mt-20 max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center">
               <h2 className="text-xl font-semibold">Không tìm thấy Project</h2>
-              <p className="mt-2 text-sm text-[#c3c6d7]">
+              <p className="mt-2 text-sm text-[var(--bd-dim)]">
                 Không có Project nào khớp với “{searchTerm}”.
               </p>
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm transition hover:bg-white/5"
+                className="mt-5 rounded-lg border border-[var(--bd-border)] px-4 py-2 text-sm transition hover:bg-[var(--bd-fill-hover)]"
               >
                 Xóa tìm kiếm
               </button>

@@ -81,6 +81,12 @@
   /* Nhãn nổi trên ảnh (số section, nút sửa/xoá). Phải khai báo rgba tường minh:
      Tailwind KHÔNG áp được độ mờ kiểu /90 lên biến CSS — rule sẽ không sinh ra. */
   --bd-chip: rgba(15, 15, 25, 0.82);
+  /* Màu ngữ nghĩa. Nền tối thì dùng tông nhạt cho nổi;
+     nền sáng phải đảo sang tông đậm, nếu không chữ sẽ chìm hẳn. */
+  --bd-warn: #fcd34d;
+  --bd-danger: #f87171;
+  --bd-info: #22d3ee;
+  --bd-ok: #34d399;
 }
 
 .app-theme[data-mode='light'] {
@@ -100,6 +106,10 @@
   --bd-accent: #7c3aed;
   --bd-page-shadow: 0 18px 50px -22px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(15, 23, 42, 0.08);
   --bd-chip: rgba(255, 255, 255, 0.9);
+  --bd-warn: #b45309;
+  --bd-danger: #dc2626;
+  --bd-info: #0e7490;
+  --bd-ok: #047857;
 }
 
 /* Chuyển chế độ mượt, không giật */

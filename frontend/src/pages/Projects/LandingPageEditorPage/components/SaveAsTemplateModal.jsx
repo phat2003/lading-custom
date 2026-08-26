@@ -49,7 +49,7 @@ const SaveAsTemplateModal = ({
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#1c1b1d] p-6 text-[#e5e1e4] shadow-2xl sm:p-8"
+        className="relative w-full max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-6 text-[var(--bd-text)] shadow-2xl sm:p-8"
         role="dialog"
         aria-modal="true"
         aria-labelledby="save-as-template-title"
@@ -59,26 +59,26 @@ const SaveAsTemplateModal = ({
           type="button"
           onClick={onClose}
           disabled={submitting}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Đóng modal lưu thành mẫu"
         >
           <XIcon size={21} />
         </button>
 
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#00eefc]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--bd-info)]">
           Save as Template
         </p>
         <h2
           id="save-as-template-title"
-          className="mt-3 pr-10 text-2xl font-semibold text-white"
+          className="mt-3 pr-10 text-2xl font-semibold text-[var(--bd-text)]"
         >
           Lưu Landing Page thành mẫu
         </h2>
-        <p className="mt-3 text-sm leading-6 text-[#c3c6d7]">
+        <p className="mt-3 text-sm leading-6 text-[var(--bd-dim)]">
           Mẫu cá nhân mới sẽ xuất hiện trong khu vực Mẫu của tôi.
         </p>
 
-        <label className="mt-7 block text-sm font-medium text-[#e5e1e4]">
+        <label className="mt-7 block text-sm font-medium text-[var(--bd-text)]">
           Tên Template
           <input
             ref={inputRef}
@@ -90,10 +90,10 @@ const SaveAsTemplateModal = ({
               if (error) setError('')
               if (serverError) onErrorClear()
             }}
-            className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition focus:ring-2 disabled:cursor-wait disabled:opacity-70 ${
+            className={`mt-3 w-full rounded-lg border bg-[var(--bd-fill)] px-4 py-3 text-[var(--bd-text)] outline-none transition focus:ring-2 disabled:cursor-wait disabled:opacity-70 ${
               displayError
-                ? 'border-[#ffb4ab] focus:ring-red-400/20'
-                : 'border-white/10 focus:border-[#b4c5ff] focus:ring-[#2563eb]/20'
+                ? 'border-red-400 focus:ring-red-400/20'
+                : 'border-[var(--bd-border)] focus:border-violet-300 focus:ring-violet-500/20'
             }`}
             aria-invalid={Boolean(displayError)}
             aria-describedby={displayError ? 'save-as-template-error' : undefined}
@@ -102,7 +102,7 @@ const SaveAsTemplateModal = ({
 
         <p
           id={displayError ? 'save-as-template-error' : undefined}
-          className={`mt-2 text-xs ${displayError ? 'text-[#ffb4ab]' : 'text-[#8d90a0]'}`}
+          className={`mt-2 text-xs ${displayError ? 'text-[var(--bd-danger)]' : 'text-[var(--bd-muted)]'}`}
           role={displayError ? 'alert' : undefined}
         >
           {displayError || 'Từ 2 đến 200 ký tự.'}
@@ -113,14 +113,14 @@ const SaveAsTemplateModal = ({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg px-5 py-2.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg px-5 py-2.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-[#2563eb] px-5 py-2.5 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-70"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-70"
           >
             {submitting ? 'Đang lưu thành mẫu...' : 'Lưu thành mẫu'}
           </button>

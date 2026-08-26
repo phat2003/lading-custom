@@ -87,7 +87,7 @@ const CurrentSectionControls = ({
 
         {confirmingDelete ? (
           <div className="rounded-lg border border-red-400/25 bg-red-500/[0.08] p-2.5">
-            <p className="text-xs leading-relaxed text-red-300">Xóa Section này cùng toàn bộ phần tử bên trong?</p>
+            <p className="text-xs leading-relaxed text-[var(--bd-danger)]">Xóa Section này cùng toàn bộ phần tử bên trong?</p>
             <div className="mt-2 flex gap-2">
               <button type="button" onClick={onDelete} className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white hover:bg-red-400">
                 Xóa Section

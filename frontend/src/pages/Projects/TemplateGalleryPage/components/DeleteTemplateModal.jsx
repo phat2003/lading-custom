@@ -6,7 +6,7 @@ const DeleteTemplateModal = ({ template, onClose }) => {
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-black/75 px-4 py-6 backdrop-blur-sm">
       <section
-        className="relative w-full max-w-lg rounded-2xl border border-[#ffb4ab]/25 bg-[#1c1b1d] p-6 text-[#e5e1e4] shadow-2xl sm:p-8"
+        className="relative w-full max-w-lg rounded-2xl border border-red-400/25 bg-[var(--bd-panel-solid)] p-6 text-[var(--bd-text)] shadow-2xl sm:p-8"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="delete-template-title"
@@ -15,24 +15,24 @@ const DeleteTemplateModal = ({ template, onClose }) => {
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#00eefc]/50"
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
           aria-label="Đóng xác nhận xóa Template"
         >
           <XIcon size={21} />
         </button>
 
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-[#3b2526] text-[#ffb4ab]">
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-red-500/10 text-red-400">
           <TrashIcon size={23} />
         </div>
         <h2
           id="delete-template-title"
-          className="mt-5 pr-10 text-2xl font-semibold text-white"
+          className="mt-5 pr-10 text-2xl font-semibold text-[var(--bd-text)]"
         >
           Xóa Template?
         </h2>
         <p
           id="delete-template-description"
-          className="mt-3 text-sm leading-6 text-[#c3c6d7]"
+          className="mt-3 text-sm leading-6 text-[var(--bd-dim)]"
         >
           Template “{template.name}” và nội dung section của mẫu sẽ bị xóa vĩnh
           viễn. Các Landing Page đã tạo từ mẫu vẫn là entity độc lập.
@@ -40,7 +40,7 @@ const DeleteTemplateModal = ({ template, onClose }) => {
 
         <div
           id="delete-template-unavailable"
-          className="mt-6 rounded-xl border border-[#eec200]/25 bg-[#eec200]/5 px-4 py-3 text-sm leading-6 text-[#ffe083]"
+          className="mt-6 rounded-xl border border-amber-400/25 bg-amber-400/5 px-4 py-3 text-sm leading-6 text-amber-300"
           role="status"
         >
           Xóa User Template đang chờ Backend cung cấp API dành cho chủ sở hữu.
@@ -51,7 +51,7 @@ const DeleteTemplateModal = ({ template, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-5 py-2.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#00eefc]/50"
+            className="rounded-lg px-5 py-2.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
           >
             Hủy bỏ
           </button>
@@ -59,7 +59,7 @@ const DeleteTemplateModal = ({ template, onClose }) => {
             type="button"
             disabled
             aria-describedby="delete-template-unavailable"
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#ba1a1a] px-5 py-2.5 font-semibold text-white opacity-45 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 rounded-lg bg-red-500 px-5 py-2.5 font-semibold text-white opacity-45 disabled:cursor-not-allowed"
           >
             <TrashIcon size={17} />
             Xóa Template

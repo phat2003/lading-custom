@@ -43,7 +43,7 @@ const SelectDestinationModal = ({
       role="presentation"
     >
       <section
-        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-[#1c1b1d] shadow-[0_30px_100px_rgba(0,0,0,0.65)]"
+        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] shadow-[0_30px_100px_rgba(0,0,0,0.65)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="destination-modal-title"
@@ -51,14 +51,14 @@ const SelectDestinationModal = ({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)]"
           aria-label="Đóng modal"
         >
           <XIcon size={22} />
         </button>
 
-        <div className="border-b border-white/10 px-7 pb-5 pt-7">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#00eefc]">
+        <div className="border-b border-[var(--bd-border)] px-7 pb-5 pt-7">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--bd-info)]">
             {source.type === 'blank'
               ? 'Blank'
               : source.type === 'user'
@@ -67,14 +67,14 @@ const SelectDestinationModal = ({
           </p>
           <h2
             id="destination-modal-title"
-            className="mt-2 pr-10 text-2xl font-semibold text-white"
+            className="mt-2 pr-10 text-2xl font-semibold text-[var(--bd-text)]"
           >
             {isExistingProjectStep
               ? 'Chọn Project có sẵn'
               : 'Bạn muốn tạo Landing Page ở đâu?'}
           </h2>
-          <p className="mt-2 text-sm text-[#c3c6d7]">
-            Nguồn khởi tạo: <span className="text-white">{source.name}</span>
+          <p className="mt-2 text-sm text-[var(--bd-dim)]">
+            Nguồn khởi tạo: <span className="text-[var(--bd-text)]">{source.name}</span>
           </p>
         </div>
 
@@ -89,30 +89,30 @@ const SelectDestinationModal = ({
                 {[0, 1, 2].map((item) => (
                   <div
                     key={item}
-                    className="h-16 animate-pulse rounded-xl border border-white/10 bg-[#2a2a2c]"
+                    className="h-16 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-fill)]"
                   />
                 ))}
               </div>
             ) : error ? (
               <div
-                className="rounded-xl border border-[#ffb4ab]/30 bg-[#2a2021] p-5 text-center"
+                className="rounded-xl border border-red-400/30 bg-red-500/10 p-5 text-center"
                 role="alert"
               >
-                <p className="text-sm text-[#ffb4ab]">{error}</p>
+                <p className="text-sm text-[var(--bd-danger)]">{error}</p>
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="mt-4 rounded-lg bg-[#b4c5ff] px-4 py-2 text-sm font-semibold text-[#002a78]"
+                  className="mt-4 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-4 py-2 text-sm font-semibold text-white"
                 >
                   Thử lại
                 </button>
               </div>
             ) : projects.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/15 bg-[#151517] p-6 text-center">
-                <h3 className="text-lg font-semibold text-white">
+              <div className="rounded-xl border border-dashed border-[var(--bd-border)] bg-var(--bd-fill) p-6 text-center">
+                <h3 className="text-lg font-semibold text-[var(--bd-text)]">
                   Bạn chưa có Project
                 </h3>
-                <p className="mt-2 text-sm text-[#c3c6d7]">
+                <p className="mt-2 text-sm text-[var(--bd-dim)]">
                   Quay lại và chọn Project mới để tiếp tục tạo Landing Page.
                 </p>
               </div>
@@ -123,17 +123,17 @@ const SelectDestinationModal = ({
                     key={project.id}
                     type="button"
                     onClick={() => onSelectProject(project)}
-                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#2a2a2c] px-5 py-4 text-left transition hover:border-[#b4c5ff]/50 hover:bg-[#353437]"
+                    className="flex w-full items-center justify-between rounded-xl border border-[var(--bd-border)] bg-[var(--bd-fill)] px-5 py-4 text-left transition hover:border-violet-300/50 hover:bg-[var(--bd-fill)]"
                   >
                     <span>
-                      <span className="block font-semibold text-white">
+                      <span className="block font-semibold text-[var(--bd-text)]">
                         {project.name}
                       </span>
-                      <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-[#8d90a0]">
+                      <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--bd-muted)]">
                         Project có sẵn
                       </span>
                     </span>
-                    <span className="text-[#b4c5ff]" aria-hidden="true">
+                    <span className="text-[var(--bd-accent)]" aria-hidden="true">
                       →
                     </span>
                   </button>
@@ -146,36 +146,36 @@ const SelectDestinationModal = ({
             <button
               type="button"
               onClick={onChooseNew}
-              className="rounded-xl border border-[#00eefc]/30 bg-[#00eefc]/10 p-5 text-left transition hover:border-[#00eefc] hover:bg-[#00eefc]/15"
+              className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 p-5 text-left transition hover:border-cyan-400 hover:bg-cyan-400/15"
             >
-              <span className="block text-lg font-semibold text-white">
+              <span className="block text-lg font-semibold text-[var(--bd-text)]">
                 Project mới
               </span>
-              <span className="mt-2 block text-sm text-[#c3c6d7]">
+              <span className="mt-2 block text-sm text-[var(--bd-dim)]">
                 Tạo Project mới rồi tiếp tục với nguồn đã chọn.
               </span>
             </button>
             <button
               type="button"
               onClick={onChooseExisting}
-              className="rounded-xl border border-[#b4c5ff]/35 bg-[#2563eb]/15 p-5 text-left transition hover:border-[#b4c5ff] hover:bg-[#2563eb]/25"
+              className="rounded-xl border border-violet-300/35 bg-violet-500/15 p-5 text-left transition hover:border-violet-300 hover:bg-violet-500/25"
             >
-              <span className="block text-lg font-semibold text-white">
+              <span className="block text-lg font-semibold text-[var(--bd-text)]">
                 Project có sẵn
               </span>
-              <span className="mt-2 block text-sm text-[#c3c6d7]">
+              <span className="mt-2 block text-sm text-[var(--bd-dim)]">
                 Chọn một Project server-backed của bạn.
               </span>
             </button>
           </div>
         )}
 
-        <div className="flex justify-end gap-3 border-t border-white/10 bg-[#0e0e10]/40 px-7 py-5">
+        <div className="flex justify-end gap-3 border-t border-[var(--bd-border)] bg-black/50 px-7 py-5">
           {isExistingProjectStep && (
             <button
               type="button"
               onClick={onBack}
-              className="rounded-lg px-5 py-2.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white"
+              className="rounded-lg px-5 py-2.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)]"
             >
               Quay lại
             </button>
@@ -183,7 +183,7 @@ const SelectDestinationModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-white/10 px-5 py-2.5 text-white transition hover:bg-white/5"
+            className="rounded-lg border border-[var(--bd-border)] px-5 py-2.5 text-[var(--bd-text)] transition hover:bg-[var(--bd-fill-hover)]"
           >
             Hủy bỏ
           </button>

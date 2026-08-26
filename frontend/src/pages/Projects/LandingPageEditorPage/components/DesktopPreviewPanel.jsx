@@ -190,7 +190,7 @@ const DesktopPreviewPanel = ({
     >
       <div
         data-testid="desktop-preview-shell"
-        className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[var(--bd-panel-solid)] shadow-[0_30px_100px_rgba(0,0,0,.7)]"
+        className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] shadow-[0_30px_100px_rgba(0,0,0,.7)]"
       >
         <header className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--bd-border)] px-3 py-2 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">

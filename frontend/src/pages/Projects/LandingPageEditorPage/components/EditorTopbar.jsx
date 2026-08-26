@@ -13,10 +13,10 @@ import { normalizePlan } from '../../../../utils/planEntitlements'
 import ExportMenu from './ExportMenu'
 
 const SAVE_STATUS = {
-  saved: { label: 'Đã lưu', className: 'text-emerald-400' },
-  dirty: { label: 'Chưa lưu', className: 'text-amber-400' },
-  saving: { label: 'Đang lưu...', className: 'text-amber-400' },
-  error: { label: 'Lưu thất bại', className: 'text-rose-400' },
+  saved: { label: 'Đã lưu', className: 'text-[var(--bd-ok)]' },
+  dirty: { label: 'Chưa lưu', className: 'text-[var(--bd-warn)]' },
+  saving: { label: 'Đang lưu...', className: 'text-[var(--bd-warn)]' },
+  error: { label: 'Lưu thất bại', className: 'text-[var(--bd-danger)]' },
 }
 
 const toolButton =
