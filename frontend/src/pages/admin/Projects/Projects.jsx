@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ProjectTable from './components/ProjectTable'
+import ProjectDetailModal from './components/ProjectDetailModal'
 import { adminProjectsApi } from '../../../api/projects'
-import { errMsg } from '../adapters'
+import { errMsg, formatDate } from '../adapters'
 
 const PAGE_SIZE = 10
 
@@ -17,6 +18,10 @@ const toUI = (p) => ({
   status: p.status,
   pageCount: p.page_count,
   publishedUrl: p.published_url,
+  // Ba trường dưới đây list đã trả sẵn, trước đây bị bỏ đi — modal chi tiết cần.
+  ownerId: p.owner?.user_id || '',
+  createdAt: formatDate(p.created_at),
+  updatedAt: formatDate(p.updated_at),
 })
 
 const Projects = () => {
@@ -26,6 +31,7 @@ const Projects = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(null)
+  const [viewing, setViewing] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const fetchProjects = useCallback(
@@ -93,7 +99,7 @@ const Projects = () => {
       {loading ? (
         <div className="h-64 animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]" />
       ) : (
-        <ProjectTable projects={items} onView={() => {}} onDelete={setDeleting} />
+        <ProjectTable projects={items} onView={setViewing} onDelete={setDeleting} />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -120,6 +126,12 @@ const Projects = () => {
           </button>
         </div>
       </div>
+
+      <ProjectDetailModal
+        project={viewing}
+        onClose={() => setViewing(null)}
+        onDelete={setDeleting}
+      />
 
       <ConfirmDialog
         open={Boolean(deleting)}
