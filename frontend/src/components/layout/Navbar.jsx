@@ -88,17 +88,9 @@ const Navbar = () => {
               </button>
             </>
           ) : (
-            <>
-              <Link
-                to="/login"
-                className="text-sm font-semibold text-[var(--bd-dim)] transition-colors hover:text-[var(--bd-text)]"
-              >
-                Đăng nhập
-              </Link>
-              <Link to="/register" className="ad-btn-primary">
-                Thử miễn phí
-              </Link>
-            </>
+            <Link to="/register" className="ad-btn-primary">
+              Thử miễn phí
+            </Link>
           )}
         </div>
       </div>
