@@ -33,15 +33,22 @@
 }
 
 /* ===== Thẻ template — rê chuột thì ảnh tự cuộn để xem hết trang =====
-   Ảnh để chiều cao tự nhiên (thường cao hơn khung 10rem). Khi hover thì đẩy
-   lên đúng phần dôi ra: translateY(10rem - chiều cao ảnh).
+   Ảnh để chiều cao tự nhiên (cao hơn khung). Khi hover thì đẩy lên đúng phần
+   dôi ra: translateY(chiều cao khung - chiều cao ảnh).
    min(0px, ...) chặn trường hợp ảnh THẤP hơn khung — nếu không ảnh sẽ bị đẩy
-   xuống và để hở một mảng trống. */
+   xuống và để hở một mảng trống.
+
+   --thumb-h phải khớp chiều cao khung ảnh của từng nơi dùng:
+     admin (h-40)      -> 10rem, dùng mặc định bên dưới
+     trang chủ (h-64 p-8) -> 12rem, tự đặt lại qua style
+   Đặt sai thì ảnh cuộn hụt hoặc lố, không phải lỗi ảnh. */
 .thumb-scroll {
-  transition: transform 2.6s ease-in-out;
+  --thumb-h: 10rem;
+  --thumb-speed: 2.6s;
+  transition: transform var(--thumb-speed) ease-in-out;
 }
 .group:hover .thumb-scroll {
-  transform: translateY(min(0px, calc(10rem - 100%)));
+  transform: translateY(min(0px, calc(var(--thumb-h) - 100%)));
 }
 
 /* Tôn trọng thiết lập giảm chuyển động của hệ điều hành */
@@ -74,6 +81,12 @@
   /* Nhãn nổi trên ảnh (số section, nút sửa/xoá). Phải khai báo rgba tường minh:
      Tailwind KHÔNG áp được độ mờ kiểu /90 lên biến CSS — rule sẽ không sinh ra. */
   --bd-chip: rgba(15, 15, 25, 0.82);
+  /* Màu ngữ nghĩa. Nền tối thì dùng tông nhạt cho nổi;
+     nền sáng phải đảo sang tông đậm, nếu không chữ sẽ chìm hẳn. */
+  --bd-warn: #fcd34d;
+  --bd-danger: #f87171;
+  --bd-info: #22d3ee;
+  --bd-ok: #34d399;
 }
 
 .app-theme[data-mode='light'] {
@@ -93,6 +106,10 @@
   --bd-accent: #7c3aed;
   --bd-page-shadow: 0 18px 50px -22px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(15, 23, 42, 0.08);
   --bd-chip: rgba(255, 255, 255, 0.9);
+  --bd-warn: #b45309;
+  --bd-danger: #dc2626;
+  --bd-info: #0e7490;
+  --bd-ok: #047857;
 }
 
 /* Chuyển chế độ mượt, không giật */
@@ -153,5 +170,34 @@
   .ad-bar::before {
     content: '';
     @apply mr-2 inline-block h-3 w-0.5 rounded-full bg-gradient-to-b from-violet-400 to-cyan-400 align-middle;
+  }
+
+  /* ===== Trang chủ công khai =====
+     Dùng CHUNG token --bd-* với khu Admin để hai bên không bao giờ lệch màu.
+     Lưu ý: Tailwind KHÔNG sinh được rule khi thêm alpha vào biến CSS
+     (bg-[var(--x)]/90 không tạo ra CSS nào cả) — cần mờ thì dùng token rgba
+     riêng như --bd-topbar / --bd-chip. */
+  .lp-section {
+    @apply relative border-t border-[var(--bd-border)] py-20;
+  }
+
+  /* Thẻ nội dung trang chủ — cùng nền/viền với .ad-card, thêm hiệu ứng nhấc lên */
+  .lp-card {
+    @apply rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] shadow-xl
+           transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40
+           hover:shadow-[0_18px_40px_-20px_rgba(139,92,246,.55)];
+  }
+
+  .lp-title {
+    @apply font-serif text-3xl font-normal text-[var(--bd-text)] sm:text-4xl;
+  }
+
+  .lp-sub {
+    @apply text-sm leading-relaxed text-[var(--bd-dim)] sm:text-base;
+  }
+
+  /* Chữ gradient tím→cyan, dùng cho từ được nhấn trong tiêu đề lớn */
+  .lp-accent-text {
+    @apply bg-gradient-to-r from-violet-400 to-cyan-300 bg-clip-text font-semibold text-transparent;
   }
 }

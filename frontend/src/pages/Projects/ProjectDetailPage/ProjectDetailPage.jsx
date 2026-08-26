@@ -231,11 +231,11 @@ const ProjectDetailPage = () => {
   if (isProjectsLoading) {
     return (
       <main
-        className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]"
+        className="grid min-h-screen place-items-center bg-[var(--bd-fill)] px-4 text-[var(--bd-text)]"
         aria-busy="true"
       >
-        <section className="w-full max-w-lg animate-pulse rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
-          <p className="text-sm text-[#c3c6d7]">Đang tải Project...</p>
+        <section className="w-full max-w-lg animate-pulse rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center">
+          <p className="text-sm text-[var(--bd-dim)]">Đang tải Project...</p>
         </section>
       </main>
     )
@@ -243,19 +243,19 @@ const ProjectDetailPage = () => {
 
   if (projectsError) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
+      <main className="grid min-h-screen place-items-center bg-[var(--bd-fill)] px-4 text-[var(--bd-text)]">
         <section
-          className="w-full max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center"
+          className="w-full max-w-lg rounded-2xl border border-red-400/30 bg-[var(--bd-panel-solid)] p-8 text-center"
           role="alert"
         >
-          <h1 className="text-2xl font-semibold text-white">
+          <h1 className="text-2xl font-semibold text-[var(--bd-text)]">
             Không tải được Project
           </h1>
-          <p className="mt-3 text-sm text-[#c3c6d7]">{projectsError}</p>
+          <p className="mt-3 text-sm text-[var(--bd-dim)]">{projectsError}</p>
           <button
             type="button"
             onClick={() => reloadProjects()}
-            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+            className="mt-6 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-3 font-semibold text-white"
           >
             Thử lại
           </button>
@@ -266,18 +266,18 @@ const ProjectDetailPage = () => {
 
   if (!project) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
-        <section className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#ffb4ab]">
+      <main className="grid min-h-screen place-items-center bg-[var(--bd-fill)] px-4 text-[var(--bd-text)]">
+        <section className="w-full max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--bd-danger)]">
             Project not found
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-white">
+          <h1 className="mt-3 text-3xl font-semibold text-[var(--bd-text)]">
             Không tìm thấy Project
           </h1>
           <button
             type="button"
             onClick={() => navigate('/projects')}
-            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+            className="mt-6 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-3 font-semibold text-white"
           >
             Quay lại My Project
           </button>
@@ -292,7 +292,7 @@ const ProjectDetailPage = () => {
     currentPageState.status === 'idle' || currentPageState.status === 'loading'
 
   return (
-    <div className="min-h-screen bg-[#131315] text-[#e5e1e4]">
+    <div className="min-h-screen bg-[var(--bd-fill)] text-[var(--bd-text)]">
       <ProjectSidebar
         user={user}
         isOpen={isMobileMenuOpen}
@@ -310,14 +310,14 @@ const ProjectDetailPage = () => {
             <button
               type="button"
               onClick={() => navigate('/projects')}
-              className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8d90a0] transition hover:text-[#d3fbff]"
+              className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--bd-muted)] transition hover:text-[var(--bd-info)]"
             >
               ← Quay lại My Project
             </button>
-            <h1 className="text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-[-0.02em] text-[var(--bd-text)] sm:text-5xl">
               {project.name}
             </h1>
-            <p className="mt-3 text-base text-[#c3c6d7] sm:text-lg">
+            <p className="mt-3 text-base text-[var(--bd-dim)] sm:text-lg">
               Quản lý và mở lại các Landing Page trong Project này.
             </p>
           </div>
@@ -333,36 +333,36 @@ const ProjectDetailPage = () => {
               {[0, 1, 2].map((item) => (
                 <div
                   key={item}
-                  className="h-[330px] animate-pulse rounded-xl border border-white/10 bg-[#1c1b1d]"
+                  className="h-[330px] animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
                 />
               ))}
             </div>
           ) : currentPageState.status === 'error' ? (
             <div
-              className="mx-auto mt-12 max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center"
+              className="mx-auto mt-12 max-w-lg rounded-2xl border border-red-400/30 bg-[var(--bd-panel-solid)] p-8 text-center"
               role="alert"
             >
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-[var(--bd-text)]">
                 Không tải được Landing Page
               </h2>
-              <p className="mt-3 text-sm text-[#c3c6d7]">
+              <p className="mt-3 text-sm text-[var(--bd-dim)]">
                 {currentPageState.error}
               </p>
               <button
                 type="button"
                 onClick={reloadLandingPages}
-                className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-2.5 font-semibold text-[#002a78]"
+                className="mt-6 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-2.5 font-semibold text-white"
               >
                 Thử lại
               </button>
             </div>
           ) : currentPageState.items.length === 0 ? (
             <div className="mx-auto flex min-h-[480px] max-w-3xl items-center justify-center">
-              <div className="w-full rounded-2xl border border-dashed border-white/15 bg-[#121a27]/70 px-6 py-14 text-center">
-                <h2 className="text-3xl font-semibold text-white">
+              <div className="w-full rounded-2xl border border-dashed border-[var(--bd-border)] bg-[var(--bd-panel-solid)] px-6 py-14 text-center">
+                <h2 className="text-3xl font-semibold text-[var(--bd-text)]">
                   Project chưa có Landing Page
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-[#c3c6d7]">
+                <p className="mx-auto mt-4 max-w-xl text-[var(--bd-dim)]">
                   Project này chưa có Landing Page. Bạn có thể bắt đầu từ Thư
                   viện Template toàn cục.
                 </p>

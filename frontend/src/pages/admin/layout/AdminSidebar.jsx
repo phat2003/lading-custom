@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import Logo from '../../../components/common/Logo'
 import {
   LayoutDashboardIcon,
   UserIcon,
@@ -10,7 +11,6 @@ import {
   SettingsIcon,
   HelpCircleIcon,
   LogOutIcon,
-  ZapIcon,
 } from '../../../components/icons'
 import Avatar from '../../../components/common/Avatar'
 import { useAuth } from '../../../context/AuthContext'
@@ -35,9 +35,7 @@ export default function AdminSidebar() {
     <aside className="relative z-10 flex h-screen w-64 shrink-0 flex-col border-r border-[var(--bd-border)] bg-[var(--bd-topbar)] backdrop-blur-xl">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 shadow-[0_0_20px_-4px_rgba(139,92,246,.8)]">
-          <ZapIcon size={18} className="text-[var(--bd-text)]" />
-        </div>
+        <Logo />
         <div>
           <p className="text-sm font-bold text-[var(--bd-text)]">Amazing Tech</p>
           <p className="text-xs text-[var(--bd-muted)]">Template Studio</p>

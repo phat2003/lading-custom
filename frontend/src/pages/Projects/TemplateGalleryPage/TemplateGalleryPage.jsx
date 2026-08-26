@@ -387,11 +387,11 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
   if (!isGlobalGallery && isProjectsLoading) {
     return (
       <main
-        className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]"
+        className="grid min-h-screen place-items-center bg-[var(--bd-fill)] px-4 text-[var(--bd-text)]"
         aria-busy="true"
       >
-        <section className="w-full max-w-lg animate-pulse rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
-          <p className="text-sm text-[#c3c6d7]">Đang tải Project...</p>
+        <section className="w-full max-w-lg animate-pulse rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center">
+          <p className="text-sm text-[var(--bd-dim)]">Đang tải Project...</p>
         </section>
       </main>
     )
@@ -399,16 +399,16 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
 
   if (!isGlobalGallery && projectsError) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
-        <section className="w-full max-w-lg rounded-2xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-8 text-center" role="alert">
-          <h1 className="text-2xl font-semibold text-white">
+      <main className="grid min-h-screen place-items-center bg-[var(--bd-fill)] px-4 text-[var(--bd-text)]">
+        <section className="w-full max-w-lg rounded-2xl border border-red-400/30 bg-[var(--bd-panel-solid)] p-8 text-center" role="alert">
+          <h1 className="text-2xl font-semibold text-[var(--bd-text)]">
             Không tải được Project
           </h1>
-          <p className="mt-3 text-sm text-[#c3c6d7]">{projectsError}</p>
+          <p className="mt-3 text-sm text-[var(--bd-dim)]">{projectsError}</p>
           <button
             type="button"
             onClick={() => reloadProjects()}
-            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+            className="mt-6 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-3 font-semibold text-white"
           >
             Thử lại
           </button>
@@ -419,18 +419,18 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
 
   if (!isGlobalGallery && !project) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#131315] px-4 text-[#e5e1e4]">
-        <section className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#1c1b1d] p-8 text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#ffb4ab]">
+      <main className="grid min-h-screen place-items-center bg-[var(--bd-fill)] px-4 text-[var(--bd-text)]">
+        <section className="w-full max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--bd-danger)]">
             Project not found
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-white">
+          <h1 className="mt-3 text-3xl font-semibold text-[var(--bd-text)]">
             Không tìm thấy Project
           </h1>
           <button
             type="button"
             onClick={() => navigate('/projects')}
-            className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-3 font-semibold text-[#002a78]"
+            className="mt-6 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-3 font-semibold text-white"
           >
             Quay lại My Project
           </button>
@@ -440,7 +440,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#131315] text-[#e5e1e4]">
+    <div className="min-h-screen bg-[var(--bd-fill)] text-[var(--bd-text)]">
       <ProjectSidebar
         user={user}
         isOpen={isMobileMenuOpen}
@@ -460,18 +460,18 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
               onClick={() =>
                 navigate(isGlobalGallery ? '/projects' : `/projects/${projectId}`)
               }
-              className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8d90a0] transition hover:text-[#d3fbff]"
+              className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--bd-muted)] transition hover:text-[var(--bd-info)]"
             >
               ← {isGlobalGallery ? 'My Project' : project.name}
             </button>
-            <h1 className="text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-[-0.02em] text-[var(--bd-text)] sm:text-5xl">
               {isMyTemplates
                 ? 'Mẫu của tôi'
                 : isGlobalGallery
                   ? 'Thư viện Template'
                   : 'Chọn mẫu giao diện'}
             </h1>
-            <p className="mt-3 text-base text-[#c3c6d7] sm:text-lg">
+            <p className="mt-3 text-base text-[var(--bd-dim)] sm:text-lg">
               {isMyTemplates
                 ? 'Xem các Template cá nhân đã lưu từ Landing Page.'
                 : isGlobalGallery
@@ -485,7 +485,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
               <span className="sr-only">Tìm kiếm mẫu</span>
               <SearchIcon
                 size={20}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#c3c6d7]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--bd-dim)]"
               />
               <input
                 value={searchTerm}
@@ -495,13 +495,13 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                     ? 'Tìm kiếm mẫu của tôi...'
                     : 'Tìm kiếm mẫu...'
                 }
-                className="h-12 w-full rounded-lg border border-[#434655]/30 bg-[#2a2a2c] pl-11 pr-4 text-white outline-none transition placeholder:text-[#8d90a0] focus:border-[#b4c5ff] focus:ring-1 focus:ring-[#b4c5ff]"
+                className="h-12 w-full rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] pl-11 pr-4 text-[var(--bd-text)] outline-none transition placeholder:text-[var(--bd-muted)] focus:border-violet-300 focus:ring-1 focus:ring-violet-300"
               />
             </label>
             <button
               type="button"
               onClick={() => showMessage('Bộ lọc nâng cao sẽ được bổ sung sau.')}
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-[#434655]/30 bg-[#2a2a2c] text-white transition hover:bg-[#353437]"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-text)] transition hover:bg-[var(--bd-fill)]"
               aria-label="Mở bộ lọc"
             >
               <FilterIcon size={20} />
@@ -511,7 +511,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
 
         {isGlobalGallery && (
           <nav
-            className="mx-auto mt-8 flex max-w-[1280px] gap-2 border-b border-white/10"
+            className="mx-auto mt-8 flex max-w-[1280px] gap-2 border-b border-[var(--bd-border)]"
             aria-label="Khu vực Template"
           >
             <NavLink
@@ -520,8 +520,8 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
               className={({ isActive }) =>
                 `border-b-2 px-4 py-3 text-sm font-semibold transition ${
                   isActive
-                    ? 'border-[#b4c5ff] text-[#dbe1ff]'
-                    : 'border-transparent text-[#8d90a0] hover:text-white'
+                    ? 'border-violet-300 text-[var(--bd-accent)]'
+                    : 'border-transparent text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
                 }`
               }
             >
@@ -532,8 +532,8 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
               className={({ isActive }) =>
                 `border-b-2 px-4 py-3 text-sm font-semibold transition ${
                   isActive
-                    ? 'border-[#b4c5ff] text-[#dbe1ff]'
-                    : 'border-transparent text-[#8d90a0] hover:text-white'
+                    ? 'border-violet-300 text-[var(--bd-accent)]'
+                    : 'border-transparent text-[var(--bd-muted)] hover:text-[var(--bd-text)]'
                 }`
               }
             >
@@ -552,8 +552,8 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                   onClick={() => setActiveFilter(filter.id)}
                   className={`rounded-full border px-4 py-2 font-mono text-[11px] transition ${
                     activeFilter === filter.id
-                      ? 'border-[#b4c5ff]/30 bg-[#2563eb]/20 text-[#b4c5ff]'
-                      : 'border-[#434655]/25 bg-[#2a2a2c] text-[#c3c6d7] hover:bg-[#353437]'
+                      ? 'border-violet-300/30 bg-violet-500/20 text-[var(--bd-accent)]'
+                      : 'border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-dim)] hover:bg-[var(--bd-fill)]'
                   }`}
                 >
                   {filter.label}
@@ -580,24 +580,24 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
               [0, 1, 2].map((item) => (
                 <div
                   key={item}
-                  className="h-[320px] animate-pulse rounded-xl border border-white/10 bg-[#1c1b1d]"
+                  className="h-[320px] animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
                 />
               ))
             ) : templateState.status === 'error' ? (
               <div
-                className="rounded-xl border border-[#ffb4ab]/30 bg-[#1c1b1d] p-10 text-center sm:col-span-2 xl:col-span-2"
+                className="rounded-xl border border-red-400/30 bg-[var(--bd-panel-solid)] p-10 text-center sm:col-span-2 xl:col-span-2"
                 role="alert"
               >
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-[var(--bd-text)]">
                   Không tải được Template
                 </h2>
-                <p className="mt-2 text-sm text-[#c3c6d7]">
+                <p className="mt-2 text-sm text-[var(--bd-dim)]">
                   {templateState.error}
                 </p>
                 <button
                   type="button"
                   onClick={retryTemplates}
-                  className="mt-6 rounded-lg bg-[#b4c5ff] px-5 py-2.5 font-semibold text-[#002a78]"
+                  className="mt-6 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-2.5 font-semibold text-white"
                 >
                   Thử lại
                 </button>
@@ -622,8 +622,8 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                 />
               ))
             ) : (
-              <div className="rounded-xl border border-white/10 bg-[#1c1b1d] p-10 text-center sm:col-span-2 xl:col-span-2">
-                <h2 className="text-xl font-semibold text-white">
+              <div className="rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-10 text-center sm:col-span-2 xl:col-span-2">
+                <h2 className="text-xl font-semibold text-[var(--bd-text)]">
                   {isMyTemplates && !searchTerm.trim()
                     ? 'Bạn chưa có mẫu cá nhân nào'
                     : isGlobalGallery && !searchTerm.trim()
@@ -634,7 +634,7 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
                         ? 'Chưa có System Template khả dụng'
                         : 'Không tìm thấy mẫu'}
                 </h2>
-                <p className="mt-2 text-sm text-[#c3c6d7]">
+                <p className="mt-2 text-sm text-[var(--bd-dim)]">
                   {searchTerm.trim()
                     ? isGlobalGallery
                       ? 'Thử thay đổi từ khóa tìm kiếm.'

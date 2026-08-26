@@ -1,186 +1,184 @@
 import { Link } from 'react-router-dom'
 
-export default function Hero() {
-  return (
-    <section className="relative pt-20 pb-16 overflow-hidden bg-slate-950 md:pt-32 md:pb-24">
-      {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/2 right-10 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
+const CHECKLIST = ['Không thẻ tín dụng', 'Thiết lập dưới 10 phút']
 
-      <div className="relative z-10 px-6 mx-auto max-w-7xl">
+// Danh sách phần tử trong mockup panel trái của builder.
+const MOCK_COMPONENTS = [
+  { label: 'Văn bản', glyph: 'T', tint: 'bg-violet-500/15 text-violet-400' },
+  { label: 'Hình ảnh', glyph: '▣', tint: 'bg-cyan-500/15 text-cyan-400' },
+  { label: 'Nút bấm', glyph: '▭', tint: 'bg-amber-500/15 text-amber-400' },
+  { label: 'Biểu mẫu', glyph: '☰', tint: 'bg-emerald-500/15 text-emerald-400' },
+]
+
+const Hero = () => {
+  return (
+    <section className="relative overflow-hidden pb-16 pt-20 md:pb-24 md:pt-32">
+      <div className="relative z-10 mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
-          
-          {/* Left Column: Copy & Actions */}
-          <div className="space-y-8 lg:col-span-6">
-            
-            {/* Tag / Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-950/40 px-4 py-1.5 text-xs font-semibold text-blue-400 backdrop-blur-sm">
-              <span className="flex w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-               LẬP TRÌNH WEBSITE KHÔNG CẦN CODE
+          {/* Cột trái: nội dung + hành động */}
+          <div className="animate-fade-in-up space-y-8 lg:col-span-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold text-[var(--bd-accent)] backdrop-blur-sm">
+              <span className="flex h-2 w-2 animate-pulse rounded-full bg-violet-400" />
+              LẬP TRÌNH WEBSITE KHÔNG CẦN CODE
             </div>
 
-            {/* Heading */}
-            <h1 className="font-serif text-4xl font-normal text-white leading-[6rem] sm:text-5xl lg:text-6xl lg:leading-[4.8rem]">
+            <h1 className="font-serif text-4xl font-normal leading-tight text-[var(--bd-text)] sm:text-5xl lg:text-6xl">
               Xây dựng trang đích hiệu suất cao trong{' '}
-              <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 decoration-blue-500">
-                vài phút
-              </span>{' '}
-              — không cần code
+              <span className="lp-accent-text">vài phút</span> — không cần code
             </h1>
 
-            {/* Description */}
-            <p className="max-w-xl text-lg leading-relaxed text-slate-400">
-              Kéo thả, tùy chỉnh và xuất bản trang web chuyên nghiệp của bạn chỉ trong vài phút. Chọn từ hơn 100 template và bắt đầu xây dựng ngay hôm nay.
+            <p className="max-w-xl text-lg leading-relaxed text-[var(--bd-dim)]">
+              Kéo thả, tùy chỉnh và xuất bản trang web chuyên nghiệp của bạn chỉ trong vài phút.
+              Chọn từ thư viện template đa dạng và bắt đầu xây dựng ngay hôm nay.
             </p>
 
-            {/* Call to Actions */}
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_0_26px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_34px_-2px_rgba(139,92,246,1)] active:translate-y-0"
               >
                 <span>Bắt đầu — Miễn phí</span>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Link>
-              
+
               <a
                 href="#video"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-800 bg-slate-900/50 px-6 py-3.5 text-sm font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--bd-border)] bg-[var(--bd-fill)] px-6 py-3.5 text-sm font-semibold text-[var(--bd-dim)] transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-400/40 hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] active:translate-y-0"
               >
-                <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-violet-400" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
                 <span>Xem Video</span>
               </a>
             </div>
 
-            {/* Small Checklist */}
-            <div className="flex flex-wrap pt-2 text-sm gap-x-8 gap-y-2 text-slate-400">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Không thẻ tín dụng</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Thiết lập dưới 10 phút</span>
-              </div>
+            <div className="flex flex-wrap gap-x-8 gap-y-2 pt-2 text-sm text-[var(--bd-dim)]">
+              {CHECKLIST.map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
-
           </div>
 
-          {/* Right Column: Visual Mockup (Builder Preview) */}
+          {/* Cột phải: mockup cửa sổ builder — dùng token nên đổi theo sáng/tối */}
           <div className="relative lg:col-span-6">
-            {/* Glowing borders behind mockup */}
-            <div className="absolute transition duration-1000 -inset-1 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 opacity-20 blur-xl group-hover:opacity-100 group-hover:duration-200"></div>
-            
-            {/* Mockup UI Window */}
-            <div className="relative overflow-hidden border shadow-2xl border-slate-800 bg-slate-950/80 rounded-2xl backdrop-blur-sm">
-              {/* Window Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/60">
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-400 opacity-20 blur-xl" />
+
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] shadow-[var(--bd-page-shadow)]">
+              {/* Thanh tiêu đề cửa sổ */}
+              <div className="flex items-center justify-between border-b border-[var(--bd-border)] bg-[var(--bd-fill)] px-4 py-3">
                 <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                  <div className="h-3 w-3 rounded-full bg-red-500/60" />
+                  <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
+                  <div className="h-3 w-3 rounded-full bg-green-500/60" />
                 </div>
-                <div className="font-mono text-xs text-slate-500">lp-builder.co/app/editor</div>
+                <div className="font-mono text-xs text-[var(--bd-muted)]">lp-builder.co/app/editor</div>
                 <div className="w-12" />
               </div>
 
-              {/* Editor Workspace Mockup */}
-              <div className="grid grid-cols-12 h-[340px] text-xs">
-                
-                {/* Left Sidebar: Components */}
-                <div className="col-span-3 p-3 space-y-4 border-r border-slate-900 bg-slate-950">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Components</div>
+              <div className="grid h-[340px] grid-cols-12 text-xs">
+                {/* Panel trái: danh sách phần tử */}
+                <div className="col-span-3 space-y-4 border-r border-[var(--bd-border)] bg-[var(--bd-app)] p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--bd-muted)]">
+                    Components
+                  </div>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 p-2 border rounded bg-slate-900 border-slate-800 text-slate-300">
-                      <div className="w-4 h-4 rounded bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold font-serif text-[10px]">T</div>
-                      <span>Văn bản</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 border rounded bg-slate-900 border-slate-800 text-slate-300">
-                      <div className="w-4 h-4 rounded bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-[10px]">🖼️</div>
-                      <span>Hình ảnh</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 border rounded bg-slate-900 border-slate-800 text-slate-300">
-                      <div className="w-4 h-4 rounded bg-amber-600/20 text-amber-400 flex items-center justify-center text-[10px]">🔳</div>
-                      <span>Nút bấm</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 border rounded bg-slate-900 border-slate-800 text-slate-300">
-                      <div className="w-4 h-4 rounded bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-[10px]">📋</div>
-                      <span>Biểu mẫu</span>
-                    </div>
+                    {MOCK_COMPONENTS.map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center gap-2 rounded border border-[var(--bd-border)] bg-[var(--bd-fill)] p-2 text-[var(--bd-dim)]"
+                      >
+                        <div className={`flex h-4 w-4 items-center justify-center rounded text-[10px] font-bold ${item.tint}`}>
+                          {item.glyph}
+                        </div>
+                        <span>{item.label}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Main Canvas Area */}
-                <div className="relative flex flex-col justify-between col-span-6 p-4 overflow-hidden bg-slate-900/40">
-                  {/* Decorative background grid pattern */}
-                  <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
+                {/* Canvas giữa */}
+                <div className="relative col-span-6 flex flex-col justify-between overflow-hidden bg-[var(--bd-fill)] p-4">
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-60"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(var(--bd-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bd-grid) 1px, transparent 1px)',
+                      backgroundSize: '16px 16px',
+                    }}
+                  />
 
-                  {/* Sample Landing Page inside Canvas */}
-                  <div className="relative z-10 p-4 space-y-3 border rounded shadow-lg border-blue-500/40 bg-slate-950">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-900">
-                      <div className="font-bold text-white text-[10px]">My SaaS Page</div>
-                      <div className="w-8 h-3 rounded bg-blue-600 text-[8px] flex items-center justify-center text-white scale-75">Sign up</div>
+                  {/* Trang mẫu bên trong canvas */}
+                  <div className="relative z-10 space-y-3 rounded border border-violet-400/40 bg-[var(--bd-panel-solid)] p-4 shadow-lg">
+                    <div className="flex items-center justify-between border-b border-[var(--bd-border)] pb-2">
+                      <div className="text-[10px] font-bold text-[var(--bd-text)]">My SaaS Page</div>
+                      <div className="flex h-3 w-8 scale-75 items-center justify-center rounded bg-gradient-to-r from-violet-500 to-cyan-400 text-[8px] text-white">
+                        Sign up
+                      </div>
                     </div>
-                    <div className="space-y-1.5 text-center py-2">
-                      <div className="h-2.5 w-3/4 bg-white/10 rounded mx-auto" />
-                      <div className="h-1.5 w-1/2 bg-slate-600 rounded mx-auto" />
+                    <div className="space-y-1.5 py-2 text-center">
+                      <div className="mx-auto h-2.5 w-3/4 rounded bg-[var(--bd-fill-hover)]" />
+                      <div className="mx-auto h-1.5 w-1/2 rounded bg-[var(--bd-muted)]" />
                     </div>
-                    <div className="h-6 w-16 bg-blue-600 rounded-md mx-auto flex items-center justify-center scale-90 border border-blue-400 shadow-[0_0_8px_rgba(37,99,235,0.4)]">
-                      <div className="h-1.5 w-8 bg-white/90 rounded" />
+                    <div className="mx-auto flex h-6 w-16 scale-90 items-center justify-center rounded-md bg-gradient-to-r from-violet-500 to-cyan-400 shadow-[0_0_10px_-2px_rgba(139,92,246,.9)]">
+                      <div className="h-1.5 w-8 rounded bg-white/90" />
                     </div>
                   </div>
 
-                  {/* Notification card floating */}
-                  <div className="relative z-10 self-end bg-slate-950 border border-slate-800 rounded-lg p-2.5 shadow-xl flex items-center gap-3 w-40 translate-x-2 -translate-y-2">
-                    <div className="flex items-center justify-center w-6 h-6 font-bold text-green-400 rounded-full bg-green-500/20">✓</div>
+                  {/* Thẻ thông báo nổi */}
+                  <div className="relative z-10 flex w-40 -translate-y-2 translate-x-2 items-center gap-3 self-end rounded-lg border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-2.5 shadow-xl">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 font-bold text-emerald-400">
+                      ✓
+                    </div>
                     <div>
-                      <div className="font-bold text-white text-[9px]">Xuất bản thành công</div>
-                      <div className="text-slate-500 text-[8px]">lp-builder.co/demo</div>
+                      <div className="text-[9px] font-bold text-[var(--bd-text)]">Xuất bản thành công</div>
+                      <div className="text-[8px] text-[var(--bd-muted)]">lp-builder.co/demo</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Settings Sidebar */}
-                <div className="col-span-3 p-3 space-y-4 border-l border-slate-900 bg-slate-950">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cấu hình</div>
+                {/* Panel phải: cấu hình */}
+                <div className="col-span-3 space-y-4 border-l border-[var(--bd-border)] bg-[var(--bd-app)] p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--bd-muted)]">
+                    Cấu hình
+                  </div>
                   <div className="space-y-3 text-[10px]">
                     <div className="space-y-1">
-                      <div className="font-medium text-slate-500">Màu chủ đạo</div>
+                      <div className="font-medium text-[var(--bd-muted)]">Màu chủ đạo</div>
                       <div className="flex gap-1.5">
-                        <div className="w-4 h-4 bg-blue-600 border border-white rounded-full" />
-                        <div className="w-4 h-4 bg-purple-600 rounded-full" />
-                        <div className="w-4 h-4 bg-indigo-600 rounded-full" />
-                        <div className="w-4 h-4 bg-teal-600 rounded-full" />
+                        <div className="h-4 w-4 rounded-full border border-[var(--bd-text)] bg-violet-500" />
+                        <div className="h-4 w-4 rounded-full bg-cyan-400" />
+                        <div className="h-4 w-4 rounded-full bg-indigo-500" />
+                        <div className="h-4 w-4 rounded-full bg-emerald-500" />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <div className="font-medium text-slate-500">Bo góc</div>
-                      <div className="h-1.5 w-full bg-slate-900 rounded-full relative">
-                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full bg-blue-600 border border-slate-950 shadow" />
+                      <div className="font-medium text-[var(--bd-muted)]">Bo góc</div>
+                      <div className="relative h-1.5 w-full rounded-full bg-[var(--bd-fill-hover)]">
+                        <div className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 shadow" />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <div className="font-medium text-slate-500">Bóng đổ</div>
-                      <div className="p-1 text-center border rounded bg-slate-900 border-slate-800 text-slate-300">Trung bình</div>
+                      <div className="font-medium text-[var(--bd-muted)]">Bóng đổ</div>
+                      <div className="rounded border border-[var(--bd-border)] bg-[var(--bd-fill)] p-1 text-center text-[var(--bd-dim)]">
+                        Trung bình
+                      </div>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
-
           </div>
-
         </div>
       </div>
     </section>
   )
 }
+
+export default Hero

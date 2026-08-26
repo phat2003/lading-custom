@@ -141,7 +141,7 @@ const CtaLinkControls = ({
               ))}
             </select>
             {targetSectionMissing && (
-              <p className="mt-2 text-xs leading-relaxed text-amber-300">
+              <p className="mt-2 text-xs leading-relaxed text-[var(--bd-warn)]">
                 Section đích không còn tồn tại. Chọn Section khác hoặc xóa liên kết.
               </p>
             )}
@@ -198,7 +198,7 @@ const CtaLinkControls = ({
 
             {landingPagesStatus === 'error' && (
               <div className="mt-2 rounded-lg border border-red-400/20 bg-red-500/[0.06] p-2.5">
-                <p className="text-xs leading-relaxed text-red-300">
+                <p className="text-xs leading-relaxed text-[var(--bd-danger)]">
                   {landingPagesError || 'Không tải được danh sách Landing Page.'}
                 </p>
                 <button
@@ -212,7 +212,7 @@ const CtaLinkControls = ({
             )}
 
             {targetLandingPageMissing && (
-              <p className="mt-2 text-xs leading-relaxed text-amber-300">
+              <p className="mt-2 text-xs leading-relaxed text-[var(--bd-warn)]">
                 Landing Page đích không còn tồn tại hoặc không thuộc Project hiện tại.
               </p>
             )}
@@ -230,7 +230,7 @@ const CtaLinkControls = ({
               Kiểm tra liên kết
             </button>
             {!targetLandingPage.publicUrl && (
-              <p className="text-xs leading-relaxed text-amber-300">
+              <p className="text-xs leading-relaxed text-[var(--bd-warn)]">
                 {targetLandingPage.status === 'published'
                   ? 'API chưa cung cấp slug công khai hợp lệ cho Landing Page này.'
                   : 'Landing Page đích đang là Draft nên chưa có public link để kiểm tra.'}

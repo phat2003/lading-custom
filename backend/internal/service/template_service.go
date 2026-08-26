@@ -111,6 +111,9 @@ type ListTemplatesInput struct {
 	// VisibleToUserID: chỉ trả mẫu user này được phép dùng (system đã publish
 	// hoặc mẫu của chính họ). Nil = xem tất cả, chỉ dành cho admin.
 	VisibleToUserID *uuid.UUID
+
+	// PublicOnly: chỉ mẫu hệ thống đã publish (trang chủ, không cần đăng nhập).
+	PublicOnly bool
 }
 
 // ListTemplates trả một trang template kèm tổng số bản ghi khớp bộ lọc.
@@ -125,6 +128,7 @@ func (s *TemplateService) ListTemplates(in ListTemplatesInput) ([]models.Templat
 		Limit:    in.Limit,
 
 		VisibleToUserID: in.VisibleToUserID,
+		PublicOnly:      in.PublicOnly,
 	})
 	if err != nil {
 		return nil, 0, err

@@ -1,10 +1,23 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import { MoonIcon, SunIcon } from '../icons'
+import Logo from '../common/Logo'
 
-export default function Navbar() {
+const NAV_LINKS = [
+  { id: 'features', label: 'Tính năng' },
+  { id: 'templates', label: 'Template' },
+  { id: 'pricing', label: 'Bảng giá' },
+  { id: 'reviews', label: 'Review' },
+]
+
+const Navbar = () => {
   // dashboardPath: admin -> /admin, user thường -> /projects
   const { user, logout, dashboardPath } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
+
+  const isDark = theme === 'dark'
 
   const handleLogout = () => {
     logout()
@@ -13,70 +26,76 @@ export default function Navbar() {
 
   // Cuộn mượt đến các phần trên trang chủ
   const scrollToSection = (id) => {
-    const element = document.getElementById(id)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-6 py-4">
+    // bg dùng --bd-topbar (token rgba sẵn có) chứ không phải bg-[var(--bd-app)]/80:
+    // Tailwind không sinh được rule khi thêm alpha vào biến CSS.
+    <nav className="sticky top-0 z-50 border-b border-[var(--bd-border)] bg-[var(--bd-topbar)] px-6 py-4 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-white tracking-wide">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-            <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
-          </div>
+        <Link
+          to="/"
+          className="group flex items-center gap-2 text-xl font-bold tracking-wide text-[var(--bd-text)]"
+        >
+          <Logo className="transition-transform duration-300 group-hover:scale-105" />
           <span>LP Builder</span>
         </Link>
 
-        {/* Navigation Links */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-          <button onClick={() => scrollToSection('features')} className="hover:text-white transition-colors cursor-pointer">
-            Tính năng
-          </button>
-          <button onClick={() => scrollToSection('templates')} className="hover:text-white transition-colors cursor-pointer">
-            Template
-          </button>
-          <button onClick={() => scrollToSection('pricing')} className="hover:text-white transition-colors cursor-pointer">
-            Bảng giá
-          </button>
-          <button onClick={() => scrollToSection('reviews')} className="hover:text-white transition-colors cursor-pointer">
-            Review
-          </button>
+        {/* Điều hướng trong trang */}
+        <div className="hidden items-center gap-8 text-sm font-medium text-[var(--bd-dim)] md:flex">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => scrollToSection(link.id)}
+              className="relative cursor-pointer py-1 transition-colors hover:text-[var(--bd-text)] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:rounded-full after:bg-gradient-to-r after:from-violet-400 after:to-cyan-400 after:transition-all after:duration-300 hover:after:w-full"
+            >
+              {link.label}
+            </button>
+          ))}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4">
+        {/* Hành động */}
+        <div className="flex items-center gap-3">
+          {/* Đổi giao diện sáng/tối — dùng chung ThemeContext với khu Admin */}
+          <button
+            onClick={toggleTheme}
+            title={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+            className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-lg border border-[var(--bd-border)] bg-[var(--bd-fill)] text-[var(--bd-dim)] transition-all duration-200 hover:border-violet-400/40 hover:text-violet-400"
+          >
+            <span className={`absolute transition-all duration-300 ${isDark ? 'rotate-0 opacity-100' : 'rotate-90 opacity-0'}`}>
+              <MoonIcon size={17} />
+            </span>
+            <span className={`absolute transition-all duration-300 ${isDark ? '-rotate-90 opacity-0' : 'rotate-0 opacity-100'}`}>
+              <SunIcon size={17} />
+            </span>
+          </button>
+
           {user ? (
             <>
-              <span className="hidden sm:inline text-sm text-slate-300">
-                Hi, <strong className="text-white">{user.full_name || user.email}</strong>
+              <span className="hidden text-sm text-[var(--bd-dim)] sm:inline">
+                Hi, <strong className="text-[var(--bd-text)]">{user.full_name || user.email}</strong>
               </span>
-              <Link
-                to={dashboardPath}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0"
-              >
+              <Link to={dashboardPath} className="ad-btn-primary">
                 Vào Dashboard
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                className="cursor-pointer text-sm font-medium text-[var(--bd-muted)] transition-colors hover:text-red-400"
               >
                 Đăng xuất
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
+              <Link
+                to="/login"
+                className="text-sm font-semibold text-[var(--bd-dim)] transition-colors hover:text-[var(--bd-text)]"
+              >
                 Đăng nhập
               </Link>
-              <Link
-                to="/register"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0"
-              >
+              <Link to="/register" className="ad-btn-primary">
                 Thử miễn phí
               </Link>
             </>
@@ -86,3 +105,5 @@ export default function Navbar() {
     </nav>
   )
 }
+
+export default Navbar

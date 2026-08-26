@@ -32,7 +32,7 @@ const CloneTemplateModal = ({ template, onClose }) => {
     <div className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-black/75 px-4 py-6 backdrop-blur-sm">
       <form
         onSubmit={(event) => event.preventDefault()}
-        className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#1c1b1d] p-6 text-[#e5e1e4] shadow-2xl sm:p-8"
+        className="relative w-full max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-6 text-[var(--bd-text)] shadow-2xl sm:p-8"
         role="dialog"
         aria-modal="true"
         aria-labelledby="clone-template-title"
@@ -40,36 +40,36 @@ const CloneTemplateModal = ({ template, onClose }) => {
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#00eefc]/50"
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
           aria-label="Đóng modal nhân bản mẫu"
         >
           <XIcon size={21} />
         </button>
 
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#00eefc]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--bd-info)]">
           Clone Template
         </p>
         <h2
           id="clone-template-title"
-          className="mt-3 pr-10 text-2xl font-semibold text-white"
+          className="mt-3 pr-10 text-2xl font-semibold text-[var(--bd-text)]"
         >
           Nhân bản mẫu
         </h2>
-        <p className="mt-3 text-sm leading-6 text-[#c3c6d7]">
-          Mẫu nguồn: <span className="font-semibold text-white">{template.name}</span>
+        <p className="mt-3 text-sm leading-6 text-[var(--bd-dim)]">
+          Mẫu nguồn: <span className="font-semibold text-[var(--bd-text)]">{template.name}</span>
         </p>
 
-        <label className="mt-7 block text-sm font-medium text-[#e5e1e4]">
+        <label className="mt-7 block text-sm font-medium text-[var(--bd-text)]">
           Tên Template bản sao
           <input
             ref={inputRef}
             value={name}
             maxLength={TEMPLATE_NAME_MAX_LENGTH + 1}
             onChange={(event) => setName(event.target.value)}
-            className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition focus:ring-2 ${
+            className={`mt-3 w-full rounded-lg border bg-[var(--bd-fill)] px-4 py-3 text-[var(--bd-text)] outline-none transition focus:ring-2 ${
               validationError
-                ? 'border-[#ffb4ab] focus:ring-red-400/20'
-                : 'border-white/10 focus:border-[#b4c5ff] focus:ring-[#2563eb]/20'
+                ? 'border-red-400 focus:ring-red-400/20'
+                : 'border-[var(--bd-border)] focus:border-violet-300 focus:ring-violet-500/20'
             }`}
             aria-invalid={Boolean(validationError)}
             aria-describedby={
@@ -86,7 +86,7 @@ const CloneTemplateModal = ({ template, onClose }) => {
               ? 'clone-template-name-error'
               : 'clone-template-name-hint'
           }
-          className={`mt-2 text-xs ${validationError ? 'text-[#ffb4ab]' : 'text-[#8d90a0]'}`}
+          className={`mt-2 text-xs ${validationError ? 'text-[var(--bd-danger)]' : 'text-[var(--bd-muted)]'}`}
           role={validationError ? 'alert' : undefined}
         >
           {validationError || 'Từ 2 đến 200 ký tự.'}
@@ -94,7 +94,7 @@ const CloneTemplateModal = ({ template, onClose }) => {
 
         <div
           id="clone-template-unavailable"
-          className="mt-6 rounded-xl border border-[#eec200]/25 bg-[#eec200]/5 px-4 py-3 text-sm leading-6 text-[#ffe083]"
+          className="mt-6 rounded-xl border border-amber-400/25 bg-amber-400/5 px-4 py-3 text-sm leading-6 text-amber-300"
           role="status"
         >
           Chức năng nhân bản đang chờ Backend hỗ trợ. Chưa có Template mới nào
@@ -105,7 +105,7 @@ const CloneTemplateModal = ({ template, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-5 py-2.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#00eefc]/50"
+            className="rounded-lg px-5 py-2.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
           >
             Hủy bỏ
           </button>
@@ -113,7 +113,7 @@ const CloneTemplateModal = ({ template, onClose }) => {
             type="button"
             disabled
             aria-describedby="clone-template-unavailable"
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-5 py-2.5 font-semibold text-white opacity-45 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-5 py-2.5 font-semibold text-white opacity-45 disabled:cursor-not-allowed"
           >
             <CopyIcon size={17} />
             Nhân bản

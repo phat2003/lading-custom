@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { useTheme } from './context/ThemeContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
@@ -28,12 +29,20 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
-// Chỉ áp dụng typography của khu My Project phía User, không ảnh hưởng Auth/Admin.
-const UserProjectRoute = ({ children }) => (
-  <div className="user-project-ui">
-    <ProtectedRoute>{children}</ProtectedRoute>
-  </div>
-)
+// Khung khu My Project phía User: typography riêng + hệ màu sáng/tối dùng chung
+// với khu Admin. Đặt data-mode ở đây một lần là mọi trang con đổi theo, không
+// cần từng trang tự bọc.
+const UserProjectRoute = ({ children }) => {
+  const { theme } = useTheme()
+  return (
+    <div
+      data-mode={theme}
+      className="user-project-ui app-theme min-h-screen bg-[var(--bd-app)] text-[var(--bd-text)]"
+    >
+      <ProtectedRoute>{children}</ProtectedRoute>
+    </div>
+  )
+}
 
 // Bọc khu admin: chưa login -> /login; đã login nhưng không phải admin -> trang chủ.
 function AdminRoute({ children }) {

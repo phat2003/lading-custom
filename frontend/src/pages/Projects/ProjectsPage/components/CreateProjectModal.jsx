@@ -71,7 +71,7 @@ const CreateProjectModal = ({
     >
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-[#17202f]/95 shadow-[0_30px_100px_rgba(0,0,0,0.55)]"
+        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-fill)] shadow-[0_30px_100px_rgba(0,0,0,0.55)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-project-title"
@@ -81,31 +81,31 @@ const CreateProjectModal = ({
           type="button"
           onClick={onClose}
           disabled={submitting}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Đóng modal"
         >
           <XIcon size={23} />
         </button>
 
-        <div className="border-b border-white/10 px-6 pb-5 pt-8 sm:px-8">
-          <h2 id="create-project-title" className="text-3xl font-semibold text-white">
+        <div className="border-b border-[var(--bd-border)] px-6 pb-5 pt-8 sm:px-8">
+          <h2 id="create-project-title" className="text-3xl font-semibold text-[var(--bd-text)]">
             Khởi tạo dự án
           </h2>
-          <p className="mt-2 text-[#c3c6d7]">
+          <p className="mt-2 text-[var(--bd-dim)]">
             Thiết lập thông tin cơ bản cho dự án mới của bạn.
           </p>
           {source && (
-            <p className="mt-2 text-sm text-[#c3c6d7]">
+            <p className="mt-2 text-sm text-[var(--bd-dim)]">
               Nguồn Landing Page:{' '}
-              <span className="text-white">{source.name}</span>
+              <span className="text-[var(--bd-text)]">{source.name}</span>
             </p>
           )}
         </div>
 
         <div className="space-y-7 px-6 py-6 sm:px-8">
           <label className="block">
-            <span className="font-mono text-xs uppercase tracking-[0.1em] text-white">
-              Tên Project <span className="text-[#ffb4ab]">*</span>
+            <span className="font-mono text-xs uppercase tracking-[0.1em] text-[var(--bd-text)]">
+              Tên Project <span className="text-[var(--bd-danger)]">*</span>
             </span>
             <input
               ref={inputRef}
@@ -119,46 +119,46 @@ const CreateProjectModal = ({
                 if (serverError) onErrorClear()
               }}
               placeholder="Ví dụ: Chiến dịch Q4, Landing Page sản phẩm mới..."
-              className={`mt-3 w-full rounded-lg border bg-[#353437] px-4 py-3 text-white outline-none transition placeholder:text-[#8d90a0] focus:ring-2 disabled:cursor-wait disabled:opacity-70 ${
+              className={`mt-3 w-full rounded-lg border bg-[var(--bd-fill)] px-4 py-3 text-[var(--bd-text)] outline-none transition placeholder:text-[var(--bd-muted)] focus:ring-2 disabled:cursor-wait disabled:opacity-70 ${
                 displayError
-                  ? 'border-[#ffb4ab] focus:ring-red-400/20'
-                  : 'border-white/10 focus:border-[#b4c5ff] focus:ring-[#2563eb]/20'
+                  ? 'border-red-400 focus:ring-red-400/20'
+                  : 'border-[var(--bd-border)] focus:border-violet-300 focus:ring-violet-500/20'
               }`}
               aria-invalid={Boolean(displayError)}
               aria-describedby={displayError ? 'project-name-error' : 'project-name-help'}
             />
             <div className="mt-2 flex items-center justify-between gap-3">
               {displayError ? (
-                <p id="project-name-error" className="text-sm text-[#ffb4ab]" role="alert">
+                <p id="project-name-error" className="text-sm text-[var(--bd-danger)]" role="alert">
                   {displayError}
                 </p>
               ) : (
-                <p id="project-name-help" className="text-xs text-[#8d90a0]">
+                <p id="project-name-help" className="text-xs text-[var(--bd-muted)]">
                   Từ 3 đến 150 ký tự.
                 </p>
               )}
-              <span className="ml-auto font-mono text-[10px] text-[#8d90a0]">
+              <span className="ml-auto font-mono text-[10px] text-[var(--bd-muted)]">
                 {projectName.length}/{MAX_NAME_LENGTH}
               </span>
             </div>
           </label>
 
           <div>
-            <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.1em] text-white">
+            <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.1em] text-[var(--bd-text)]">
               <span>Thêm thành viên</span>
-              <span className="text-[#eec200]" aria-label="Yêu cầu gói Pro">
+              <span className="text-[var(--bd-warn)]" aria-label="Yêu cầu gói Pro">
                 Khóa
               </span>
             </div>
-            <div className="relative mt-3 overflow-hidden rounded-xl border border-[#eec200]/35 bg-[#eec200]/10 p-5 text-center">
+            <div className="relative mt-3 overflow-hidden rounded-xl border border-amber-400/35 bg-amber-400/10 p-5 text-center">
               <div className="relative z-10 flex flex-col items-center">
-                <UserIcon size={30} className="text-[#ffe083]" />
-                <p className="mt-3 text-[#e5e1e4]">Tính năng Team yêu cầu gói Pro</p>
+                <UserIcon size={30} className="text-[var(--bd-warn)]" />
+                <p className="mt-3 text-[var(--bd-text)]">Tính năng Team yêu cầu gói Pro</p>
                 <button
                   type="button"
                   onClick={onUpgrade}
                   disabled={submitting}
-                  className="mt-4 rounded-full bg-[#eec200] px-6 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#231b00] transition hover:bg-[#ffe083] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-4 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-6 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,.9)] transition-all duration-200 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-55"
                 >
                   Nâng cấp ngay →
                 </button>
@@ -167,13 +167,13 @@ const CreateProjectModal = ({
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-[#0e0e10]/35 px-6 py-5 sm:flex-row sm:justify-end sm:px-8">
+        <div className="flex flex-col-reverse gap-3 border-t border-[var(--bd-border)] bg-black/50 px-6 py-5 sm:flex-row sm:justify-end sm:px-8">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
               disabled={submitting}
-              className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg px-6 py-3 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Quay lại
             </button>
@@ -182,14 +182,14 @@ const CreateProjectModal = ({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg px-6 py-3 text-[#c3c6d7] transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg px-6 py-3 text-[var(--bd-dim)] transition hover:bg-[var(--bd-fill-hover)] hover:text-[var(--bd-text)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-blue-500 hover:shadow-[0_0_28px_rgba(37,99,235,0.5)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
+            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-blue-500 hover:shadow-[0_0_28px_rgba(37,99,235,0.5)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
           >
             <PlusIcon size={18} />
             {submitting ? 'Đang tạo...' : 'Tạo dự án'}

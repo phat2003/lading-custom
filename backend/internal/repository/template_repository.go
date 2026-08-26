@@ -90,6 +90,10 @@ type TemplateFilter struct {
 	// mẫu hệ thống ĐÃ publish, hoặc mẫu do chính user sở hữu.
 	// Nil = không giới hạn (dùng cho trang admin).
 	VisibleToUserID *uuid.UUID
+
+	// PublicOnly chỉ trả mẫu hệ thống ĐÃ publish — dùng cho trang chủ công khai,
+	// nơi người xem chưa đăng nhập nên không có VisibleToUserID để đối chiếu.
+	PublicOnly bool
 }
 
 // FindPaged trả về một trang template kèm TỔNG số bản ghi khớp bộ lọc.
@@ -119,6 +123,12 @@ func (r *TemplateRepository) FindPaged(f TemplateFilter) ([]models.Template, int
 			r.db.Where("type = ? AND status = ?", models.TemplateSystem, models.TemplateStatusPublished).
 				Or("owner_id = ?", *f.VisibleToUserID),
 		)
+	}
+
+	// Khách vãng lai: chỉ thấy mẫu hệ thống đã publish, không có nhánh OR nào
+	// để lọt mẫu riêng tư của người khác ra ngoài.
+	if f.PublicOnly {
+		query = query.Where("type = ? AND status = ?", models.TemplateSystem, models.TemplateStatusPublished)
 	}
 
 	// Đếm trước khi phân trang để meta.total là tổng toàn bộ, không phải số dòng trang này.

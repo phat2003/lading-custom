@@ -1,5 +1,27 @@
 import api from './client'
 
+// Ảnh thumbnail đến từ hai nơi khác nhau:
+//   /uploads/...  -> file admin upload, do BACKEND phục vụ (xem router: r.GET("/uploads/*filepath"))
+//   /templates/... -> ảnh mẫu nằm trong frontend/public, do chính FE phục vụ
+// Nên chỉ ghép origin của API cho nhóm đầu; giữ nguyên phần còn lại.
+export function resolveThumbnailUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return ''
+  const raw = value.trim()
+
+  if (/^https?:\/\//i.test(raw)) return raw
+  if (!raw.startsWith('/uploads/')) return raw
+
+  try {
+    const apiOrigin = new URL(
+      api.defaults.baseURL,
+      globalThis.location?.origin || 'http://localhost',
+    ).origin
+    return new URL(raw, `${apiOrigin}/`).toString()
+  } catch {
+    return raw
+  }
+}
+
 export function mapTemplateFromApi(template) {
   if (!template || !template.template_id || !template.name) return null
   if (template.type !== 'system' && template.type !== 'user') return null
@@ -13,7 +35,7 @@ export function mapTemplateFromApi(template) {
     category: template.category || '',
     status: template.status || null,
     tier: template.tier || null,
-    thumbnailUrl: template.thumbnail_url || '',
+    thumbnailUrl: resolveThumbnailUrl(template.thumbnail_url),
     sectionCount:
       typeof template.section_count === 'number' ? template.section_count : null,
     createdAt: template.created_at || null,
@@ -52,4 +74,11 @@ export const templatesApi = {
 //   GET /api/v1/templates?page&limit&search&category&tier
 export const userTemplatesApi = {
   list: (params, config) => api.get('/templates', { params, ...config }),
+}
+
+// Template cho TRANG CHỦ CÔNG KHAI — không cần đăng nhập, backend chỉ trả mẫu
+// hệ thống đã publish.
+//   GET /api/v1/p/templates?page&limit&category&tier
+export const publicTemplatesApi = {
+  list: (params, config) => api.get('/p/templates', { params, ...config }),
 }
