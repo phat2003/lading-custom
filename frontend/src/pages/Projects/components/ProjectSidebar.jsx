@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Logo from '../../../components/common/Logo'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
 import {
   ChevronDownIcon,
   FolderIcon,
   GlobeIcon,
   LayoutTemplateIcon,
+  LogOutIcon,
   PlusIcon,
   SettingsIcon,
   SparklesIcon,
@@ -14,6 +15,7 @@ import {
   MoonIcon,
   XIcon,
 } from '../../../components/icons'
+import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
 import { isProPlan } from '../../../utils/planEntitlements'
 
@@ -56,18 +58,61 @@ export default function ProjectSidebar({
   isOpen,
   onClose,
   onCreateProject,
-  onShowMessage,
 }) {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
   const displayName = user?.full_name || user?.email || 'Design Pro'
   const pro = isProPlan(user)
   const planLabel = pro ? 'Pro Plan' : 'Free Plan'
   const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+  const accountTriggerRef = useRef(null)
+  const accountMenuPanelRef = useRef(null)
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) return undefined
+
+    const handlePointerDown = (event) => {
+      const clickedTrigger = accountTriggerRef.current?.contains(event.target)
+      const clickedMenu = accountMenuPanelRef.current?.contains(event.target)
+      if (!clickedTrigger && !clickedMenu) {
+        setIsAccountMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      setIsAccountMenuOpen(false)
+      accountTriggerRef.current?.focus()
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isAccountMenuOpen])
 
   const openUpgrade = () => {
     setUpgradeOpen(true)
     onClose()
+  }
+
+  const openSettings = () => {
+    setIsAccountMenuOpen(false)
+    onClose()
+    navigate('/settings')
+  }
+
+  const handleLogout = () => {
+    setIsAccountMenuOpen(false)
+    onClose()
+    logout()
+    navigate('/login', { replace: true })
   }
 
   return (
@@ -115,10 +160,10 @@ export default function ProjectSidebar({
             onClick={onClose}
           />
           <NavigationItem
+            to="/settings"
             icon={SettingsIcon}
             label="Cài đặt"
-            disabled
-            onClick={() => onShowMessage('Trang Cài đặt chưa nằm trong task hiện tại.')}
+            onClick={onClose}
           />
         </nav>
 
@@ -156,20 +201,77 @@ export default function ProjectSidebar({
             </button>
           )}
 
-          <div className="flex items-center justify-between border-t border-[var(--bd-border)] px-2 pt-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--bd-border)] bg-[var(--bd-fill)] text-xs font-bold text-[var(--bd-accent)]">
-                {displayName.slice(0, 1).toUpperCase()}
+          <div className="relative flex items-center gap-1 border-t border-[var(--bd-border)] px-2 pt-4">
+            <button
+              ref={accountTriggerRef}
+              type="button"
+              onClick={() => setIsAccountMenuOpen((open) => !open)}
+              className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg p-1.5 text-left transition hover:bg-[var(--bd-fill-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70"
+              aria-haspopup="menu"
+              aria-expanded={isAccountMenuOpen}
+              aria-controls="user-account-menu"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--bd-border)] bg-[var(--bd-fill)] text-xs font-bold text-[var(--bd-accent)]">
+                  {displayName.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-[var(--bd-text)]">{displayName}</span>
+                  <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-[var(--bd-dim)]">
+                    <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                    {planLabel}
+                  </span>
+                </span>
+              </span>
+              <ChevronDownIcon
+                size={16}
+                className={`shrink-0 text-[var(--bd-dim)] transition-transform duration-200 ${
+                  isAccountMenuOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isAccountMenuOpen && (
+              <div
+                ref={accountMenuPanelRef}
+                id="user-account-menu"
+                role="menu"
+                aria-label="Tài khoản"
+                className="absolute bottom-full left-0 right-0 z-20 mb-2 overflow-hidden rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] shadow-2xl shadow-black/35"
+              >
+                <div className="border-b border-[var(--bd-border)] px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-[var(--bd-text)]">{displayName}</p>
+                  {user?.email && (
+                    <p className="mt-1 truncate text-xs text-[var(--bd-dim)]">{user.email}</p>
+                  )}
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--bd-accent)]">
+                    {planLabel}
+                  </p>
+                </div>
+                <div className="p-1.5">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={openSettings}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--bd-text)] transition hover:bg-[var(--bd-fill-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/70"
+                  >
+                    <SettingsIcon size={17} />
+                    Tài khoản &amp; cài đặt
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-rose-400 transition hover:bg-rose-500/10 hover:text-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/70"
+                  >
+                    <LogOutIcon size={17} />
+                    Đăng xuất
+                  </button>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm text-[var(--bd-text)]">{displayName}</p>
-                <p className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-[var(--bd-dim)]">
-                  <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                  {planLabel}
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
+            )}
+
+            <div className="flex shrink-0 items-center">
               {/* Đổi giao diện sáng/tối — dùng chung ThemeContext với khu Admin */}
               <button
                 type="button"
@@ -184,7 +286,6 @@ export default function ProjectSidebar({
                   <SunIcon size={17} />
                 </span>
               </button>
-              <ChevronDownIcon size={16} className="text-[var(--bd-dim)]" />
             </div>
           </div>
         </div>

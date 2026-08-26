@@ -20,6 +20,7 @@ import ProjectsPage from './pages/Projects/ProjectsPage/ProjectsPage'
 import ProjectDetailPage from './pages/Projects/ProjectDetailPage/ProjectDetailPage'
 import TemplateGalleryPage from './pages/Projects/TemplateGalleryPage/TemplateGalleryPage'
 import LandingPageEditorPage from './pages/Projects/LandingPageEditorPage/LandingPageEditorPage'
+import UserSettingsPage from './pages/Projects/UserSettingsPage/UserSettingsPage'
 import { ProjectsProvider } from './pages/Projects/context/ProjectsContext'
 
 // Bọc route cần đăng nhập: chưa login thì đẩy về /login.
@@ -111,6 +112,14 @@ export default function App() {
           element={
             <UserProjectRoute>
               <LandingPageEditorPage />
+            </UserProjectRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <UserProjectRoute>
+              <UserSettingsPage />
             </UserProjectRoute>
           }
         />
