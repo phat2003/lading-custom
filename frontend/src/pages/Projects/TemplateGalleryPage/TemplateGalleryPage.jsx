@@ -448,7 +448,6 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
         onCreateProject={() =>
           navigate('/projects', { state: { openCreateProject: true } })
         }
-        onShowMessage={showMessage}
       />
       <ProjectMobileHeader onOpenMenu={() => setIsMobileMenuOpen(true)} />
 

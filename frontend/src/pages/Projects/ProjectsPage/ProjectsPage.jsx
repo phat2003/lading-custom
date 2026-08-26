@@ -180,11 +180,6 @@ export default function ProjectsPage() {
     }
   }
 
-  const showComingSoon = (message) => {
-    setNotice(message)
-    setIsMobileMenuOpen(false)
-  }
-
   return (
     <div className="min-h-screen bg-[var(--bd-fill)] text-[var(--bd-text)]">
       <ProjectSidebar
@@ -195,7 +190,6 @@ export default function ProjectsPage() {
           openCreateModal()
           setIsMobileMenuOpen(false)
         }}
-        onShowMessage={showComingSoon}
       />
 
       <ProjectMobileHeader onOpenMenu={() => setIsMobileMenuOpen(true)} />
