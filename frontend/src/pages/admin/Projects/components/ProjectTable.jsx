@@ -1,6 +1,6 @@
 import Avatar from '../../../../components/common/Avatar'
 import Badge from '../../../../components/common/Badge'
-import ActionMenu from '../../components/ActionMenu'
+import { EyeIcon, TrashIcon } from '../../../../components/icons'
 
 const STATUS = {
   published: { label: 'Đã xuất bản', color: 'green' },
@@ -44,12 +44,23 @@ export default function ProjectTable({ projects = [], onView, onDelete }) {
                   <Badge color={status.color}>{status.label}</Badge>
                 </td>
                 <td className="px-5 py-3">
-                  <ActionMenu
-                    items={[
-                      { label: 'Xem chi tiết', onClick: () => onView?.(p) },
-                      { label: 'Xóa dự án', danger: true, onClick: () => onDelete?.(p) },
-                    ]}
-                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onView?.(p)}
+                      className="inline-flex items-center gap-1 rounded-md border border-violet-400/40 px-2.5 py-1 text-xs text-[var(--bd-accent)] transition-colors hover:bg-violet-500/10"
+                    >
+                      <EyeIcon size={14} /> Chi tiết
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete?.(p)}
+                      title="Xóa dự án"
+                      className="rounded-md border border-red-500/40 p-1.5 text-[var(--bd-danger)] transition-colors hover:bg-red-500/10"
+                    >
+                      <TrashIcon size={14} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             )
