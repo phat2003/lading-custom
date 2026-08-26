@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const CHECKLIST = ['Không thẻ tín dụng', 'Thiết lập dưới 10 phút']
 
@@ -11,6 +12,15 @@ const MOCK_COMPONENTS = [
 ]
 
 const Hero = () => {
+  // dashboardPath: user thường -> /projects, admin -> /admin.
+  // Dùng nó thay vì gán cứng '/projects' để admin không bị đẩy vào khu My Project
+  // của user (lỗi luồng đã gặp trước đây).
+  const { user, dashboardPath } = useAuth()
+
+  // Chưa đăng nhập thì mời đăng nhập; Login sẽ tự đưa về dashboardPath sau khi
+  // thành công, nên bấm nút này là đi thẳng tới nơi cần đến.
+  const startTo = user ? dashboardPath : '/login'
+
   return (
     <section className="relative overflow-hidden pb-16 pt-20 md:pb-24 md:pt-32">
       <div className="relative z-10 mx-auto max-w-7xl px-6">
@@ -34,10 +44,10 @@ const Hero = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
-                to="/register"
+                to={startTo}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_0_26px_-6px_rgba(139,92,246,.9)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_34px_-2px_rgba(139,92,246,1)] active:translate-y-0"
               >
-                <span>Bắt đầu — Miễn phí</span>
+                <span>{user ? 'Vào dự án của bạn' : 'Bắt đầu — Miễn phí'}</span>
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>

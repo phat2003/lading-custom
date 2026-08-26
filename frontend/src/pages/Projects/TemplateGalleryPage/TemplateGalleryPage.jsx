@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, useNavigate, useParams } from 'react-router-dom'
+import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { FilterIcon, SearchIcon } from '../../../components/icons'
 import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
@@ -201,6 +201,46 @@ const TemplateGalleryPage = ({ mode = 'system' }) => {
     setCreatedProject(null)
     setCreationStep(isCreationGallery ? 'destination' : 'naming')
   }
+
+  // Mở từ trang chủ bằng /templates?template=<id>: tự chọn sẵn mẫu đó rồi nhảy
+  // thẳng vào bước chọn dự án đích, người dùng không phải dò lại trong danh sách.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const autoPickedRef = useRef(false)
+
+  useEffect(() => {
+    if (autoPickedRef.current) return
+    // Chỉ áp dụng cho thư viện chung; tab "Mẫu của tôi" không có bước tạo này.
+    if (!isGlobalGallery || isMyTemplates) return
+
+    const wantedId = searchParams.get('template')
+    if (!wantedId) return
+    // Phải đợi danh sách tải xong mới đối chiếu được id.
+    if (templateState.status !== 'success') return
+
+    autoPickedRef.current = true
+
+    // Dọn query ngay: F5 hoặc bấm Back sẽ không mở lại modal ngoài ý muốn.
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('template')
+    setSearchParams(nextParams, { replace: true })
+
+    const found = templateState.items.find((item) => item.id === wantedId)
+    if (!found) {
+      setNotice('Không tìm thấy mẫu bạn chọn, có thể mẫu đã bị gỡ khỏi thư viện.')
+      return
+    }
+
+    // Tôn trọng khoá gói Pro y như khi bấm trực tiếp trên thẻ.
+    const locked =
+      found.type === 'system' && found.tier === 'premium' && !canUsePremiumTemplates(user)
+    if (locked) {
+      setUpgradeReason(`“${found.name}” yêu cầu gói Pro.`)
+      return
+    }
+
+    handleSelectTemplate(found)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGlobalGallery, isMyTemplates, searchParams, templateState.status, templateState.items, user])
 
   const openCloneTemplate = useCallback((template) => {
     setCloneSource(template)

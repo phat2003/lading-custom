@@ -28,6 +28,7 @@ export { default as DownloadIcon } from './DownloadIcon'
 export { default as GlobeIcon } from './GlobeIcon'
 
 // UI / điều hướng chung
+export { default as ArrowLeftIcon } from './ArrowLeftIcon'
 export { default as XIcon } from './XIcon'
 export { default as MenuIcon } from './MenuIcon'
 export { default as SearchIcon } from './SearchIcon'

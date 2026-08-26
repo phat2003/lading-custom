@@ -57,9 +57,17 @@ const Templates = () => {
     return () => controller.abort()
   }, [])
 
-  // "Xem tất cả": chưa đăng nhập thì mời đăng nhập, đã đăng nhập thì vào thẳng
-  // thư viện mẫu trong khu làm việc.
-  const seeAllTo = user ? '/templates' : '/login'
+  // Thư viện mẫu trong khu làm việc bắt buộc đăng nhập.
+  // "Xem tất cả" -> mở thư viện chung.
+  // "Sử dụng template" -> mở thư viện KÈM ?template=<id> để trang kia tự chọn
+  // sẵn mẫu đó và mở luôn bước chọn dự án đích.
+  const galleryPath = (templateId) =>
+    templateId ? `/templates?template=${encodeURIComponent(templateId)}` : '/templates'
+
+  // Khách vãng lai: đẩy qua /login nhưng nhớ đích đến trong location.state,
+  // Login sẽ quay lại đúng chỗ này sau khi đăng nhập xong.
+  const linkTo = (templateId) => (user ? galleryPath(templateId) : '/login')
+  const linkState = (templateId) => (user ? undefined : { from: galleryPath(templateId) })
 
   return (
     <section id="templates" className="lp-section">
@@ -72,7 +80,8 @@ const Templates = () => {
             </p>
           </div>
           <Link
-            to={seeAllTo}
+            to={linkTo(null)}
+            state={linkState(null)}
             className="group inline-flex items-center gap-1 self-start text-sm font-semibold text-[var(--bd-accent)] transition-colors hover:text-cyan-400 sm:self-auto"
           >
             <span>Xem tất cả</span>
@@ -165,6 +174,19 @@ const Templates = () => {
                   <p className="text-sm leading-relaxed text-[var(--bd-dim)]">
                     {describe(temp)}
                   </p>
+
+                  {/* Mặc định là nút viền mờ để 4 thẻ không tranh nhau gây rối;
+                      rê chuột mới chuyển thành gradient tím→cyan như nút chính. */}
+                  <Link
+                    to={linkTo(temp.id)}
+                    state={linkState(temp.id)}
+                    className="!mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--bd-border)] bg-[var(--bd-fill)] px-4 py-2.5 text-sm font-semibold text-[var(--bd-dim)] transition-all duration-200 hover:border-transparent hover:bg-gradient-to-r hover:from-violet-500 hover:to-cyan-400 hover:text-white hover:shadow-[0_0_24px_-8px_rgba(139,92,246,.9)]"
+                  >
+                    <span>Sử dụng template</span>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </Link>
                 </div>
               </div>
             ))}
