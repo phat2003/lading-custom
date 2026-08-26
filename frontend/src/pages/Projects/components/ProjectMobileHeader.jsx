@@ -1,12 +1,11 @@
 import { MenuIcon } from '../../../components/icons'
+import Logo from '../../../components/common/Logo'
 
 export default function ProjectMobileHeader({ onOpenMenu }) {
   return (
     <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-[#201f21]/95 px-4 backdrop-blur lg:hidden">
       <div className="flex items-center gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded bg-[#2563eb] text-xl font-bold text-white">
-          M
-        </div>
+        <Logo size="sm" />
         <div>
           <p className="font-semibold leading-none">Myproject</p>
           <p className="mt-1 font-mono text-[9px] tracking-[0.16em] text-[#c3c6d7]">

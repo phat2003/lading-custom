@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Logo from '../../../components/common/Logo'
 import { NavLink } from 'react-router-dom'
 import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
 import {
@@ -89,14 +90,7 @@ export default function ProjectSidebar({
         </button>
 
         <div className="mb-8 flex items-center gap-3 px-6">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#2563eb] shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-            <span className="grid grid-cols-2 gap-1" aria-hidden="true">
-              <span className="h-2 w-2 rounded-[2px] border-2 border-white" />
-              <span className="h-2 w-2 rounded-[2px] border-2 border-white" />
-              <span className="h-2 w-2 rounded-[2px] border-2 border-white" />
-              <span className="h-2 w-2 rounded-[2px] border-2 border-white" />
-            </span>
-          </div>
+          <Logo />
           <div>
             <h1 className="text-lg font-bold leading-none text-white">Myproject</h1>
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#c3c6d7]">

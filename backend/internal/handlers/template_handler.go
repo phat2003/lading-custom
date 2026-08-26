@@ -172,6 +172,41 @@ func (h *TemplateHandler) List(c *gin.Context) {
 		response.NewMeta(page, limit, total))
 }
 
+// ListPublic godoc — GET /api/v1/p/templates
+// Danh sách mẫu cho TRANG CHỦ CÔNG KHAI (không cần đăng nhập).
+// Query: ?page=1&limit=4&category=all&tier=all
+//
+// Khác ListForUser ở chỗ không có user để đối chiếu, nên chỉ trả mẫu hệ thống
+// đã publish. Không nhận status/search để bề mặt công khai càng hẹp càng tốt.
+func (h *TemplateHandler) ListPublic(c *gin.Context) {
+	page := parsePositiveInt(c.Query("page"), defaultTemplatePage)
+	limit := parsePositiveInt(c.Query("limit"), defaultTemplateLimit)
+	if limit > maxTemplateLimit {
+		limit = maxTemplateLimit
+	}
+
+	tier := c.Query("tier")
+	if !isAllowedFilter(tier, "free", "premium") {
+		response.Fail(c, http.StatusBadRequest, "tier chỉ nhận: all | free | premium")
+		return
+	}
+
+	templates, total, err := h.templateService.ListTemplates(service.ListTemplatesInput{
+		Category:   c.Query("category"),
+		Tier:       tier,
+		Page:       page,
+		Limit:      limit,
+		PublicOnly: true,
+	})
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "lấy danh sách mẫu thất bại")
+		return
+	}
+
+	response.OKWithMeta(c, http.StatusOK, "lấy danh sách thành công", templates,
+		response.NewMeta(page, limit, total))
+}
+
 // ListForUser godoc — GET /api/v1/templates
 // Danh sách mẫu cho trang "chọn mẫu" của user thường.
 // Query: ?page=1&limit=9&search=&category=all&tier=all

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Logo from '../components/common/Logo'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -83,12 +84,7 @@ export default function Register() {
       <div className={`relative z-10 w-full max-w-md p-10 rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.08)] flex flex-col items-center 
         ${darkMode ? 'border border-slate-900/60 bg-[#070c1e]/60 backdrop-blur-md' : 'border border-gray-300 bg-white'}`}>
 
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-6 
-          ${darkMode ? 'bg-[#131b2e] border border-slate-800 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'bg-gray-200 border border-gray-300 shadow'}`}>
-          <svg className="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
-          </svg>
-        </div>
+        <Logo size="lg" className="mb-6" />
 
         <div className="mb-8 space-y-2 text-center">
           <h1 className="text-3xl font-bold tracking-wide">Myproject</h1>

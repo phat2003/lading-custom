@@ -160,6 +160,9 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	{
 		// Webhook cho MoMo gọi về để báo cáo kết quả thanh toán
 		publicAPI.POST("/payment/webhook", paymentHandler.MoMoWebhook)
+
+		// Mẫu hệ thống đã publish — trang chủ công khai gọi khi khách chưa đăng nhập.
+		publicAPI.GET("/templates", templateHandler.ListPublic)
 	}
 
 	// Các nhóm route cần đăng nhập.
