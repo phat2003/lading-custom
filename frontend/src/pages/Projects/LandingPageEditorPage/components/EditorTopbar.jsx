@@ -9,6 +9,8 @@ import {
   SunIcon,
   UndoIcon,
 } from '../../../../components/icons'
+import { normalizePlan } from '../../../../utils/planEntitlements'
+import ExportMenu from './ExportMenu'
 
 const SAVE_STATUS = {
   saved: { label: 'Đã lưu', className: 'text-emerald-400' },
@@ -35,13 +37,18 @@ const EditorTopbar = ({
   previewOpen = false,
   onStaticPreview,
   staticPreviewing = false,
+  onExportPdf,
+  onExportHtml,
+  htmlExportAllowed = false,
+  exportingFormat = null,
   onPublish,
   publishing = false,
   theme,
   onToggleTheme,
 }) => {
   const status = SAVE_STATUS[saveStatus] || SAVE_STATUS.saved
-  const planLabel = String(planType || 'free').toUpperCase()
+  const planLabel = normalizePlan(planType).toUpperCase()
+  const exporting = Boolean(exportingFormat)
 
   return (
     <header className="z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--bd-border)] bg-[var(--bd-topbar)] px-4 backdrop-blur-xl">
@@ -103,6 +110,7 @@ const EditorTopbar = ({
             onClick={onSave}
             disabled={
               staticPreviewing ||
+              exporting ||
               publishing ||
               saveStatus === 'saved' ||
               saveStatus === 'saving'
@@ -118,7 +126,10 @@ const EditorTopbar = ({
             type="button"
             onClick={onSaveAsTemplate}
             disabled={
-              staticPreviewing || publishing || saveStatus === 'saving'
+              staticPreviewing ||
+              exporting ||
+              publishing ||
+              saveStatus === 'saving'
             }
             className="hidden rounded-xl border border-[var(--bd-border)] px-3.5 py-2 text-xs font-semibold text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:opacity-45 xl:block"
           >
@@ -143,7 +154,10 @@ const EditorTopbar = ({
             type="button"
             onClick={onStaticPreview}
             disabled={
-              staticPreviewing || publishing || saveStatus === 'saving'
+              staticPreviewing ||
+              exporting ||
+              publishing ||
+              saveStatus === 'saving'
             }
             className="hidden items-center gap-2 rounded-xl border border-[var(--bd-border)] px-2.5 py-2 text-xs text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:cursor-wait disabled:opacity-45 md:flex xl:px-3.5"
             title="Tạo HTML tĩnh từ dữ liệu đã lưu trên server"
@@ -162,12 +176,24 @@ const EditorTopbar = ({
             </span>
           </button>
         )}
+        {onExportPdf && (
+          <ExportMenu
+            onExportPdf={onExportPdf}
+            onExportHtml={onExportHtml}
+            htmlExportAllowed={htmlExportAllowed}
+            exportingFormat={exportingFormat}
+            disabled={
+              staticPreviewing || publishing || saveStatus === 'saving'
+            }
+          />
+        )}
         <button
           type="button"
           onClick={onPublish}
           disabled={
             !onPublish ||
             staticPreviewing ||
+            exporting ||
             publishing ||
             saveStatus === 'saving'
           }

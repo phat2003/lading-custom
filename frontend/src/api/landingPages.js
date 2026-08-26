@@ -92,6 +92,20 @@ export const landingPagesApi = {
     api.post('/pages/save-as-template', payload, config),
   generateStaticPreview: (id, config) =>
     api.post(`/landing-pages/${id}/generate-static`, undefined, config),
+  exportPdf: (id, config) =>
+    api.get(`/landing-pages/${id}/export/pdf`, {
+      ...config,
+      responseType: 'blob',
+    }),
+  exportHtml: (id, config) =>
+    api.get(`/landing-pages/${id}/export/html`, {
+      ...config,
+      params: {
+        ...config?.params,
+        offline: true,
+      },
+      responseType: 'blob',
+    }),
   publish: (id, config) =>
     api.post(`/landing-pages/${id}/publish`, undefined, config),
   update: (id, payload) => api.put(`/pages/${id}`, payload),

@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { authApi } from '../api/auth'
+import { profileApi } from '../api/profile'
+import { normalizePlan } from '../utils/planEntitlements'
 
 const AuthContext = createContext(null)
 
@@ -8,22 +10,71 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Khôi phục user từ localStorage khi load lại trang.
-    const saved = localStorage.getItem('user')
-    if (saved) {
-      setUser(JSON.parse(saved))
+  const storeUser = useCallback((nextUser) => {
+    if (!nextUser) return null
+    const normalizedUser = {
+      ...nextUser,
+      plan_type: normalizePlan(nextUser),
     }
-    setLoading(false)
+    localStorage.setItem('user', JSON.stringify(normalizedUser))
+    setUser(normalizedUser)
+    return normalizedUser
   }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let active = true
+
+    const hydrateSession = async () => {
+      const token = localStorage.getItem('token')
+      const saved = localStorage.getItem('user')
+
+      if (!token) {
+        localStorage.removeItem('user')
+        if (active) {
+          setUser(null)
+          setLoading(false)
+        }
+        return
+      }
+
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (active) setUser({ ...parsed, plan_type: normalizePlan(parsed) })
+        } catch {
+          localStorage.removeItem('user')
+        }
+      }
+
+      try {
+        const response = await profileApi.get({ signal: controller.signal })
+        if (active) storeUser(response.data.data)
+      } catch (error) {
+        // Lỗi mạng tạm thời giữ user đã lưu làm fallback; 401 do API client xử lý tập trung.
+        if (error?.code === 'ERR_CANCELED') return
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    hydrateSession()
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [storeUser])
+
+  const refreshUser = useCallback(async () => {
+    const response = await profileApi.get()
+    return storeUser(response.data.data)
+  }, [storeUser])
 
   const login = async (email, password) => {
     const res = await authApi.login({ email, password })
     const { token, user: u } = res.data.data
     localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(u))
-    setUser(u)
-    return u
+    return storeUser(u)
   }
 
   const register = async (payload) => {
@@ -44,7 +95,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, isAdmin, dashboardPath }}
+      value={{ user, loading, login, register, logout, refreshUser, isAdmin, dashboardPath }}
     >
       {children}
     </AuthContext.Provider>

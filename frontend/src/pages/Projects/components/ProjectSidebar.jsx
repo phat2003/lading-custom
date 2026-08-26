@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
 import {
   ChevronDownIcon,
   FolderIcon,
@@ -8,6 +10,7 @@ import {
   SettingsIcon,
   XIcon,
 } from '../../../components/icons'
+import { isProPlan } from '../../../utils/planEntitlements'
 
 function NavigationItem({ to, icon, label, disabled = false, onClick }) {
   const IconComponent = icon
@@ -51,7 +54,14 @@ export default function ProjectSidebar({
   onShowMessage,
 }) {
   const displayName = user?.full_name || user?.email || 'Design Pro'
-  const planLabel = user?.plan_type === 'pro' ? 'Pro Plan' : 'Free Plan'
+  const pro = isProPlan(user)
+  const planLabel = pro ? 'Pro Plan' : 'Free Plan'
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+
+  const openUpgrade = () => {
+    setUpgradeOpen(true)
+    onClose()
+  }
 
   return (
     <>
@@ -122,14 +132,21 @@ export default function ProjectSidebar({
             Dự án mới
           </button>
 
-          <button
-            type="button"
-            onClick={() => onShowMessage('Luồng nâng cấp Pro chưa nằm trong task hiện tại.')}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#eec200]/25 bg-[#eec200]/5 px-4 py-3 font-mono text-xs text-[#ffe083] transition hover:bg-[#eec200]/10"
-          >
-            <span aria-hidden="true">✦</span>
-            Nâng cấp Pro
-          </button>
+          {pro ? (
+            <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#00eefc]/20 bg-[#00eefc]/5 px-4 py-3 font-mono text-xs text-[#d3fbff]">
+              <span aria-hidden="true">✦</span>
+              Pro Plan
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={openUpgrade}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#eec200]/25 bg-[#eec200]/5 px-4 py-3 font-mono text-xs text-[#ffe083] transition hover:bg-[#eec200]/10"
+            >
+              <span aria-hidden="true">✦</span>
+              Nâng cấp Pro
+            </button>
+          )}
 
           <div className="flex items-center justify-between border-t border-white/10 px-2 pt-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -148,6 +165,12 @@ export default function ProjectSidebar({
           </div>
         </div>
       </aside>
+      <UpgradeRequiredDialog
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason="Gói Free đang hoạt động. Xem quyền lợi Pro và trạng thái nâng cấp hiện tại."
+        currentPlan={user}
+      />
     </>
   )
 }

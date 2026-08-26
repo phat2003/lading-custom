@@ -10,6 +10,12 @@ import {
 import { useLocation } from 'react-router-dom'
 import { projectsApi } from '../../../api/projects'
 import { useAuth } from '../../../context/AuthContext'
+import {
+  canCreateProject,
+  createProjectCountUnavailableError,
+  createProjectLimitError,
+  isFreePlan,
+} from '../../../utils/planEntitlements'
 
 const LEGACY_PROJECTS_STORAGE_KEY = 'myproject.frontend.projects.v1'
 const LANDING_PAGES_STORAGE_KEY = 'myproject.frontend.landing-pages.v1'
@@ -186,6 +192,15 @@ export function ProjectsProvider({ children }) {
   }, [authLoading, reloadProjects, shouldLoadProjects, user])
 
   const createProject = useCallback(async (name) => {
+    if (isFreePlan(user)) {
+      if (projectsStatus !== 'success') {
+        throw createProjectCountUnavailableError()
+      }
+      if (!canCreateProject(user, projects.length)) {
+        throw createProjectLimitError()
+      }
+    }
+
     const response = await projectsApi.create({ name: name.trim() })
     const newProject = mapProjectFromApi(response?.data?.data)
 
@@ -201,7 +216,7 @@ export function ProjectsProvider({ children }) {
     setProjectsError('')
     setProjectsStatus('success')
     return newProject
-  }, [])
+  }, [projects.length, projectsStatus, user])
 
   const renameProject = useCallback(async (projectId, name) => {
     const response = await projectsApi.update(projectId, { name: name.trim() })
