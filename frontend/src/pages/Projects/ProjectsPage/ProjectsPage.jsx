@@ -32,6 +32,7 @@ export default function ProjectsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortOrder, setSortOrder] = useState('updated-desc')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notice, setNotice] = useState('')
@@ -81,14 +82,33 @@ export default function ProjectsPage() {
     setProjectToDelete(null)
   }, [])
 
-  const filteredProjects = useMemo(() => {
+  const visibleProjects = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
-    if (!keyword) return projects
+    const filtered = keyword
+      ? projects.filter((project) =>
+          project.name.toLocaleLowerCase('vi').includes(keyword),
+        )
+      : projects
 
-    return projects.filter((project) =>
-      project.name.toLowerCase().includes(keyword),
-    )
-  }, [projects, searchTerm])
+    const sorted = [...filtered]
+    const timestamp = (project) => {
+      const value = new Date(project.updatedAt || project.createdAt || 0).getTime()
+      return Number.isNaN(value) ? 0 : value
+    }
+
+    sorted.sort((left, right) => {
+      if (sortOrder === 'updated-asc') return timestamp(left) - timestamp(right)
+      if (sortOrder === 'name-asc') {
+        return left.name.localeCompare(right.name, 'vi', { sensitivity: 'base' })
+      }
+      if (sortOrder === 'name-desc') {
+        return right.name.localeCompare(left.name, 'vi', { sensitivity: 'base' })
+      }
+      return timestamp(right) - timestamp(left)
+    })
+
+    return sorted
+  }, [projects, searchTerm, sortOrder])
 
   useEffect(() => {
     if (!notice) return undefined
@@ -198,6 +218,8 @@ export default function ProjectsPage() {
         <ProjectHeader
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          sortOrder={sortOrder}
+          onSortChange={setSortOrder}
           onCreateProject={openCreateModal}
         />
 
@@ -207,15 +229,21 @@ export default function ProjectsPage() {
 
           {isProjectsLoading ? (
             <section
-              className="relative grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-              aria-label="Đang tải danh sách Project"
+              className="relative mx-auto grid w-full max-w-[1600px] grid-cols-[repeat(auto-fill,minmax(16.5rem,1fr))] gap-6 max-sm:grid-cols-1"
+              aria-label="Đang tải danh sách dự án"
               aria-busy="true"
             >
               {[0, 1, 2].map((item) => (
                 <div
                   key={item}
-                  className="h-[292px] animate-pulse rounded-xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
-                />
+                  className="overflow-hidden rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)]"
+                >
+                  <div className="h-44 bg-[var(--bd-fill)]" />
+                  <div className="space-y-4 p-5">
+                    <div className="h-5 w-3/5 rounded bg-[var(--bd-fill-hover)]" />
+                    <div className="h-3 w-2/5 rounded bg-[var(--bd-fill)]" />
+                  </div>
+                </div>
               ))}
             </section>
           ) : projectsError ? (
@@ -224,7 +252,7 @@ export default function ProjectsPage() {
               role="alert"
             >
               <h2 className="text-xl font-semibold text-[var(--bd-text)]">
-                Không tải được danh sách Project
+                Không tải được danh sách dự án
               </h2>
               <p className="mt-2 text-sm text-[var(--bd-dim)]">{projectsError}</p>
               <button
@@ -237,12 +265,12 @@ export default function ProjectsPage() {
             </section>
           ) : projects.length === 0 ? (
             <EmptyProjectState onCreateProject={openCreateModal} />
-          ) : filteredProjects.length > 0 ? (
+          ) : visibleProjects.length > 0 ? (
             <section
-              className="relative grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-              aria-label="Danh sách Project"
+              className="relative mx-auto grid w-full max-w-[1600px] grid-cols-[repeat(auto-fill,minmax(16.5rem,1fr))] gap-6 max-sm:grid-cols-1"
+              aria-label="Danh sách dự án"
             >
-              {filteredProjects.map((project) => (
+              {visibleProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
                   project={project}
@@ -253,15 +281,18 @@ export default function ProjectsPage() {
               ))}
             </section>
           ) : (
-            <section className="relative mx-auto mt-20 max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center">
-              <h2 className="text-xl font-semibold">Không tìm thấy Project</h2>
+            <section className="relative mx-auto mt-16 max-w-lg rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-panel-solid)] p-8 text-center shadow-xl shadow-black/10">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-[var(--bd-border)] bg-[var(--bd-fill)] text-2xl" aria-hidden="true">
+                ∅
+              </div>
+              <h2 className="mt-5 text-xl font-semibold">Không tìm thấy dự án</h2>
               <p className="mt-2 text-sm text-[var(--bd-dim)]">
-                Không có Project nào khớp với “{searchTerm}”.
+                Không có dự án nào phù hợp với “{searchTerm.trim()}”.
               </p>
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="mt-5 rounded-lg border border-[var(--bd-border)] px-4 py-2 text-sm transition hover:bg-[var(--bd-fill-hover)]"
+                className="mt-5 rounded-lg border border-[var(--bd-border)] px-4 py-2 text-sm transition hover:bg-[var(--bd-fill-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70"
               >
                 Xóa tìm kiếm
               </button>
