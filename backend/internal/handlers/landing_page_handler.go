@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/nhienthai/lading-custom/backend/internal/models"
 	"github.com/nhienthai/lading-custom/backend/internal/repository"
 	"github.com/nhienthai/lading-custom/backend/internal/service"
 	"github.com/nhienthai/lading-custom/backend/pkg/response"
@@ -46,6 +47,14 @@ type createPageRequest struct {
 type updatePageRequest struct {
 	Name   string `json:"name"`
 	Status string `json:"status"` // draft, published
+}
+
+type updateSEORequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Keywords    string `json:"keywords"`
+	OGImage     string `json:"og_image"`
+	Favicon     string `json:"favicon"`
 }
 
 // POST /pages
@@ -147,6 +156,45 @@ func (h *LandingPageHandler) Update(c *gin.Context) {
 	}
 
 	response.OK(c, http.StatusOK, "Cập nhật thành công", page)
+}
+
+// UpdateSEO — PUT /api/v1/pages/:id/seo (route yêu cầu gói Pro).
+func (h *LandingPageHandler) UpdateSEO(c *gin.Context) {
+	userID, ok := currentUserID(c)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "không xác định được người dùng")
+		return
+	}
+
+	pageID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "ID trang không hợp lệ")
+		return
+	}
+
+	var req updateSEORequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Dữ liệu SEO không hợp lệ.")
+		return
+	}
+
+	page, err := h.pageService.UpdateSEO(userID, pageID, models.LandingPageSEO{
+		Title:       req.Title,
+		Description: req.Description,
+		Keywords:    req.Keywords,
+		OGImage:     req.OGImage,
+		Favicon:     req.Favicon,
+	})
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidSEOURL) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		failPageError(c, err)
+		return
+	}
+
+	response.OK(c, http.StatusOK, "Cập nhật SEO thành công", page)
 }
 
 // DELETE /pages/:id

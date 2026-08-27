@@ -28,6 +28,7 @@ import { useAuth } from '../../../context/AuthContext'
 import { useTheme } from '../../../context/ThemeContext'
 import UpgradeRequiredDialog from '../../../components/pricing/UpgradeRequiredDialog'
 import {
+  canEditSeo,
   canExportHtml,
   canExportPdf,
 } from '../../../utils/planEntitlements'
@@ -39,6 +40,7 @@ import CurrentSectionControls from './components/CurrentSectionControls'
 import DesktopPreviewPanel from './components/DesktopPreviewPanel'
 import PublishSuccessModal from './components/PublishSuccessModal'
 import SaveAsTemplateModal from './components/SaveAsTemplateModal'
+import SeoSettingsDialog from './components/SeoSettingsDialog'
 import SectionListPanel from './components/SectionListPanel'
 import StaticPreviewDialog from './components/StaticPreviewDialog'
 import {
@@ -72,6 +74,7 @@ import {
 } from './imageUpload'
 
 const PUBLISH_CLICK_GUARD_MS = 750
+const SEO_PRO_REASON = 'SEO & Social chỉ khả dụng với gói Pro.'
 const INITIAL_TARGET_PAGES_STATE = {
   projectId: null,
   status: 'idle',
@@ -150,6 +153,9 @@ const LandingPageEditorPage = () => {
   const [isPublishing, setIsPublishing] = useState(false)
   const [exportingFormat, setExportingFormat] = useState(null)
   const [upgradeReason, setUpgradeReason] = useState('')
+  const [isSeoSettingsOpen, setIsSeoSettingsOpen] = useState(false)
+  const [isSavingSeo, setIsSavingSeo] = useState(false)
+  const [seoError, setSeoError] = useState('')
   const [publishResult, setPublishResult] = useState(null)
   const [staticPreviewState, setStaticPreviewState] = useState(
     INITIAL_STATIC_PREVIEW_STATE,
@@ -173,6 +179,7 @@ const LandingPageEditorPage = () => {
   const templateRequestInFlightRef = useRef(false)
   const publishRequestInFlightRef = useRef(false)
   const exportRequestInFlightRef = useRef(false)
+  const seoRequestInFlightRef = useRef(false)
   const staticPreviewRequestInFlightRef = useRef(false)
   const staticPreviewOpenRef = useRef(false)
   const lastPublishAttemptAtRef = useRef(0)
@@ -990,6 +997,71 @@ const LandingPageEditorPage = () => {
     user,
   ])
 
+  const openSeoSettings = useCallback(() => {
+    if (localLandingPage) return
+    if (!canEditSeo(user)) {
+      setUpgradeReason(SEO_PRO_REASON)
+      return
+    }
+    setSeoError('')
+    setIsSeoSettingsOpen(true)
+  }, [localLandingPage, user])
+
+  const closeSeoSettings = useCallback(() => {
+    if (seoRequestInFlightRef.current) return
+    setSeoError('')
+    setIsSeoSettingsOpen(false)
+  }, [])
+
+  const handleSaveSeo = useCallback(
+    async (payload) => {
+      if (
+        localLandingPage ||
+        seoRequestInFlightRef.current ||
+        saveRequestInFlightRef.current ||
+        exportRequestInFlightRef.current ||
+        staticPreviewRequestInFlightRef.current ||
+        publishRequestInFlightRef.current
+      ) {
+        return
+      }
+
+      seoRequestInFlightRef.current = true
+      setIsSavingSeo(true)
+      setSeoError('')
+      try {
+        const response = await landingPagesApi.updateSeo(landingPageId, payload)
+        const record = mapLandingPageFromApi(response?.data?.data)
+        if (!record || record.id !== landingPageId || record.projectId !== projectId) {
+          throw new Error('Invalid landing page SEO response')
+        }
+        setServerPageState({
+          landingPageId,
+          status: 'ready',
+          record,
+          error: '',
+        })
+        setIsSeoSettingsOpen(false)
+        setNotice('Đã lưu thiết lập SEO. Hãy xuất bản lại để cập nhật public page.')
+      } catch (error) {
+        const message = apiErrorMessage(error, 'Không thể lưu thiết lập SEO. Vui lòng thử lại.')
+        const isEntitlementError =
+          error?.response?.status === 403 && /gói\s+pro|chỉ\s+dành\s+cho\s+gói\s+pro/i.test(message)
+        if (isEntitlementError) {
+          setIsSeoSettingsOpen(false)
+          setUpgradeReason(SEO_PRO_REASON)
+          refreshUser().catch(() => undefined)
+        } else {
+          setSeoError(message)
+        }
+      } finally {
+        seoRequestInFlightRef.current = false
+        setIsSavingSeo(false)
+      }
+    },
+    [landingPageId, localLandingPage, projectId, refreshUser],
+  )
+
   const closeStaticPreview = useCallback(() => {
     staticPreviewOpenRef.current = false
     setStaticPreviewState((state) => ({ ...state, open: false }))
@@ -1124,6 +1196,8 @@ const LandingPageEditorPage = () => {
         onExportHtml={localLandingPage ? null : handleExportHtml}
         htmlExportAllowed={canExportHtml(user)}
         exportingFormat={exportingFormat}
+        onSeoSettings={localLandingPage ? null : openSeoSettings}
+        seoAllowed={canEditSeo(user)}
         onPublish={localLandingPage ? null : handlePublish}
         publishing={isPublishing}
         theme={theme}
@@ -1252,6 +1326,14 @@ const LandingPageEditorPage = () => {
         onClose={closeSaveAsTemplate}
         onSubmit={handleSaveAsTemplate}
         onErrorClear={() => setSaveAsTemplateError('')}
+      />
+      <SeoSettingsDialog
+        open={isSeoSettingsOpen}
+        initialSettings={editorLandingPage.seoSettings}
+        saving={isSavingSeo}
+        serverError={seoError}
+        onClose={closeSeoSettings}
+        onSave={handleSaveSeo}
       />
     </div>
   )

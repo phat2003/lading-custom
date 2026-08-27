@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -86,11 +87,33 @@ type LandingPage struct {
 	// PublishedURL — slug công khai của trang (/p/:slug). Null nếu chưa từng publish.
 	// Slug thuộc về TRANG (không thuộc snapshot) nên bền qua mọi lần republish và cả
 	// chu kỳ unpublish -> publish lại. Xem migration 002_move_slug_to_page.
-	PublishedURL *string   `gorm:"column:published_url;uniqueIndex" json:"published_url,omitempty"`
-	CreatedAt    time.Time `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"column:updated_at" json:"updated_at"`
+	PublishedURL *string `gorm:"column:published_url;uniqueIndex" json:"published_url,omitempty"`
+	// SEOSettings là metadata riêng của từng Landing Page. JSONB giữ contract gọn,
+	// tương thích ngược với các trang cũ qua default object rỗng.
+	SEOSettings datatypes.JSON `gorm:"column:seo_settings;type:jsonb;not null;default:'{}'" json:"seo_settings"`
+	CreatedAt   time.Time      `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt   time.Time      `gorm:"column:updated_at" json:"updated_at"`
 
 	Sections []PageSection `gorm:"foreignKey:LandingPageID" json:"sections,omitempty"`
+}
+
+// LandingPageSEO là contract SEO tối thiểu được User Builder và renderer công khai dùng chung.
+type LandingPageSEO struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Keywords    string `json:"keywords"`
+	OGImage     string `json:"og_image"`
+	Favicon     string `json:"favicon"`
+}
+
+// SEO trả metadata đã parse; JSON cũ/hỏng rơi về giá trị rỗng thay vì làm hỏng trang.
+func (p *LandingPage) SEO() LandingPageSEO {
+	var seo LandingPageSEO
+	if p == nil || len(p.SEOSettings) == 0 {
+		return seo
+	}
+	_ = json.Unmarshal(p.SEOSettings, &seo)
+	return seo
 }
 
 func (LandingPage) TableName() string { return "landing_page" }

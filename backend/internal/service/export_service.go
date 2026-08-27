@@ -5,14 +5,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -106,54 +104,10 @@ var htmlTemplate = template.Must(template.New("page").Parse(`<!DOCTYPE html>
 </body>
 </html>`))
 
-// BuildHTML sinh HTML đơn giản từ landing page và danh sách section.
-// Mỗi section content (JSONB) được phẳng hóa thành các cặp key/value để hiển thị.
+// BuildHTML sinh tài liệu HTML trực quan từ cùng canonical renderer được dùng
+// cho preview, publish và HTML export. Hàm này là đầu vào duy nhất của PDF.
 func (s *ExportService) BuildHTML(page *models.LandingPage, sections []models.PageSection) (string, error) {
-	if page == nil {
-		return "", errors.New("landing page rỗng")
-	}
-
-	data := pageTemplateData{
-		Title:    page.Name,
-		Sections: make([]sectionView, 0, len(sections)),
-	}
-
-	for _, sec := range sections {
-		// Bỏ qua section bị ẩn.
-		if !sec.IsVisible {
-			continue
-		}
-
-		sv := sectionView{Type: sec.SectionType}
-
-		// Parse content JSONB thành map để lấy các trường text hiển thị.
-		if len(sec.Content) > 0 {
-			var raw map[string]interface{}
-			if err := json.Unmarshal(sec.Content, &raw); err == nil {
-				// Sắp xếp key để thứ tự render ổn định (deterministic).
-				keys := make([]string, 0, len(raw))
-				for k := range raw {
-					keys = append(keys, k)
-				}
-				sort.Strings(keys)
-
-				for _, k := range keys {
-					sv.Fields = append(sv.Fields, fieldKV{
-						Key:   k,
-						Value: stringifyValue(raw[k]),
-					})
-				}
-			}
-		}
-
-		data.Sections = append(data.Sections, sv)
-	}
-
-	var buf bytes.Buffer
-	if err := htmlTemplate.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("sinh HTML thất bại: %w", err)
-	}
-	return buf.String(), nil
+	return RenderLandingPageHTML(page, sections, PageRenderOptions{})
 }
 
 // stringifyValue chuyển 1 giá trị JSON bất kỳ thành chuỗi để hiển thị.
@@ -268,109 +222,11 @@ func (s *ExportService) BuildFullHTMLOffline(landingPage *models.LandingPage, se
 // buildHTML là logic chung sinh HTML cho cả 2 chế độ (CDN và offline).
 // Khi offline=true: nhúng ảnh thành base64 và dùng template có CSS inline.
 func (s *ExportService) buildHTML(landingPage *models.LandingPage, sections []models.PageSection, offline bool) (string, error) {
-	if landingPage == nil {
-		return "", errors.New("landing page rỗng")
-	}
-
-	data := fullPageData{
-		Title:    landingPage.Name,
-		Sections: make([]fullSectionView, 0, len(sections)),
-	}
-
-	for _, sec := range sections {
-		// Bỏ qua section bị ẩn.
-		if !sec.IsVisible {
-			continue
-		}
-
-		// Parse content JSONB thành map để lấy các trường.
-		var content map[string]interface{}
-		if len(sec.Content) > 0 {
-			// Nếu content lỗi định dạng thì coi như map rỗng, vẫn render khung section.
-			_ = json.Unmarshal(sec.Content, &content)
-		}
-		if content == nil {
-			content = map[string]interface{}{}
-		}
-
-		sv := fullSectionView{Type: sec.SectionType}
-
-		switch sec.SectionType {
-		case "hero":
-			sv.Title = pickString(content, "title")
-			sv.Subtitle = pickString(content, "subtitle")
-			sv.ButtonText = pickString(content, "button_text", "buttonText")
-			sv.BgStyle = safeBgStyle(pickString(content, "bg_color", "bgColor", "background"))
-
-		case "cta":
-			sv.Title = pickString(content, "title")
-			sv.Subtitle = pickString(content, "subtitle")
-			sv.ButtonText = pickString(content, "button_text", "buttonText")
-
-		case "features":
-			sv.Title = pickString(content, "title")
-			for _, it := range pickArray(content, "items") {
-				sv.Items = append(sv.Items, featureItemView{
-					Icon:  pickString(it, "icon"),
-					Title: pickString(it, "title"),
-					Desc:  pickString(it, "desc", "description"),
-				})
-			}
-
-		case "testimonials":
-			sv.Title = pickString(content, "title")
-			for _, q := range pickArray(content, "quotes", "items") {
-				avatar := pickString(q, "avatar", "avatar_url")
-				// Chế độ offline: nhúng ảnh thành base64 để không cần tải từ mạng.
-				if offline {
-					avatar = s.embedImage(avatar)
-				}
-				sv.Quotes = append(sv.Quotes, testimonialView{
-					Author: pickString(q, "author", "name"),
-					Text:   pickString(q, "text", "quote"),
-					Avatar: safeImageURL(avatar),
-				})
-			}
-
-		case "faq":
-			sv.Title = pickString(content, "title")
-			for _, f := range pickArray(content, "items", "faqs", "questions") {
-				sv.Faqs = append(sv.Faqs, faqItemView{
-					Question: pickString(f, "question", "q"),
-					Answer:   pickString(f, "answer", "a"),
-				})
-			}
-
-		case "footer":
-			sv.Copyright = pickString(content, "copyright")
-			for _, l := range pickArray(content, "links") {
-				sv.Links = append(sv.Links, linkView{
-					Label: pickString(l, "label", "text", "title"),
-					URL:   pickString(l, "url", "href"),
-				})
-			}
-
-		default:
-			// Section không xác định: render generic với content dạng JSON đẹp.
-			if pretty, err := json.MarshalIndent(content, "", "  "); err == nil {
-				sv.RawJSON = string(pretty)
-			}
-		}
-
-		data.Sections = append(data.Sections, sv)
-	}
-
-	// Chọn template theo chế độ: offline dùng CSS inline, còn lại dùng CDN.
-	tmpl := fullHTMLTemplate
+	options := PageRenderOptions{}
 	if offline {
-		tmpl = fullHTMLTemplateOffline
+		options.ImageTransform = s.embedImage
 	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("sinh HTML thất bại: %w", err)
-	}
-	return buf.String(), nil
+	return RenderLandingPageHTML(landingPage, sections, options)
 }
 
 // embedImage chuyển 1 nguồn ảnh (URL hoặc đường dẫn cục bộ) thành data URI base64.

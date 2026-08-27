@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/nhienthai/lading-custom/backend/internal/service"
 	"github.com/nhienthai/lading-custom/backend/pkg/response"
@@ -30,11 +31,39 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// registerValidationMessage chuyển lỗi binding nội bộ thành nội dung an toàn cho khách hàng.
+// Không trả tên struct/tag của go-playground validator ra ngoài API.
+func registerValidationMessage(err error) string {
+	var validationErrors validator.ValidationErrors
+	if !errors.As(err, &validationErrors) {
+		return "Dữ liệu đăng ký không hợp lệ."
+	}
+
+	for _, fieldErr := range validationErrors {
+		switch fieldErr.Field() {
+		case "Email":
+			if fieldErr.Tag() == "required" {
+				return "Vui lòng nhập email."
+			}
+			return "Email không đúng định dạng. Ví dụ: ten@example.com"
+		case "Password":
+			if fieldErr.Tag() == "required" {
+				return "Vui lòng nhập mật khẩu."
+			}
+			return "Mật khẩu phải có ít nhất 6 ký tự."
+		case "FullName":
+			return "Vui lòng nhập họ và tên."
+		}
+	}
+
+	return "Dữ liệu đăng ký không hợp lệ."
+}
+
 // Register godoc — POST /api/v1/auth/register
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, err.Error())
+		response.Fail(c, http.StatusBadRequest, registerValidationMessage(err))
 		return
 	}
 

@@ -187,6 +187,8 @@ CREATE TABLE landing_page (
     -- Slug công khai (/p/:slug). NULL = chưa từng publish.
     -- Slug thuộc về TRANG nên bền qua mọi lần republish và cả unpublish -> publish lại.
     published_url     VARCHAR(255) UNIQUE,
+    -- Metadata SEO theo từng Landing Page; object rỗng giữ tương thích với trang cũ.
+    seo_settings      JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );

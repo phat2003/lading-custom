@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"strings"
@@ -95,30 +94,7 @@ func (s *PreviewService) GetPreview(userID, pageID uuid.UUID, device string) (st
 // RenderPreview sinh HTML preview hoàn chỉnh từ landing page + danh sách section.
 // device quyết định meta viewport và bề rộng khung preview.
 func (s *PreviewService) RenderPreview(page *models.LandingPage, sections []models.PageSection, device string) (string, error) {
-	if page == nil {
-		return "", errors.New("landing page rỗng")
-	}
-
-	// Render từng section thành 1 mảnh HTML độc lập.
-	htmlParts := make([]string, 0, len(sections))
-	for _, sec := range sections {
-		// Bỏ qua section bị ẩn (phòng khi caller không lọc sẵn).
-		if !sec.IsVisible {
-			continue
-		}
-
-		part, err := s.RenderSectionHTML(sec)
-		if err != nil {
-			// Một section lỗi không được làm hỏng cả trang preview:
-			// thay bằng khung generic để user vẫn thấy các section còn lại.
-			part = renderGenericSection(sec.SectionType)
-		}
-		htmlParts = append(htmlParts, part)
-	}
-
-	// Ghép các mảnh thành trang hoàn chỉnh. customCSS để rỗng — dành sẵn cho
-	// tính năng "CSS tùy chỉnh của user" sau này.
-	return s.WrapFullHTML(htmlParts, page.Name, device, ""), nil
+	return RenderLandingPageHTML(page, sections, PageRenderOptions{Device: device})
 }
 
 // RenderSectionHTML render 1 section thành chuỗi HTML theo section_type.
@@ -126,6 +102,14 @@ func (s *PreviewService) RenderPreview(page *models.LandingPage, sections []mode
 // pickString/pickArray (dùng chung với export_service.go).
 // Nếu content sai định dạng hoặc section_type lạ -> render generic section.
 func (s *PreviewService) RenderSectionHTML(section models.PageSection) (string, error) {
+	fragment, _, canonical, err := renderCanonicalSection(section, "lp-preview", nil)
+	if canonical {
+		return fragment, err
+	}
+	return s.renderLegacySectionHTML(section)
+}
+
+func (s *PreviewService) renderLegacySectionHTML(section models.PageSection) (string, error) {
 	// Parse content JSONB. Content lỗi -> coi như rỗng, vẫn render khung section
 	// để user thấy được section nào đang có vấn đề thay vì trang trắng.
 	var content map[string]interface{}

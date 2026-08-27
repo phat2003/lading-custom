@@ -1,10 +1,17 @@
 package service
 
 import (
+	"encoding/json"
+	"errors"
+	"net/url"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/nhienthai/lading-custom/backend/internal/models"
 	"github.com/nhienthai/lading-custom/backend/internal/repository"
 )
+
+var ErrInvalidSEOURL = errors.New("ảnh chia sẻ hoặc favicon phải là URL http(s) hoặc đường dẫn /uploads hợp lệ")
 
 type LandingPageService struct {
 	pageRepo    *repository.LandingPageRepository
@@ -114,6 +121,42 @@ func (s *LandingPageService) UpdatePage(userID, pageID uuid.UUID, name, status s
 		return nil, err
 	}
 	return page, nil
+}
+
+// UpdateSEO lưu metadata SEO theo đúng Landing Page và vẫn tái dùng kiểm tra ownership.
+// Quyền gói Pro được chặn tại middleware để mọi request đều dùng plan mới nhất từ DB.
+func (s *LandingPageService) UpdateSEO(userID, pageID uuid.UUID, input models.LandingPageSEO) (*models.LandingPage, error) {
+	page, err := s.GetPageByID(userID, pageID)
+	if err != nil {
+		return nil, err
+	}
+
+	input.Title = strings.TrimSpace(input.Title)
+	input.Description = strings.TrimSpace(input.Description)
+	input.Keywords = strings.TrimSpace(input.Keywords)
+	input.OGImage = strings.TrimSpace(input.OGImage)
+	input.Favicon = strings.TrimSpace(input.Favicon)
+	if !isSEOAssetURL(input.OGImage) || !isSEOAssetURL(input.Favicon) {
+		return nil, ErrInvalidSEOURL
+	}
+
+	raw, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	page.SEOSettings = raw
+	if err := s.pageRepo.Update(page); err != nil {
+		return nil, err
+	}
+	return page, nil
+}
+
+func isSEOAssetURL(raw string) bool {
+	if raw == "" || strings.HasPrefix(raw, "/uploads/") {
+		return true
+	}
+	parsed, err := url.ParseRequestURI(raw)
+	return err == nil && (parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Host != ""
 }
 
 func (s *LandingPageService) DeletePage(userID, pageID uuid.UUID) error {

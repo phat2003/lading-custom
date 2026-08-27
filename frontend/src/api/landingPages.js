@@ -11,6 +11,28 @@ export const mapLandingPageFromApi = (landingPage) => {
     status:
       typeof landingPage.status === 'string' ? landingPage.status : null,
     publishedUrl: landingPage.published_url || null,
+    seoSettings: {
+      title:
+        typeof landingPage.seo_settings?.title === 'string'
+          ? landingPage.seo_settings.title
+          : '',
+      description:
+        typeof landingPage.seo_settings?.description === 'string'
+          ? landingPage.seo_settings.description
+          : '',
+      keywords:
+        typeof landingPage.seo_settings?.keywords === 'string'
+          ? landingPage.seo_settings.keywords
+          : '',
+      ogImage:
+        typeof landingPage.seo_settings?.og_image === 'string'
+          ? landingPage.seo_settings.og_image
+          : '',
+      favicon:
+        typeof landingPage.seo_settings?.favicon === 'string'
+          ? landingPage.seo_settings.favicon
+          : '',
+    },
     createdAt: landingPage.created_at || null,
     updatedAt: landingPage.updated_at || null,
   }
@@ -109,5 +131,6 @@ export const landingPagesApi = {
   publish: (id, config) =>
     api.post(`/landing-pages/${id}/publish`, undefined, config),
   update: (id, payload) => api.put(`/pages/${id}`, payload),
+  updateSeo: (id, payload) => api.put(`/pages/${id}/seo`, payload),
   remove: (id) => api.delete(`/pages/${id}`),
 }
