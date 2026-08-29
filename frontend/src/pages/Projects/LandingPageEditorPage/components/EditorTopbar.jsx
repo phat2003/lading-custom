@@ -6,6 +6,7 @@ import {
   MoonIcon,
   RedoIcon,
   SaveIcon,
+  SettingsIcon,
   SunIcon,
   UndoIcon,
 } from '../../../../components/icons'
@@ -41,6 +42,8 @@ const EditorTopbar = ({
   onExportHtml,
   htmlExportAllowed = false,
   exportingFormat = null,
+  onSeoSettings,
+  seoAllowed = false,
   onPublish,
   publishing = false,
   theme,
@@ -186,6 +189,23 @@ const EditorTopbar = ({
               staticPreviewing || publishing || saveStatus === 'saving'
             }
           />
+        )}
+        {onSeoSettings && (
+          <button
+            type="button"
+            onClick={onSeoSettings}
+            disabled={staticPreviewing || exporting || publishing || saveStatus === 'saving'}
+            className="flex items-center gap-1.5 rounded-xl border border-[var(--bd-border)] px-3 py-2 text-xs text-[var(--bd-text)] transition hover:border-violet-400/50 hover:text-[var(--bd-accent)] disabled:opacity-45"
+            title={seoAllowed ? 'Thiết lập SEO & Social' : 'SEO & Social — gói Pro'}
+          >
+            <SettingsIcon size={15} />
+            SEO
+            {!seoAllowed && (
+              <span className="rounded bg-violet-500/15 px-1 py-0.5 text-[9px] font-semibold text-violet-300">
+                PRO
+              </span>
+            )}
+          </button>
         )}
         <button
           type="button"

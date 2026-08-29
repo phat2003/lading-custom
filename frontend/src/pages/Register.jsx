@@ -77,7 +77,8 @@ const Register = () => {
 
     if (!form.full_name.trim()) nextErrors.full_name = 'Họ và tên không được để trống'
     if (!form.email.trim()) nextErrors.email = 'Email không được để trống'
-    else if (!EMAIL_REGEX.test(form.email)) nextErrors.email = 'Email không hợp lệ'
+    else if (!EMAIL_REGEX.test(form.email))
+      nextErrors.email = 'Email không đúng định dạng. Ví dụ: ten@example.com'
     if (!form.password.trim()) nextErrors.password = 'Mật khẩu không được để trống'
     else if (!PASSWORD_REGEX.test(form.password))
       nextErrors.password = 'Mật khẩu phải từ 6 ký tự, có số và ký tự đặc biệt'
@@ -98,7 +99,15 @@ const Register = () => {
       // không bị mất sau khi đăng ký xong rồi đăng nhập.
       navigate('/login', { state: location.state })
     } catch (err) {
-      setError(err.response?.data?.error || 'Đăng ký thất bại')
+      const serverError = err.response?.data?.error || ''
+      if (/email.*(định dạng|không hợp lệ)/i.test(serverError)) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          email: 'Email không đúng định dạng. Ví dụ: ten@example.com',
+        }))
+      } else {
+        setError(serverError || 'Đăng ký thất bại')
+      }
     } finally {
       setLoading(false)
     }

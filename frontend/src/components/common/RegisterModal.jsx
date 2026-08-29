@@ -22,7 +22,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
     if (!form.email.trim()) {
       nextErrors.email = 'Email không được để trống'
     } else if (!emailRegex.test(form.email)) {
-      nextErrors.email = 'Email không hợp lệ'
+      nextErrors.email = 'Email không đúng định dạng. Ví dụ: ten@example.com'
     }
 
     if (!form.password.trim()) {
@@ -51,7 +51,15 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }) {
       onClose()
       onSuccess?.()
     } catch (err) {
-      setError(err.response?.data?.error || 'Đăng ký thất bại')
+      const serverError = err.response?.data?.error || ''
+      if (/email.*(định dạng|không hợp lệ)/i.test(serverError)) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          email: 'Email không đúng định dạng. Ví dụ: ten@example.com',
+        }))
+      } else {
+        setError(serverError || 'Đăng ký thất bại')
+      }
     } finally {
       setLoading(false)
     }

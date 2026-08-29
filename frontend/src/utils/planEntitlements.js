@@ -79,6 +79,7 @@ export const getPlanEntitlements = (userOrPlan) => {
     canUsePremiumTemplates: pro,
     canExportPdf: true,
     canExportHtml: pro,
+    canEditSeo: pro,
     hasCustomBranding: pro,
     hasWatermark: !pro,
   })
@@ -90,6 +91,8 @@ export const canUsePremiumTemplates = (userOrPlan) =>
 export const canExportPdf = (userOrPlan) => getPlanEntitlements(userOrPlan).canExportPdf
 
 export const canExportHtml = (userOrPlan) => getPlanEntitlements(userOrPlan).canExportHtml
+
+export const canEditSeo = (userOrPlan) => getPlanEntitlements(userOrPlan).canEditSeo
 
 export const hasCustomBranding = (userOrPlan) =>
   getPlanEntitlements(userOrPlan).hasCustomBranding

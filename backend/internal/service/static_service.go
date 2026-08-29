@@ -25,21 +25,14 @@ import (
 //     responsive theo media query (không khóa bề rộng theo device), có meta SEO,
 //     được lưu vào published_snapshot và serve tại /p/:slug.
 //
-// Phần render từng section dùng lại RenderSectionHTML của PreviewService để
-// HTML publish luôn khớp với những gì user thấy trong editor.
+// Preview, publish, PDF và HTML export cùng dùng canonical renderer để giữ
+// semantics của PageSection.content.elements[] nhất quán.
 type StaticService struct {
 	staticRepo *repository.StaticRepository
-
-	// renderer chỉ dùng cho việc render section (RenderSectionHTML không đụng DB),
-	// nên khởi tạo rỗng là đủ — tránh trùng lặp logic template giữa 2 service.
-	renderer *PreviewService
 }
 
 func NewStaticService(staticRepo *repository.StaticRepository) *StaticService {
-	return &StaticService{
-		staticRepo: staticRepo,
-		renderer:   &PreviewService{},
-	}
+	return &StaticService{staticRepo: staticRepo}
 }
 
 // slugLength là độ dài slug công khai (vd: "a3f9k2xy").
@@ -70,22 +63,10 @@ func (s *StaticService) renderPage(userID uuid.UUID, pageID uuid.UUID) (string, 
 		return "", nil, nil, errors.New("landing page rỗng")
 	}
 
-	// Render từng section. Một section lỗi không được làm sập cả trang publish:
-	// fallback về khung generic để các section còn lại vẫn hiển thị.
-	htmlParts := make([]string, 0, len(sections))
-	for _, sec := range sections {
-		if !sec.IsVisible {
-			continue
-		}
-
-		part, err := s.renderer.RenderSectionHTML(sec)
-		if err != nil {
-			part = renderGenericSection(sec.SectionType)
-		}
-		htmlParts = append(htmlParts, part)
+	html, err := RenderLandingPageHTML(page, sections, PageRenderOptions{})
+	if err != nil {
+		return "", nil, nil, err
 	}
-
-	html := s.wrapStaticHTML(htmlParts, page.Name, buildSEODescription(sections))
 	return html, page, sections, nil
 }
 
@@ -246,6 +227,19 @@ func buildSEODescription(sections []models.PageSection) string {
 		var content map[string]interface{}
 		if err := json.Unmarshal(sec.Content, &content); err != nil {
 			continue // content hỏng -> bỏ qua, không làm sập việc publish
+		}
+		if elements, ok := content["elements"].([]interface{}); ok {
+			for _, preferredType := range []string{"paragraph", "heading", "label"} {
+				for _, rawElement := range elements {
+					element, ok := rawElement.(map[string]interface{})
+					if !ok || pickString(element, "type") != preferredType {
+						continue
+					}
+					if text := pickString(element, "content"); text != "" {
+						return truncateText(text, 160)
+					}
+				}
+			}
 		}
 
 		desc := pickString(content, "subtitle", "description", "title")

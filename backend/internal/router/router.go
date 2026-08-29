@@ -192,6 +192,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			pages.GET("", pageHandler.GetAll) // Cần truyền ?project_id=...
 			pages.GET("/:id", pageHandler.GetByID)
 			pages.PUT("/:id", pageHandler.Update)
+			pages.PUT("/:id/seo", middleware.ProRequired(), pageHandler.UpdateSEO)
 			pages.DELETE("/:id", pageHandler.Delete)
 			// Publish nằm ở /landing-pages/:id/publish (xem nhóm Static Preview / Publish bên dưới).
 			// ---- (Chức năng Save as Template) ----
